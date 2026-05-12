@@ -1,7 +1,5 @@
 .venv/
 __pycache__/
 *.pyc
-data/daily/
-data/auction/
-data/stocks_list.csv
+data/
 .pytest_cache/

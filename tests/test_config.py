@@ -1,45 +1,78 @@
-# tests/test_config.py
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from config import (
-    PROJECT_ROOT,
-    DATA_DIR,
-    DAILY_DIR,
-    AUCTION_DIR,
-    STOCKS_LIST_PATH,
-    VOLUME_RATIO_THRESHOLD,
-    OPEN_CHANGE_THRESHOLD,
-    TOP_VOLUME_COUNT,
-    AUCTION_HISTORY_DAYS,
-    RETRY_MAX_ATTEMPTS,
-    RETRY_BACKOFF_BASE,
-    CONCURRENT_WORKERS,
-)
+import pytest
+from config import to_tushare_code, TUSHARE_TOKEN, DB_PATH, DEFAULT_STOCKS
 
 
-def test_project_root_exists():
-    assert PROJECT_ROOT.exists()
+class TestToTushareCode:
+    # Shanghai main board
+    def test_shanghai_600(self):
+        assert to_tushare_code("600537") == "600537.SH"
 
+    def test_shanghai_601(self):
+        assert to_tushare_code("601398") == "601398.SH"
 
-def test_data_dirs_are_under_project():
-    assert str(DATA_DIR).startswith(str(PROJECT_ROOT))
-    assert str(DAILY_DIR).startswith(str(DATA_DIR))
-    assert str(AUCTION_DIR).startswith(str(DATA_DIR))
+    def test_shanghai_603(self):
+        assert to_tushare_code("603778") == "603778.SH"
 
+    def test_shanghai_605(self):
+        assert to_tushare_code("605123") == "605123.SH"
 
-def test_stocks_list_path_is_csv():
-    assert STOCKS_LIST_PATH.suffix == ".csv"
-    assert STOCKS_LIST_PATH.name == "stocks_list.csv"
+    # Shanghai STAR (科创板)
+    def test_shanghai_688(self):
+        assert to_tushare_code("688001") == "688001.SH"
 
+    # Shanghai B-share
+    def test_shanghai_900(self):
+        assert to_tushare_code("900901") == "900901.SH"
 
-def test_threshold_values_are_reasonable():
-    assert VOLUME_RATIO_THRESHOLD > 0
-    assert 0 < OPEN_CHANGE_THRESHOLD < 20
-    assert TOP_VOLUME_COUNT > 0
-    assert AUCTION_HISTORY_DAYS == 5
-    assert RETRY_MAX_ATTEMPTS >= 1
-    assert RETRY_BACKOFF_BASE >= 1
-    assert CONCURRENT_WORKERS >= 1
+    # Shenzhen main board
+    def test_shenzhen_000(self):
+        assert to_tushare_code("000890") == "000890.SZ"
+
+    def test_shenzhen_001(self):
+        assert to_tushare_code("001234") == "001234.SZ"
+
+    # Shenzhen SME (中小板)
+    def test_shenzhen_002(self):
+        assert to_tushare_code("002709") == "002709.SZ"
+
+    # Shenzhen ChiNext (创业板)
+    def test_shenzhen_300(self):
+        assert to_tushare_code("300342") == "300342.SZ"
+
+    # Shenzhen B-share
+    def test_shenzhen_200(self):
+        assert to_tushare_code("200002") == "200002.SZ"
+
+    # Shanghai ETF
+    def test_shanghai_etf_510(self):
+        assert to_tushare_code("510050") == "510050.SH"
+
+    def test_shanghai_etf_512(self):
+        assert to_tushare_code("512100") == "512100.SH"
+
+    def test_shanghai_etf_515(self):
+        assert to_tushare_code("515030") == "515030.SH"
+
+    # Shenzhen ETF
+    def test_shenzhen_etf_159(self):
+        assert to_tushare_code("159915") == "159915.SZ"
+
+    # Pass-through for already-suffixed codes
+    def test_already_suffixed_sh(self):
+        assert to_tushare_code("600537.SH") == "600537.SH"
+
+    def test_already_suffixed_sz(self):
+        assert to_tushare_code("000890.SZ") == "000890.SZ"
+
+    # Invalid / IPO subscription codes
+    def test_ipo_730_raises(self):
+        with pytest.raises(ValueError, match="Cannot determine market"):
+            to_tushare_code("730123")
+
+    def test_unknown_prefix_raises(self):
+        with pytest.raises(ValueError, match="Cannot determine market"):
+            to_tushare_code("500123")
+
+    def test_4digit_short_code_raises(self):
+        with pytest.raises(ValueError, match="must be a 6-digit code"):
+            to_tushare_code("60")

@@ -102,6 +102,7 @@ def cmd_show(args: argparse.Namespace) -> None:
     ).strftime("%Y-%m-%d")
 
     db = DailyDB(DB_PATH)
+    db.init()
     rows = db.query_daily(stock, start_date, end_date)
 
     if not rows:

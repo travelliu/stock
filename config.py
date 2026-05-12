@@ -1,3 +1,6 @@
+import os
+
+from dotenv import load_dotenv
 from pathlib import Path
 
 # Directories
@@ -5,8 +8,11 @@ PROJECT_DIR = Path(__file__).resolve().parent
 DATA_DIR = PROJECT_DIR / "data"
 DATA_DIR.mkdir(exist_ok=True)
 
+# Load .env
+load_dotenv(PROJECT_DIR / ".env")
+
 # tushare
-TUSHARE_TOKEN = "YOUR_TUSHARE_TOKEN_HERE"
+TUSHARE_TOKEN = os.environ.get("TUSHARE_TOKEN", "")
 
 # Database
 DB_PATH = DATA_DIR / "stock_daily.db"

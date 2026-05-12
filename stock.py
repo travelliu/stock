@@ -11,6 +11,7 @@ from analysis import (
     compute_statistics, compute_distribution,
     SPREAD_LABELS, SPREAD_KEYS, DEFAULT_SPREADS,
 )
+from company import get_stock_name
 
 
 def _display_width(s: str) -> int:
@@ -117,7 +118,9 @@ def cmd_show(args: argparse.Namespace) -> None:
     # Also show raw data table for the date range
     rows = db.query_daily(stock, start_date, end_date)
     if rows:
-        print(f"--- {stock} 日线数据 ({start_date} ~ {end_date}) 共 {len(rows)} 条 ---")
+        name = get_stock_name(stock)
+        label = f"{stock} {name}" if name else stock
+        print(f"--- {label} 日线数据 ({start_date} ~ {end_date}) 共 {len(rows)} 条 ---")
         print()
         _print_table(rows)
     elif not all_rows:
@@ -192,7 +195,9 @@ def _print_analysis(
 
     spread_keys = SPREAD_KEYS if show_all else DEFAULT_SPREADS
 
-    print(f"=== {stock} 价差分析 ===")
+    name = get_stock_name(stock)
+    label = f"{stock} {name}" if name else stock
+    print(f"=== {label} 价差分析 ===")
     print()
 
     for key in spread_keys:

@@ -63,13 +63,13 @@ class TestFetchName:
         mock_ts = sys.modules["tushare"]
         mock_pro = MagicMock()
         mock_ts.pro_api.return_value = mock_pro
-        mock_pro.stock_company.return_value = pd.DataFrame([
-            {"ts_code": "603778.SH", "short_name": "千金药业"},
+        mock_pro.stock_basic.return_value = pd.DataFrame([
+            {"ts_code": "603778.SH", "name": "国晟科技"},
         ])
         result = _fetch_name("603778")
-        assert result == "千金药业"
-        mock_pro.stock_company.assert_called_once_with(
-            ts_code="603778.SH", fields="ts_code,short_name"
+        assert result == "国晟科技"
+        mock_pro.stock_basic.assert_called_once_with(
+            ts_code="603778.SH", fields="ts_code,name"
         )
 
     @patch.dict(sys.modules, {"tushare": _mock_tushare_module()})
@@ -77,7 +77,7 @@ class TestFetchName:
         mock_ts = sys.modules["tushare"]
         mock_pro = MagicMock()
         mock_ts.pro_api.return_value = mock_pro
-        mock_pro.stock_company.return_value = pd.DataFrame()
+        mock_pro.stock_basic.return_value = pd.DataFrame()
         result = _fetch_name("603778")
         assert result == ""
 
@@ -86,7 +86,7 @@ class TestFetchName:
         mock_ts = sys.modules["tushare"]
         mock_pro = MagicMock()
         mock_ts.pro_api.return_value = mock_pro
-        mock_pro.stock_company.return_value = None
+        mock_pro.stock_basic.return_value = None
         result = _fetch_name("603778")
         assert result == ""
 

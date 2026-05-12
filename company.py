@@ -1,7 +1,6 @@
 """Stock company name resolution with JSON file caching."""
 
 import json
-from pathlib import Path
 
 from config import DATA_DIR, TUSHARE_TOKEN, to_tushare_code
 
@@ -46,12 +45,12 @@ def _save_cache(names: dict[str, str]) -> None:
 
 
 def _fetch_name(stock_code: str) -> str:
-    """Fetch stock short name from Tushare stock_company API."""
+    """Fetch stock short name from Tushare stock_basic API."""
     import tushare
 
     ts_code = to_tushare_code(stock_code)
     pro = tushare.pro_api(TUSHARE_TOKEN)
-    df = pro.stock_company(ts_code=ts_code, fields="ts_code,short_name")
-    if df is not None and not df.empty:
-        return str(df.iloc[0]["short_name"])
+    df = pro.stock_basic(ts_code=ts_code, fields="ts_code,name")
+    if df is not None and not df.empty and "name" in df.columns:
+        return str(df.iloc[0]["name"])
     return ""

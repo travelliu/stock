@@ -26,7 +26,7 @@ class TestCLIHelp:
         result = run_cli("show", "--help")
         assert result.returncode == 0
         assert "--stock" in result.stdout
-        assert "--analyze" in result.stdout
+        assert "--all" in result.stdout
 
 
 class TestCLIShow:

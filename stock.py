@@ -103,26 +103,25 @@ def cmd_show(args: argparse.Namespace) -> None:
     db = DailyDB(DB_PATH)
     db.init()
 
-    if args.analyze:
-        # Analyze needs all data for multi-window comparison
-        rows = db.query_daily(stock, "2000-01-01", "2099-12-31")
-        if not rows:
-            print(f"No data for {stock}")
-            return
-        show_all = getattr(args, "all", False)
-        _print_analysis(stock, rows, show_all=show_all)
-    else:
-        end_date = args.to or datetime.now().strftime("%Y-%m-%d")
-        start_date = args.from_ or (
-            datetime.now() - timedelta(days=30)
-        ).strftime("%Y-%m-%d")
-        rows = db.query_daily(stock, start_date, end_date)
-        if not rows:
-            print(f"No data for {stock} ({start_date} ~ {end_date})")
-            return
+    end_date = args.to or datetime.now().strftime("%Y-%m-%d")
+    start_date = args.from_ or (
+        datetime.now() - timedelta(days=30)
+    ).strftime("%Y-%m-%d")
+    show_all = getattr(args, "all", False)
+
+    # Always show analysis (uses all data for multi-window)
+    all_rows = db.query_daily(stock, "2000-01-01", "2099-12-31")
+    if all_rows:
+        _print_analysis(stock, all_rows, show_all=show_all)
+
+    # Also show raw data table for the date range
+    rows = db.query_daily(stock, start_date, end_date)
+    if rows:
         print(f"--- {stock} 日线数据 ({start_date} ~ {end_date}) 共 {len(rows)} 条 ---")
         print()
         _print_table(rows)
+    elif not all_rows:
+        print(f"No data for {stock}")
 
 
 def _print_table(rows: list[dict]) -> None:
@@ -232,8 +231,6 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Start date (YYYY-MM-DD, default: 30 days ago)")
     p_show.add_argument("--to", type=str, default=None,
                         help="End date (YYYY-MM-DD, default: today)")
-    p_show.add_argument("--analyze", action="store_true",
-                        help="Show spread statistics")
     p_show.add_argument("--all", action="store_true",
                         help="Show all 6 spread types (default: only 高-开 and 开-低)")
 

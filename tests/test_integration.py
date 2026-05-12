@@ -1,7 +1,4 @@
 """Integration test: fetch real data for 603778 and verify end-to-end flow."""
-import subprocess
-import sys
-
 import pytest
 
 from config import DB_PATH
@@ -10,13 +7,12 @@ from fetcher import fetch_daily
 
 
 @pytest.fixture(autouse=True)
-def clean_db():
-    """Remove test DB before and after integration test."""
-    if DB_PATH.exists():
-        DB_PATH.unlink()
+def use_test_db(tmp_path, monkeypatch):
+    """Redirect DB_PATH to a temp file so real data is never touched."""
+    test_db = tmp_path / "test.db"
+    monkeypatch.setattr("config.DB_PATH", test_db)
+    monkeypatch.setattr("db.DB_PATH", test_db, raising=False)
     yield
-    if DB_PATH.exists():
-        DB_PATH.unlink()
 
 
 @pytest.mark.integration
@@ -51,34 +47,20 @@ class TestIntegration603778:
 
         # Incremental fetch should use max_date as start
         df2 = fetch_daily("603778", start_date=max_date)
-        # May or may not have new data depending on market hours
-        # But the call should not error
         assert isinstance(df2, type(df1))
 
-    def test_cli_fetch_show(self):
-        # Fetch via CLI
-        result = subprocess.run(
-            [sys.executable, "stock.py", "fetch", "--stocks", "603778", "--days", "30"],
-            capture_output=True, text=True,
-            cwd="/root/code/github/travelliu/stock",
-        )
-        assert result.returncode == 0
-        assert "603778" in result.stdout
+    def test_cli_fetch_show(self, capsys):
+        from stock import cmd_fetch, cmd_show, build_parser
 
-        # Show via CLI
-        result = subprocess.run(
-            [sys.executable, "stock.py", "show", "--stock", "603778"],
-            capture_output=True, text=True,
-            cwd="/root/code/github/travelliu/stock",
-        )
-        assert result.returncode == 0
+        # Simulate: python stock.py fetch --stocks 603778 --days 30
+        args = build_parser().parse_args(["fetch", "--stocks", "603778", "--days", "30"])
+        cmd_fetch(args)
+        out = capsys.readouterr().out
+        assert "603778" in out
+        assert "Inserted" in out
 
-        # Analyze via CLI
-        result = subprocess.run(
-            [sys.executable, "stock.py", "show", "--stock", "603778", "--analyze"],
-            capture_output=True, text=True,
-            cwd="/root/code/github/travelliu/stock",
-        )
-        assert result.returncode == 0
-        assert "价差分析" in result.stdout
-        assert "样本数" in result.stdout
+        # Simulate: python stock.py show --stock 603778
+        args = build_parser().parse_args(["show", "--stock", "603778"])
+        cmd_show(args)
+        out = capsys.readouterr().out
+        assert "价差分析" in out

@@ -42,8 +42,8 @@ def cmd_fetch(args: argparse.Namespace) -> None:
         if df.empty:
             print(f"  No new data for {code}")
             continue
-        db.insert_daily(df)
-        print(f"  Inserted {len(df)} rows")
+        count = db.insert_daily(df)
+        print(f"  Inserted {count} rows")
 
 
 def cmd_show(args: argparse.Namespace) -> None:

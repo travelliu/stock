@@ -37,6 +37,9 @@ class DailyDB:
         self.db_path = db_path
 
     def init(self) -> None:
+        # Remove corrupt/empty DB file so it gets recreated
+        if self.db_path.exists() and self.db_path.stat().st_size == 0:
+            self.db_path.unlink()
         conn = sqlite3.connect(self.db_path)
         conn.execute(SCHEMA)
         conn.commit()

@@ -63,6 +63,8 @@ def cmd_show(args: argparse.Namespace) -> None:
     if args.analyze:
         _print_analysis(stock, start_date, end_date, rows)
     else:
+        print(f"--- {stock} 日线数据 ({start_date} ~ {end_date}) 共 {len(rows)} 条 ---")
+        print()
         _print_table(rows)
 
 
@@ -74,11 +76,17 @@ def _print_table(rows: list[dict]) -> None:
     ]
     display_names = [
         "日期", "开盘", "最高", "最低", "收盘",
-        "成交量", "高-开", "开-低", "高-低",
+        "成交量(万)", "高-开", "开-低", "高-低",
         "开-收", "高-收", "低-收",
     ]
-    table = [[r.get(h, "") for h in headers] for r in rows]
-    print(tabulate(table, headers=display_names, floatfmt=".2f"))
+    # Reverse: newest first
+    table = [[r.get(h, "") for h in headers] for r in reversed(rows)]
+    # Format volume to 万手
+    for row in table:
+        vol_idx = headers.index("vol")
+        row[vol_idx] = round(row[vol_idx] / 10000, 2)
+    print(tabulate(table, headers=display_names, floatfmt=".2f",
+                   tablefmt="rounded_outline", stralign="right"))
 
 
 def _print_analysis(

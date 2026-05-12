@@ -34,7 +34,7 @@ If fetch fails or the user doesn't want to wait, proceed with existing data.
 ### Step 2 — Get analysis output
 
 ```bash
-python stock.py show --stock <CODE> --analyze --all
+python stock.py show --stock <CODE> --all
 ```
 
 This prints summary statistics (mean, median, mode) and distribution tables for all 6

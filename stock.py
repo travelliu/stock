@@ -199,16 +199,21 @@ def _print_analysis(
         label = SPREAD_LABELS[key]
 
         # --- Summary table ---
-        headers = ["时段", "样本数", "均值", "中位数"]
+        headers = ["时段", "样本数", "均值", "中位数", "众数"]
         table = []
         for name, rows in windows:
             values = [r[key] for r in rows if r.get(key) is not None]
             if values:
+                try:
+                    mode_val = statistics.mode(values)
+                except statistics.StatisticsError:
+                    mode_val = "-"
                 table.append([
                     name,
                     str(len(values)),
                     f"{statistics.mean(values):.2f}",
                     f"{statistics.median(values):.2f}",
+                    f"{mode_val:.2f}" if isinstance(mode_val, float) else str(mode_val),
                 ])
             else:
                 table.append([name, "0", "-", "-"])

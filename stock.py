@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 import argparse
+import statistics
 import unicodedata
 from datetime import datetime, timedelta
 
 from config import DEFAULT_FETCH_DAYS, DB_PATH
 from db import DailyDB
 from fetcher import fetch_daily
-from analysis import compute_statistics, SPREAD_LABELS, SPREAD_KEYS
+from analysis import (
+    compute_statistics, compute_distribution,
+    SPREAD_LABELS, SPREAD_KEYS, DEFAULT_SPREADS,
+)
 
 
 def _display_width(s: str) -> int:
@@ -96,22 +100,26 @@ def cmd_fetch(args: argparse.Namespace) -> None:
 
 def cmd_show(args: argparse.Namespace) -> None:
     stock = args.stock
-    end_date = args.to or datetime.now().strftime("%Y-%m-%d")
-    start_date = args.from_ or (
-        datetime.now() - timedelta(days=30)
-    ).strftime("%Y-%m-%d")
-
     db = DailyDB(DB_PATH)
     db.init()
-    rows = db.query_daily(stock, start_date, end_date)
-
-    if not rows:
-        print(f"No data for {stock} ({start_date} ~ {end_date})")
-        return
 
     if args.analyze:
-        _print_analysis(stock, start_date, end_date, rows)
+        # Analyze needs all data for multi-window comparison
+        rows = db.query_daily(stock, "2000-01-01", "2099-12-31")
+        if not rows:
+            print(f"No data for {stock}")
+            return
+        show_all = getattr(args, "all", False)
+        _print_analysis(stock, rows, show_all=show_all)
     else:
+        end_date = args.to or datetime.now().strftime("%Y-%m-%d")
+        start_date = args.from_ or (
+            datetime.now() - timedelta(days=30)
+        ).strftime("%Y-%m-%d")
+        rows = db.query_daily(stock, start_date, end_date)
+        if not rows:
+            print(f"No data for {stock} ({start_date} ~ {end_date})")
+            return
         print(f"--- {stock} 日线数据 ({start_date} ~ {end_date}) 共 {len(rows)} 条 ---")
         print()
         _print_table(rows)
@@ -146,21 +154,60 @@ def _print_table(rows: list[dict]) -> None:
 
 
 def _print_analysis(
-    stock: str, start_date: str, end_date: str, rows: list[dict]
+    stock: str, all_rows: list[dict], show_all: bool = False
 ) -> None:
-    stats = compute_statistics(rows)
-    print(f"=== {stock} 价差分析 ({start_date} ~ {end_date}) ===")
-    print(f"样本数: {stats['count']}")
+    # Build time windows by trading days (newest first in each window)
+    all_rows_sorted = sorted(all_rows, key=lambda r: r["trade_date"], reverse=True)
+    windows = [
+        ("全部", all_rows_sorted),
+        ("近90日", all_rows_sorted[:90]),
+        ("近30日", all_rows_sorted[:30]),
+        ("近15日", all_rows_sorted[:15]),
+    ]
+
+    spread_keys = SPREAD_KEYS if show_all else DEFAULT_SPREADS
+
+    print(f"=== {stock} 价差分析 ===")
     print()
 
-    headers = ["价差类型", "平均值", "中位数"]
-    table = []
-    for key in SPREAD_KEYS:
-        if key in stats["spreads"]:
-            s = stats["spreads"][key]
-            table.append([SPREAD_LABELS[key], f"{s['mean']:.2f}", f"{s['median']:.2f}"])
+    # --- Summary table for each spread type ---
+    for key in spread_keys:
+        label = SPREAD_LABELS[key]
+        print(f"── {label} ({key}) 汇总 ──")
+        headers = ["时段", "样本数", "均值", "中位数"]
+        table = []
+        for name, rows in windows:
+            values = [r[key] for r in rows if r.get(key) is not None]
+            if values:
+                table.append([
+                    name,
+                    str(len(values)),
+                    f"{statistics.mean(values):.2f}",
+                    f"{statistics.median(values):.2f}",
+                ])
+            else:
+                table.append([name, "0", "-", "-"])
+        print(_format_table(headers, table))
+        print()
 
-    print(_format_table(headers, table))
+        # --- Distribution for each window ---
+        for name, rows in windows:
+            values = [r[key] for r in rows if r.get(key) is not None]
+            if not values:
+                continue
+            bins = compute_distribution(values)
+            print(f"── {label} 分布 ({name}, {len(values)}条) ──")
+            dist_headers = ["区间", "数量", "占比"]
+            dist_table = []
+            for b in bins:
+                interval = f"{b['low']:.2f} ~ {b['high']:.2f}"
+                dist_table.append([
+                    interval,
+                    str(b["count"]),
+                    f"{b['pct']:.1f}%",
+                ])
+            print(_format_table(dist_headers, dist_table))
+            print()
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -187,6 +234,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="End date (YYYY-MM-DD, default: today)")
     p_show.add_argument("--analyze", action="store_true",
                         help="Show spread statistics")
+    p_show.add_argument("--all", action="store_true",
+                        help="Show all 6 spread types (default: only 高-开 and 开-低)")
 
     return parser
 

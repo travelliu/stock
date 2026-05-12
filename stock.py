@@ -4,14 +4,14 @@ from datetime import datetime, timedelta
 
 from tabulate import tabulate
 
-from config import DEFAULT_FETCH_DAYS, DB_PATH, DEFAULT_STOCKS
+from config import DEFAULT_FETCH_DAYS, DB_PATH
 from db import DailyDB
 from fetcher import fetch_daily
 from analysis import compute_statistics, SPREAD_LABELS, SPREAD_KEYS
 
 
 def cmd_fetch(args: argparse.Namespace) -> None:
-    stocks = args.stocks.split(",") if args.stocks else DEFAULT_STOCKS
+    stocks = args.stocks.split(",")
     db = DailyDB(DB_PATH)
     db.init()
 
@@ -105,7 +105,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # fetch
     p_fetch = sub.add_parser("fetch", help="Fetch daily data from tushare")
-    p_fetch.add_argument("--stocks", type=str, default=None,
+    p_fetch.add_argument("--stocks", type=str, required=True,
                          help="Comma-separated stock codes (e.g., 603778,000890)")
     p_fetch.add_argument("--days", type=str, default=None,
                          help="Lookback days (e.g., 30, 180) or 'all' for full history. "

@@ -152,6 +152,22 @@ def _print_table(rows: list[dict]) -> None:
     print(_format_table(display_names, table))
 
 
+def _join_tables_side_by_side(tables: list[str], gaps: int = 4) -> str:
+    """Join multiple table strings side by side."""
+    if not tables:
+        return ""
+    split = [t.split("\n") for t in tables]
+    max_lines = max(len(s) for s in split)
+    pad = " " * gaps
+    lines = []
+    for i in range(max_lines):
+        parts = []
+        for s in split:
+            parts.append(s[i] if i < len(s) else " " * _display_width(s[0]) if s else "")
+        lines.append(pad.join(parts))
+    return "\n".join(lines)
+
+
 def _print_analysis(
     stock: str, all_rows: list[dict], show_all: bool = False
 ) -> None:
@@ -169,10 +185,10 @@ def _print_analysis(
     print(f"=== {stock} 价差分析 ===")
     print()
 
-    # --- Summary table for each spread type ---
     for key in spread_keys:
         label = SPREAD_LABELS[key]
-        print(f"── {label} ({key}) 汇总 ──")
+
+        # --- Summary table ---
         headers = ["时段", "样本数", "均值", "中位数"]
         table = []
         for name, rows in windows:
@@ -186,27 +202,35 @@ def _print_analysis(
                 ])
             else:
                 table.append([name, "0", "-", "-"])
-        print(_format_table(headers, table))
-        print()
 
-        # --- Distribution for each window ---
+        summary_str = f"── {label} 汇总 ──\n" + _format_table(headers, table)
+
+        # --- Distribution tables side by side ---
+        dist_tables = []
         for name, rows in windows:
             values = [r[key] for r in rows if r.get(key) is not None]
             if not values:
                 continue
             bins = compute_distribution(values)
-            print(f"── {label} 分布 ({name}, {len(values)}条) ──")
             dist_headers = ["区间", "数量", "占比"]
             dist_table = []
             for b in bins:
-                interval = f"{b['low']:.2f} ~ {b['high']:.2f}"
+                interval = f"{b['low']:.2f}~{b['high']:.2f}"
                 dist_table.append([
                     interval,
                     str(b["count"]),
                     f"{b['pct']:.1f}%",
                 ])
-            print(_format_table(dist_headers, dist_table))
-            print()
+            dist_tables.append(
+                f"── {label} 分布 ({name},{len(values)}条) ──\n"
+                + _format_table(dist_headers, dist_table)
+            )
+
+        print(summary_str)
+        print()
+        if dist_tables:
+            print(_join_tables_side_by_side(dist_tables))
+        print()
 
 
 def build_parser() -> argparse.ArgumentParser:

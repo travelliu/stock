@@ -153,17 +153,27 @@ def _print_table(rows: list[dict]) -> None:
 
 
 def _join_tables_side_by_side(tables: list[str], gaps: int = 4) -> str:
-    """Join multiple table strings side by side."""
+    """Join multiple table strings side by side with CJK-aware alignment."""
     if not tables:
         return ""
     split = [t.split("\n") for t in tables]
-    max_lines = max(len(s) for s in split)
+
+    # Normalize each block: pad all lines to the max display width of that block
+    normalized = []
+    for block in split:
+        if not block:
+            continue
+        max_w = max(_display_width(line) for line in block)
+        padded = [_rpad(line, max_w) for line in block]
+        normalized.append(padded)
+
+    max_lines = max(len(b) for b in normalized)
     pad = " " * gaps
     lines = []
     for i in range(max_lines):
         parts = []
-        for s in split:
-            parts.append(s[i] if i < len(s) else " " * _display_width(s[0]) if s else "")
+        for b in normalized:
+            parts.append(b[i] if i < len(b) else " " * _display_width(b[0]))
         lines.append(pad.join(parts))
     return "\n".join(lines)
 

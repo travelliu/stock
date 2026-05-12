@@ -1,13 +1,61 @@
 #!/usr/bin/env python3
 import argparse
+import unicodedata
 from datetime import datetime, timedelta
-
-from tabulate import tabulate
 
 from config import DEFAULT_FETCH_DAYS, DB_PATH
 from db import DailyDB
 from fetcher import fetch_daily
 from analysis import compute_statistics, SPREAD_LABELS, SPREAD_KEYS
+
+
+def _display_width(s: str) -> int:
+    """Calculate terminal display width (CJK chars = 2 columns)."""
+    width = 0
+    for ch in str(s):
+        eaw = unicodedata.east_asian_width(ch)
+        width += 2 if eaw in ("W", "F") else 1
+    return width
+
+
+def _rpad(s: str, width: int) -> str:
+    """Right-pad string to reach target display width."""
+    return str(s) + " " * max(0, width - _display_width(s))
+
+
+def _lpad(s: str, width: int) -> str:
+    """Left-pad string to reach target display width."""
+    return " " * max(0, width - _display_width(s)) + str(s)
+
+
+def _format_table(headers: list[str], rows: list[list[str]]) -> str:
+    """Format a table with CJK-aware column alignment."""
+    # Calculate column widths
+    col_widths = [_display_width(h) for h in headers]
+    for row in rows:
+        for i, cell in enumerate(row):
+            col_widths[i] = max(col_widths[i], _display_width(cell))
+
+    # Build horizontal separator
+    sep = "+" + "+".join("-" * (w + 2) for w in col_widths) + "+"
+
+    lines = [sep]
+    # Header row
+    header_line = "|"
+    for i, h in enumerate(headers):
+        header_line += " " + _rpad(h, col_widths[i]) + " |"
+    lines.append(header_line)
+    lines.append(sep)
+
+    # Data rows
+    for row in rows:
+        data_line = "|"
+        for i, cell in enumerate(row):
+            data_line += " " + _rpad(cell, col_widths[i]) + " |"
+        lines.append(data_line)
+    lines.append(sep)
+
+    return "\n".join(lines)
 
 
 def cmd_fetch(args: argparse.Namespace) -> None:
@@ -79,14 +127,21 @@ def _print_table(rows: list[dict]) -> None:
         "成交量(万)", "高-开", "开-低", "高-低",
         "开-收", "高-收", "低-收",
     ]
-    # Reverse: newest first
-    table = [[r.get(h, "") for h in headers] for r in reversed(rows)]
-    # Format volume to 万手
-    for row in table:
-        vol_idx = headers.index("vol")
-        row[vol_idx] = round(row[vol_idx] / 10000, 2)
-    print(tabulate(table, headers=display_names, floatfmt=".2f",
-                   tablefmt="rounded_outline", stralign="right"))
+    # Reverse: newest first, format values
+    table = []
+    for r in reversed(rows):
+        row = []
+        for h in headers:
+            v = r.get(h, "")
+            if h == "vol":
+                row.append(f"{v / 10000:>8.2f}")
+            elif isinstance(v, float):
+                row.append(f"{v:>6.2f}")
+            else:
+                row.append(str(v))
+        table.append(row)
+
+    print(_format_table(display_names, table))
 
 
 def _print_analysis(
@@ -96,13 +151,15 @@ def _print_analysis(
     print(f"=== {stock} 价差分析 ({start_date} ~ {end_date}) ===")
     print(f"样本数: {stats['count']}")
     print()
-    print(f"{'价差类型':<14} {'平均值':>8} {'中位数':>8}")
-    print("-" * 32)
+
+    headers = ["价差类型", "平均值", "中位数"]
+    table = []
     for key in SPREAD_KEYS:
         if key in stats["spreads"]:
-            label = SPREAD_LABELS[key]
             s = stats["spreads"][key]
-            print(f"{label:<14} {s['mean']:>8.2f} {s['median']:>8.2f}")
+            table.append([SPREAD_LABELS[key], f"{s['mean']:.2f}", f"{s['median']:.2f}"])
+
+    print(_format_table(headers, table))
 
 
 def build_parser() -> argparse.ArgumentParser:

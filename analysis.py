@@ -325,7 +325,7 @@ class StockAnalyzer:
     ) -> str:
         headers = [
             "", "历史参考价", "近3月参考价", "近1月参考价", "近2周参考价",
-            "最低价反推", "最高价反推", "均值", "正负算一",
+            "最低价反推(当日最低价)", "最高价反推(当日最高价)", "均值", "正负算一",
         ]
 
         pred_high = open_price + composite_means.get("spread_oh", 0.0)
@@ -338,11 +338,12 @@ class StockAnalyzer:
             high_row.append(
                 f"{open_price + val:.2f}" if val is not None else "/"
             )
-        lc_hist = window_means["历史"].get("spread_lc")
-        if self.actual_low is not None and lc_hist is not None:
-            high_row.append(f"{self.actual_low + lc_hist:.2f}")
+        hl_2w = window_means["近2周"].get("spread_hl")
+        if self.actual_low is not None and hl_2w is not None:
+            high_row.append(f"{self.actual_low + hl_2w:.2f}")
         else:
             high_row.append("/")
+        lc_hist = window_means["历史"].get("spread_lc")
         if self.actual_high is not None and lc_hist is not None:
             high_row.append(f"{self.actual_high - lc_hist:.2f}")
         else:
@@ -366,9 +367,8 @@ class StockAnalyzer:
                 f"{open_price - val:.2f}" if val is not None else "/"
             )
         low_row.append("/")
-        hc_hist = window_means["历史"].get("spread_hc")
-        if self.actual_high is not None and hc_hist is not None:
-            low_row.append(f"{self.actual_high - hc_hist:.2f}")
+        if self.actual_high is not None and hl_2w is not None:
+            low_row.append(f"{self.actual_high - hl_2w:.2f}")
         else:
             low_row.append("/")
         nums = []

@@ -33,3 +33,40 @@ class TestCLIShow:
     def test_show_requires_stock(self):
         result = run_cli("show")
         assert result.returncode != 0
+
+
+class TestRecommendationInOutput:
+    def test_default_output_contains_recommendation(self, capsys):
+        from stock import _print_analysis
+
+        rows = [
+            {"trade_date": "2026-05-12", "open": 13.58, "high": 13.86,
+             "low": 12.87, "close": 13.38, "vol": 742300,
+             "spread_oh": 0.28, "spread_ol": 0.71, "spread_hl": 0.99,
+             "spread_oc": 0.20, "spread_hc": 0.48, "spread_lc": 0.51},
+            {"trade_date": "2026-05-11", "open": 13.50, "high": 13.70,
+             "low": 13.20, "close": 13.60, "vol": 500000,
+             "spread_oh": 0.20, "spread_ol": 0.30, "spread_hl": 0.50,
+             "spread_oc": 0.10, "spread_hc": 0.10, "spread_lc": 0.40},
+            {"trade_date": "2026-05-08", "open": 13.40, "high": 13.90,
+             "low": 13.10, "close": 13.50, "vol": 600000,
+             "spread_oh": 0.50, "spread_ol": 0.30, "spread_hl": 0.80,
+             "spread_oc": 0.10, "spread_hc": 0.40, "spread_lc": 0.40},
+        ]
+        _print_analysis("603778", rows, show_all=False)
+        captured = capsys.readouterr()
+        assert "高抛低吸推荐" in captured.out
+        assert "累计占比" in captured.out
+
+    def test_show_all_output_excludes_recommendation(self, capsys):
+        from stock import _print_analysis
+
+        rows = [
+            {"trade_date": "2026-05-12", "open": 13.58, "high": 13.86,
+             "low": 12.87, "close": 13.38, "vol": 742300,
+             "spread_oh": 0.28, "spread_ol": 0.71, "spread_hl": 0.99,
+             "spread_oc": 0.20, "spread_hc": 0.48, "spread_lc": 0.51},
+        ]
+        _print_analysis("603778", rows, show_all=True)
+        captured = capsys.readouterr()
+        assert "高抛低吸推荐" not in captured.out

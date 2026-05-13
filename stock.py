@@ -8,7 +8,7 @@ from config import DEFAULT_FETCH_DAYS, DB_PATH
 from db import DailyDB
 from fetcher import fetch_daily
 from analysis import (
-    compute_statistics, compute_distribution,
+    compute_statistics, compute_distribution, compute_recommended_range,
     SPREAD_LABELS, SPREAD_KEYS, DEFAULT_SPREADS,
 )
 from company import get_stock_name
@@ -257,6 +257,35 @@ def _print_analysis(
                 )
             if dist_tables:
                 print(_join_tables_side_by_side(dist_tables))
+
+        # --- Recommendation table (default pair only) ---
+        if not show_all and pair == DEFAULT_SPREADS:
+            rec_headers = ["时段", "高抛差价(高-开盘)", "低吸差价(开盘-低)"]
+            rec_table = []
+            # Shortest-to-longest window order
+            ordered_windows = [
+                ("近15日", all_rows_sorted[:15]),
+                ("近30日", all_rows_sorted[:30]),
+                ("近90日", all_rows_sorted[:90]),
+                ("全部", all_rows_sorted),
+            ]
+            for wname, rows in ordered_windows:
+                oh_values = [r["spread_oh"] for r in rows if r.get("spread_oh") is not None]
+                ol_values = [r["spread_ol"] for r in rows if r.get("spread_ol") is not None]
+                if not oh_values or not ol_values:
+                    continue
+                oh_range = compute_recommended_range(oh_values)
+                ol_range = compute_recommended_range(ol_values)
+                if oh_range is None or ol_range is None:
+                    continue
+                rec_table.append([
+                    wname,
+                    f"{oh_range['low']:.2f}~{oh_range['high']:.2f} ({oh_range['cum_pct']:.1f}%)",
+                    f"{ol_range['low']:.2f}~{ol_range['high']:.2f} ({ol_range['cum_pct']:.1f}%)",
+                ])
+            if rec_table:
+                print(f"── 高抛低吸推荐 (累计占比≥60%) ──")
+                print(_format_table(rec_headers, rec_table))
         print()
 
 

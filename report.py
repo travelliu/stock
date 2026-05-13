@@ -45,3 +45,41 @@ def _compute_composite_means(
         ]
         composite[key] = statistics.mean(vals) if vals else 0.0
     return composite
+
+
+import unicodedata
+
+
+def _display_width(s: str) -> int:
+    width = 0
+    for ch in str(s):
+        eaw = unicodedata.east_asian_width(ch)
+        width += 2 if eaw in ("W", "F") else 1
+    return width
+
+
+def _rpad(s: str, width: int) -> str:
+    return str(s) + " " * max(0, width - _display_width(s))
+
+
+def _format_table(headers: list[str], rows: list[list[str]]) -> str:
+    col_widths = [_display_width(h) for h in headers]
+    for row in rows:
+        for i, cell in enumerate(row):
+            if i < len(col_widths):
+                col_widths[i] = max(col_widths[i], _display_width(cell))
+    sep = "+" + "+".join("-" * (w + 2) for w in col_widths) + "+"
+    lines = [sep]
+    header_line = "|"
+    for i, h in enumerate(headers):
+        header_line += " " + _rpad(h, col_widths[i]) + " |"
+    lines.append(header_line)
+    lines.append(sep)
+    for row in rows:
+        data_line = "|"
+        for i, cell in enumerate(row):
+            if i < len(col_widths):
+                data_line += " " + _rpad(cell, col_widths[i]) + " |"
+        lines.append(data_line)
+    lines.append(sep)
+    return "\n".join(lines)

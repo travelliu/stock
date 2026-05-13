@@ -1,6 +1,13 @@
 import statistics
 import pytest
-from report import _compute_window_means, _compute_composite_means, MODEL_SPREAD_KEYS
+from report import (
+    _compute_window_means,
+    _compute_composite_means,
+    MODEL_SPREAD_KEYS,
+    _display_width,
+    _rpad,
+    _format_table,
+)
 
 
 class TestComputeWindowMeans:
@@ -89,3 +96,24 @@ class TestComputeCompositeMeans:
         composite = _compute_composite_means(window_means)
         assert composite["spread_oh"] == 0.0
         assert composite["spread_ol"] == 0.0
+
+
+class TestTableFormatting:
+    def test_display_width_english(self):
+        assert _display_width("hello") == 5
+
+    def test_display_width_chinese(self):
+        assert _display_width("开盘") == 4
+
+    def test_display_width_mixed(self):
+        assert _display_width("开A") == 3
+
+    def test_format_table_basic(self):
+        headers = ["时段", "数值"]
+        rows = [["历史", "1.23"], ["近1月", "0.45"]]
+        table = _format_table(headers, rows)
+        assert "时段" in table
+        assert "历史" in table
+        assert "+" in table
+        lines = table.split("\n")
+        assert len(lines) == 6

@@ -24,6 +24,21 @@ class TestComputeWindowMeans:
         for wname in ["历史", "近3月", "近1月", "近2周"]:
             assert all(v is None for v in means[wname].values())
 
+    def test_rows_with_none_values(self):
+        rows = [
+            {"trade_date": "2024-01-03", "spread_oh": 1.0, "spread_ol": None,
+             "spread_hl": 1.5, "spread_oc": None, "spread_hc": 0.5, "spread_lc": 1.0},
+            {"trade_date": "2024-01-02", "spread_oh": 2.0, "spread_ol": 1.0,
+             "spread_hl": None, "spread_oc": 1.0, "spread_hc": None, "spread_lc": 2.0},
+        ]
+        means = _compute_window_means(rows)
+        assert means["历史"]["spread_oh"] == pytest.approx(1.5)
+        assert means["历史"]["spread_ol"] == pytest.approx(1.0)
+        assert means["历史"]["spread_hl"] == pytest.approx(1.5)
+        assert means["历史"]["spread_oc"] == pytest.approx(1.0)
+        assert means["历史"]["spread_hc"] == pytest.approx(0.5)
+        assert means["历史"]["spread_lc"] == pytest.approx(1.5)
+
 
 class TestComputeCompositeMeans:
     def test_basic(self):

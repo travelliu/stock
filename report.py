@@ -29,7 +29,7 @@ def _compute_window_means(
     result: dict[str, dict[str, float | None]] = {}
     for wname, rows in windows:
         result[wname] = {}
-        for key in SPREAD_KEYS:
+        for key in MODEL_SPREAD_KEYS:
             values = [r[key] for r in rows if r.get(key) is not None]
             result[wname][key] = statistics.mean(values) if values else None
     return result
@@ -40,7 +40,7 @@ def _compute_composite_means(
 ) -> dict[str, float]:
     """Arithmetic average across the four window means per spread key."""
     composite: dict[str, float] = {}
-    for key in SPREAD_KEYS:
+    for key in MODEL_SPREAD_KEYS:
         vals = [
             window_means[w][key]
             for w in _WINDOW_NAMES

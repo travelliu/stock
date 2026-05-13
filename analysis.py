@@ -45,6 +45,8 @@ class StockAnalyzer:
         end_date: str = "",
         show_all: bool = False,
         open_price: float | None = None,
+        actual_low: float | None = None,
+        actual_high: float | None = None,
     ):
         self.stock = stock
         self.all_rows = all_rows or []
@@ -52,6 +54,8 @@ class StockAnalyzer:
         self.end_date = end_date
         self.show_all = show_all
         self.open_price = open_price
+        self.actual_low = actual_low
+        self.actual_high = actual_high
         self._label: str | None = None
 
     @property
@@ -335,10 +339,14 @@ class StockAnalyzer:
                 f"{open_price + val:.2f}" if val is not None else "/"
             )
         lc_hist = window_means["历史"].get("spread_lc")
-        high_row.append(
-            f"{pred_low + lc_hist:.2f}" if lc_hist is not None else "/"
-        )
-        high_row.append("/")
+        if self.actual_low is not None and lc_hist is not None:
+            high_row.append(f"{self.actual_low + lc_hist:.2f}")
+        else:
+            high_row.append("/")
+        if self.actual_high is not None and lc_hist is not None:
+            high_row.append(f"{self.actual_high - lc_hist:.2f}")
+        else:
+            high_row.append("/")
         nums = []
         for cell in high_row[1:5]:
             try:
@@ -359,9 +367,10 @@ class StockAnalyzer:
             )
         low_row.append("/")
         hc_hist = window_means["历史"].get("spread_hc")
-        low_row.append(
-            f"{pred_high - hc_hist:.2f}" if hc_hist is not None else "/"
-        )
+        if self.actual_high is not None and hc_hist is not None:
+            low_row.append(f"{self.actual_high - hc_hist:.2f}")
+        else:
+            low_row.append("/")
         nums = []
         for cell in low_row[1:5]:
             try:

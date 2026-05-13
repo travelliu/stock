@@ -37,9 +37,10 @@ class TestCLIShow:
 
 class TestRecommendationInOutput:
     def test_default_output_contains_recommendation(self, capsys):
-        from stock import _print_analysis
+        from analysis import StockAnalyzer
 
-        rows = [
+        analyzer = StockAnalyzer("603778")
+        analyzer.all_rows = [
             {"trade_date": "2026-05-12", "open": 13.58, "high": 13.86,
              "low": 12.87, "close": 13.38, "vol": 742300,
              "spread_oh": 0.28, "spread_ol": 0.71, "spread_hl": 0.99,
@@ -53,21 +54,22 @@ class TestRecommendationInOutput:
              "spread_oh": 0.50, "spread_ol": 0.30, "spread_hl": 0.80,
              "spread_oc": 0.10, "spread_hc": 0.40, "spread_lc": 0.40},
         ]
-        _print_analysis("603778", rows, show_all=False)
+        analyzer.print_analysis()
         captured = capsys.readouterr()
         assert "高抛低吸推荐" in captured.out
         assert "累计占比" in captured.out
 
     def test_show_all_output_excludes_recommendation(self, capsys):
-        from stock import _print_analysis
+        from analysis import StockAnalyzer
 
-        rows = [
+        analyzer = StockAnalyzer("603778", show_all=True)
+        analyzer.all_rows = [
             {"trade_date": "2026-05-12", "open": 13.58, "high": 13.86,
              "low": 12.87, "close": 13.38, "vol": 742300,
              "spread_oh": 0.28, "spread_ol": 0.71, "spread_hl": 0.99,
              "spread_oc": 0.20, "spread_hc": 0.48, "spread_lc": 0.51},
         ]
-        _print_analysis("603778", rows, show_all=True)
+        analyzer.print_analysis()
         captured = capsys.readouterr()
         assert "高抛低吸推荐" not in captured.out
 

@@ -182,3 +182,28 @@ def _build_reference_table(
     rows.append(close_row)
 
     return _format_table(headers, rows)
+
+
+def build_trading_plan(
+    stock: str,
+    open_price: float,
+    all_rows: list[dict[str, Any]],
+) -> str:
+    if not all_rows:
+        return "暂无历史数据，无法生成交易计划。"
+
+    window_means = _compute_window_means(all_rows)
+    composite_means = _compute_composite_means(window_means)
+
+    lines = [
+        f"=== {stock} 交易计划 ===",
+        "",
+        _format_header(open_price, composite_means),
+        "",
+        "── 价差模型 ──",
+        _build_spread_model_table(window_means, composite_means),
+        "",
+        "── 历史参考价 ──",
+        _build_reference_table(open_price, window_means, composite_means),
+    ]
+    return "\n".join(lines)

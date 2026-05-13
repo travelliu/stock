@@ -11,6 +11,7 @@ from report import (
     _build_spread_model_table,
     MODEL_SPREAD_LABELS,
     _build_reference_table,
+    build_trading_plan,
 )
 
 
@@ -206,5 +207,24 @@ class TestBuildReferenceTable:
         table = _build_reference_table(100.0, window_means, composite)
         assert "101.88" in table
         assert "98.12" in table
+
+
+class TestBuildTradingPlan:
+    def test_with_data(self):
+        rows = [
+            {"trade_date": "2024-01-04", "spread_oh": 1.0, "spread_ol": 0.5,
+             "spread_hl": 1.5, "spread_oc": 0.5, "spread_hc": 0.5, "spread_lc": 1.0},
+            {"trade_date": "2024-01-03", "spread_oh": 2.0, "spread_ol": 1.0,
+             "spread_hl": 3.0, "spread_oc": 1.0, "spread_hc": 1.0, "spread_lc": 2.0},
+        ]
+        plan = build_trading_plan("603778", 200.0, rows)
+        assert "603778 交易计划" in plan
+        assert "价差模型" in plan
+        assert "历史参考价" in plan
+        assert "开盘价: 200.00" in plan
+
+    def test_empty_data(self):
+        plan = build_trading_plan("603778", 200.0, [])
+        assert "暂无历史数据" in plan
 
 

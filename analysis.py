@@ -47,6 +47,7 @@ class StockAnalyzer:
         open_price: float | None = None,
         actual_low: float | None = None,
         actual_high: float | None = None,
+        actual_close: float | None = None,
     ):
         self.stock = stock
         self.all_rows = all_rows or []
@@ -56,6 +57,7 @@ class StockAnalyzer:
         self.open_price = open_price
         self.actual_low = actual_low
         self.actual_high = actual_high
+        self.actual_close = actual_close
         self._label: str | None = None
 
     @property
@@ -287,9 +289,21 @@ class StockAnalyzer:
     def _format_header(
         self, open_price: float, composite_means: dict[str, float]
     ) -> str:
-        high_price = open_price + composite_means.get("spread_oh", 0.0)
-        low_price = open_price - composite_means.get("spread_ol", 0.0)
-        close_price = open_price - composite_means.get("spread_oc", 0.0)
+        high_price = (
+            self.actual_high
+            if self.actual_high is not None
+            else open_price + composite_means.get("spread_oh", 0.0)
+        )
+        low_price = (
+            self.actual_low
+            if self.actual_low is not None
+            else open_price - composite_means.get("spread_ol", 0.0)
+        )
+        close_price = (
+            self.actual_close
+            if self.actual_close is not None
+            else open_price - composite_means.get("spread_oc", 0.0)
+        )
         return (
             f"开盘价: {open_price:.2f}   "
             f"最高价: {high_price:.2f}   "

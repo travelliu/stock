@@ -74,6 +74,7 @@ def cmd_show(args: argparse.Namespace) -> None:
         open_price=args.open,
         actual_low=args.low,
         actual_high=args.high,
+        actual_close=args.close,
     )
     analyzer.show()
 
@@ -109,6 +110,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Today's lowest price. Used for reverse calculation in reference table.")
     p_show.add_argument("--high", type=float, default=None,
                         help="Today's highest price. Used for reverse calculation in reference table.")
+    p_show.add_argument("--close", type=float, default=None,
+                        help="Today's closing price. When provided, shown in header instead of predicted value.")
 
     return parser
 

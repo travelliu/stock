@@ -278,16 +278,16 @@ def _print_analysis(
             def _section_w(start: int, end: int) -> int:
                 return sum(col_widths[start:end + 1]) + 3 * (end - start + 1)
 
-            time_sw = col_widths[0] + 3
+            time_sw = col_widths[0] + 2
             oh_sw = _section_w(1, 4)
             ol_sw = _section_w(5, 8)
             rec_sw = _section_w(9, 10)
 
             sub_line = (
-                _rpad("", time_sw)
-                + _rpad("── 最高-开盘 ──", oh_sw)
-                + _rpad("── 开盘-最低 ──", ol_sw)
-                + _rpad("── 高抛低吸推荐 (累计占比≥60%) ──", rec_sw)
+                "|" + " " * time_sw + "|"
+                + _rpad("── 最高-开盘 ──", oh_sw) + "|"
+                + _rpad("── 开盘-最低 ──", ol_sw) + "|"
+                + _rpad("── 高抛低吸推荐 (累计占比≥60%) ──", rec_sw) + "|"
             )
             print(sub_line)
             print(_format_table(u_headers, u_table))

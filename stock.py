@@ -231,32 +231,6 @@ def _print_analysis(
 
         # Print summaries side by side
         print(_join_tables_side_by_side(summaries))
-        print()
-
-        # --- Distribution tables per spread in the pair ---
-        for key in pair:
-            label = SPREAD_LABELS[key]
-            dist_tables = []
-            for wname, rows in windows:
-                values = [r[key] for r in rows if r.get(key) is not None]
-                if not values:
-                    continue
-                bins = compute_distribution(values)
-                dist_headers = ["区间", "数量", "占比"]
-                dist_table = []
-                for b in bins:
-                    interval = f"{b['low']:.2f}~{b['high']:.2f}"
-                    dist_table.append([
-                        interval,
-                        str(b["count"]),
-                        f"{b['pct']:.1f}%",
-                    ])
-                dist_tables.append(
-                    f"── {label} 分布 ({wname},{len(values)}条) ──\n"
-                    + _format_table(dist_headers, dist_table)
-                )
-            if dist_tables:
-                print(_join_tables_side_by_side(dist_tables))
 
         # --- Recommendation table (default pair only) ---
         if not show_all and pair == DEFAULT_SPREADS:
@@ -284,8 +258,35 @@ def _print_analysis(
                     f"{ol_range['low']:.2f}~{ol_range['high']:.2f} ({ol_range['cum_pct']:.1f}%)",
                 ])
             if rec_table:
+                print()
                 print(f"── 高抛低吸推荐 (累计占比≥60%) ──")
                 print(_format_table(rec_headers, rec_table))
+        print()
+
+        # --- Distribution tables per spread in the pair ---
+        for key in pair:
+            label = SPREAD_LABELS[key]
+            dist_tables = []
+            for wname, rows in windows:
+                values = [r[key] for r in rows if r.get(key) is not None]
+                if not values:
+                    continue
+                bins = compute_distribution(values)
+                dist_headers = ["区间", "数量", "占比"]
+                dist_table = []
+                for b in bins:
+                    interval = f"{b['low']:.2f}~{b['high']:.2f}"
+                    dist_table.append([
+                        interval,
+                        str(b["count"]),
+                        f"{b['pct']:.1f}%",
+                    ])
+                dist_tables.append(
+                    f"── {label} 分布 ({wname},{len(values)}条) ──\n"
+                    + _format_table(dist_headers, dist_table)
+                )
+            if dist_tables:
+                print(_join_tables_side_by_side(dist_tables))
         print()
 
 

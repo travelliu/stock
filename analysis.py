@@ -88,3 +88,50 @@ def compute_distribution(
         })
 
     return bins
+
+
+def compute_recommended_range(
+    values: list[float],
+    threshold: float = 60.0,
+) -> dict[str, Any] | None:
+    """Return the spread range covering >= threshold% of observations.
+
+    Uses cumulative-percentage method: sort distribution bins by density
+    descending, accumulate until threshold is met.
+
+    Args:
+        values: raw spread values for one window
+        threshold: minimum cumulative percentage (default 60%)
+
+    Returns:
+        {"low": float, "high": float, "cum_pct": float} or None if no data
+    """
+    if not values:
+        return None
+
+    bins = compute_distribution(values)
+
+    # Single-bin case (all values identical)
+    if len(bins) == 1:
+        return {
+            "low": bins[0]["low"],
+            "high": bins[0]["high"],
+            "cum_pct": 100.0,
+        }
+
+    # Sort bins by percentage descending
+    sorted_bins = sorted(bins, key=lambda b: b["pct"], reverse=True)
+
+    cum_pct = 0.0
+    selected: list[dict[str, Any]] = []
+    for b in sorted_bins:
+        selected.append(b)
+        cum_pct += b["pct"]
+        if cum_pct >= threshold:
+            break
+
+    return {
+        "low": min(b["low"] for b in selected),
+        "high": max(b["high"] for b in selected),
+        "cum_pct": round(cum_pct, 1),
+    }

@@ -304,12 +304,14 @@ class StockAnalyzer:
             if self.actual_close is not None
             else open_price - composite_means.get("spread_oc", 0.0)
         )
-        return (
-            f"开盘价: {open_price:.2f}   "
-            f"最高价: {high_price:.2f}   "
-            f"最低价: {low_price:.2f}   "
-            f"收盘价: {close_price:.2f}"
-        )
+        parts = [
+            f"开盘价: {open_price:.2f}",
+            f"最高价: {high_price:.2f}",
+            f"最低价: {low_price:.2f}",
+        ]
+        if self.actual_close is not None:
+            parts.append(f"收盘价: {close_price:.2f}")
+        return "   ".join(parts)
 
     def _build_spread_model_table(
         self,

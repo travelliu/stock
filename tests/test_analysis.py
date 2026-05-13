@@ -228,6 +228,14 @@ class TestFormatHeader:
         assert "开盘价: 200.00" in header
         assert "最高价: 203.77" in header
         assert "最低价: 196.18" in header
+        assert "收盘价" not in header
+
+    def test_with_actual_close(self, analyzer):
+        composite = {"spread_oh": 3.77, "spread_ol": 3.82,
+                     "spread_oc": 4.07, "spread_hl": 8.21,
+                     "spread_hc": 4.07, "spread_lc": 3.25}
+        analyzer.actual_close = 195.93
+        header = analyzer._format_header(200.0, composite)
         assert "收盘价: 195.93" in header
 
 

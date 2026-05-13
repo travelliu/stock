@@ -207,8 +207,8 @@ def _print_analysis(
         if not show_all:
             # Unified table with sub-headers (default pair only)
             u_headers = [
-                "时段", "样本数", "均值", "中位数", "众数",
-                "样本数", "均值", "中位数", "众数",
+                "时段", "样本数", "均值", "中位数", "众数", "",
+                "样本数", "均值", "中位数", "众数", "",
                 "高抛差价(高-开盘)", "低吸差价(开盘-低)",
             ]
             ordered_windows = [
@@ -239,6 +239,8 @@ def _print_analysis(
                 else:
                     row.extend(["0", "-", "-", "-"])
 
+                row.append("")  # separator
+
                 # OL summary
                 if ol_vals:
                     try:
@@ -253,6 +255,8 @@ def _print_analysis(
                     ])
                 else:
                     row.extend(["0", "-", "-", "-"])
+
+                row.append("")  # separator
 
                 # Recommendation
                 oh_range = compute_recommended_range(oh_vals) if oh_vals else None
@@ -279,9 +283,9 @@ def _print_analysis(
                 return sum(col_widths[start:end + 1]) + 3 * (end - start + 1)
 
             time_sw = col_widths[0] + 2
-            oh_sw = _section_w(1, 4)
-            ol_sw = _section_w(5, 8)
-            rec_sw = _section_w(9, 10)
+            oh_sw = _section_w(1, 5)
+            ol_sw = _section_w(6, 10)
+            rec_sw = _section_w(11, 12)
 
             sub_line = (
                 "|" + " " * time_sw + "|"

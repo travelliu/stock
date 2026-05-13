@@ -1,0 +1,4 @@
+# Stock daily data fetcher
+# Runs Mon-Fri at 22:00 (after market data settled ~15:30 + Tushare processing)
+# Log: data/fetch.log
+0 22 * * 1-5 /root/code/github/travelliu/stock/scripts/fetch_daily.sh >> /root/code/github/travelliu/stock/data/fetch.log 2>&1

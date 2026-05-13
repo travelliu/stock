@@ -4,7 +4,7 @@ import statistics
 import unicodedata
 from datetime import datetime, timedelta
 
-from config import DEFAULT_FETCH_DAYS, DB_PATH
+from config import DEFAULT_FETCH_DAYS, DEFAULT_STOCKS, DB_PATH
 from db import DailyDB
 from fetcher import fetch_daily
 from analysis import (
@@ -64,12 +64,17 @@ def _format_table(headers: list[str], rows: list[list[str]]) -> str:
 
 
 def cmd_fetch(args: argparse.Namespace) -> None:
-    stocks = args.stocks.split(",")
+    stocks_input = getattr(args, "stocks", None)
+    if stocks_input:
+        stocks = [s.strip() for s in stocks_input.split(",") if s.strip()]
+    else:
+        stocks = DEFAULT_STOCKS
+        print(f"Using DEFAULT_STOCKS: {', '.join(stocks)}")
+
     db = DailyDB(DB_PATH)
     db.init()
 
     for code in stocks:
-        code = code.strip()
         print(f"Fetching {code} ...")
 
         if args.days == "all":
@@ -87,9 +92,10 @@ def cmd_fetch(args: argparse.Namespace) -> None:
                 days = None
                 print(f"  Last record: {max_date}, fetching incremental ...")
             else:
-                days = DEFAULT_FETCH_DAYS
+                # No existing data, fetch full history
+                days = 3650
                 start_date = None
-                print(f"  No existing data, fetching {days} days ...")
+                print(f"  No existing data, fetching full history ...")
 
         df = fetch_daily(code, start_date=start_date, days=days)
         if df.empty:
@@ -360,8 +366,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     # fetch
     p_fetch = sub.add_parser("fetch", help="Fetch daily data from tushare")
-    p_fetch.add_argument("--stocks", type=str, required=True,
-                         help="Comma-separated stock codes (e.g., 603778,000890)")
+    p_fetch.add_argument("--stocks", type=str, default=None,
+                         help="Comma-separated stock codes (e.g., 603778,000890). "
+                              "Default: use DEFAULT_STOCKS from env")
     p_fetch.add_argument("--days", type=str, default=None,
                          help="Lookback days (e.g., 30, 180) or 'all' for full history. "
                               "Default: incremental from last record")

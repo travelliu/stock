@@ -17,10 +17,12 @@ TUSHARE_TOKEN = os.environ.get("TUSHARE_TOKEN", "")
 # Database
 DB_PATH = DATA_DIR / "stock_daily.db"
 
-# Default stocks
+# Default stocks (comma-separated in env var DEFAULT_STOCKS, or hardcoded fallback)
 DEFAULT_STOCKS = [
-    "600537", "603778", "000890", "002709",
-    "600186", "002842", "300342", "000593",
+    s.strip() for s in os.environ.get(
+        "DEFAULT_STOCKS",
+        "600537,603778,000890,600186,300342,000593,600821,300476",
+    ).split(",") if s.strip()
 ]
 
 # Fetch defaults

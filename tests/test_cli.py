@@ -90,6 +90,18 @@ class TestTradingPlanOption:
         with pytest.raises(SystemExit):
             parser.parse_args(["show", "--stock", "603778", "--open", "abc"])
 
+    def test_parser_accepts_low(self):
+        from stock import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["show", "--stock", "603778", "--low", "13.0"])
+        assert args.low == 13.0
+
+    def test_parser_accepts_high(self):
+        from stock import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["show", "--stock", "603778", "--high", "14.0"])
+        assert args.high == 14.0
+
     def test_show_without_open_no_plan(self, capsys, monkeypatch):
         from stock import build_parser, cmd_show
         import db, company

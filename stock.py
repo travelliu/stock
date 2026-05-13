@@ -72,6 +72,8 @@ def cmd_show(args: argparse.Namespace) -> None:
         end_date=end_date,
         show_all=show_all,
         open_price=args.open,
+        actual_low=args.low,
+        actual_high=args.high,
     )
     analyzer.show()
 
@@ -103,6 +105,10 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Show all 6 spread types (default: only 高-开 and 开-低)")
     p_show.add_argument("--open", type=float, default=None,
                         help="Today's opening price. When provided, outputs a trading plan report.")
+    p_show.add_argument("--low", type=float, default=None,
+                        help="Today's lowest price. Used for reverse calculation in reference table.")
+    p_show.add_argument("--high", type=float, default=None,
+                        help="Today's highest price. Used for reverse calculation in reference table.")
 
     return parser
 

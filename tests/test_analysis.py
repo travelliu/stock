@@ -283,8 +283,6 @@ class TestBuildReferenceTable:
         assert "收盘价预测" in table
         assert "203.77" in table
         assert "196.18" in table
-        oc_comp = composite["spread_oc"]
-        assert f"{200.0 - oc_comp:.2f}" in table
         assert "+" in table
         assert "-" in table
 

@@ -384,12 +384,18 @@ class StockAnalyzer:
         rows.append(low_row)
 
         close_row = ["收盘价预测"]
-        oc_comp = composite_means.get("spread_oc", 0.0)
-        close_val = open_price - oc_comp
-        close_row.append(f"{close_val:.2f}")
-        close_row.extend(["/", "/", "/"])
-        close_row.extend(["/", "/"])
-        close_row.append(f"{close_val:.2f}")
+        close_row.extend(["/", "/", "/", "/"])
+        lc_2w = window_means["近2周"].get("spread_lc")
+        if self.actual_low is not None and lc_2w is not None:
+            close_row.append(f"{self.actual_low + lc_2w:.2f}")
+        else:
+            close_row.append("/")
+        hc_2w = window_means["近2周"].get("spread_hc")
+        if self.actual_high is not None and hc_2w is not None:
+            close_row.append(f"{self.actual_high - hc_2w:.2f}")
+        else:
+            close_row.append("/")
+        close_row.append("/")
         close_row.append("-")
         rows.append(close_row)
 

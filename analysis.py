@@ -407,7 +407,15 @@ class StockAnalyzer:
             close_row.append(f"{self.actual_high - hc_2w:.2f}")
         else:
             close_row.append("/")
-        close_row.append("/")
+        nums = []
+        for cell in close_row[5:7]:
+            try:
+                nums.append(float(cell))
+            except ValueError:
+                pass
+        close_row.append(
+            f"{statistics.mean(nums):.2f}" if nums else "/"
+        )
         close_row.append("-")
         rows.append(close_row)
 

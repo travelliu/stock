@@ -9,20 +9,22 @@ from config import TUSHARE_TOKEN, to_tushare_code
 def compute_spreads(df: pd.DataFrame) -> pd.DataFrame:
     """Compute 6 price-spread columns and append to DataFrame.
 
-    spread_oh = high - open
-    spread_ol = open - low
-    spread_hl = high - low
-    spread_oc = open - close
-    spread_hc = high - close
-    spread_lc = low - close
+    All spreads are stored as absolute values.
+
+    spread_oh = |high - open|
+    spread_ol = |open - low|
+    spread_hl = |high - low|
+    spread_oc = |open - close|
+    spread_hc = |high - close|
+    spread_lc = |low - close|
     """
     result = df.copy()
-    result["spread_oh"] = result["high"] - result["open"]
-    result["spread_ol"] = result["open"] - result["low"]
-    result["spread_hl"] = result["high"] - result["low"]
-    result["spread_oc"] = result["open"] - result["close"]
-    result["spread_hc"] = result["high"] - result["close"]
-    result["spread_lc"] = result["low"] - result["close"]
+    result["spread_oh"] = (result["high"] - result["open"]).abs()
+    result["spread_ol"] = (result["open"] - result["low"]).abs()
+    result["spread_hl"] = (result["high"] - result["low"]).abs()
+    result["spread_oc"] = (result["open"] - result["close"]).abs()
+    result["spread_hc"] = (result["high"] - result["close"]).abs()
+    result["spread_lc"] = (result["low"] - result["close"]).abs()
     return result
 
 

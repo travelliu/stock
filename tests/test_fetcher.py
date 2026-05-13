@@ -15,9 +15,9 @@ class TestComputeSpreads:
         assert row["spread_oh"] == pytest.approx(1.0)    # high - open
         assert row["spread_ol"] == pytest.approx(0.5)    # open - low
         assert row["spread_hl"] == pytest.approx(1.5)    # high - low
-        assert row["spread_oc"] == pytest.approx(-0.5)   # open - close
-        assert row["spread_hc"] == pytest.approx(0.5)    # high - close
-        assert row["spread_lc"] == pytest.approx(-1.0)   # low - close
+        assert row["spread_oc"] == pytest.approx(0.5)    # |open - close|
+        assert row["spread_hc"] == pytest.approx(0.5)    # |high - close|
+        assert row["spread_lc"] == pytest.approx(1.0)    # |low - close|
 
     def test_preserves_original_columns(self):
         df = pd.DataFrame([

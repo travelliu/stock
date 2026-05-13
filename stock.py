@@ -200,56 +200,63 @@ def _print_analysis(
     print(f"=== {label} 价差分析 ===")
     print()
 
-    for key in spread_keys:
-        label = SPREAD_LABELS[key]
+    for i in range(0, len(spread_keys), 2):
+        pair = spread_keys[i : i + 2]
 
-        # --- Summary table ---
-        headers = ["时段", "样本数", "均值", "中位数", "众数"]
-        table = []
-        for name, rows in windows:
-            values = [r[key] for r in rows if r.get(key) is not None]
-            if values:
-                try:
-                    mode_val = statistics.mode(values)
-                except statistics.StatisticsError:
-                    mode_val = "-"
-                table.append([
-                    name,
-                    str(len(values)),
-                    f"{statistics.mean(values):.2f}",
-                    f"{statistics.median(values):.2f}",
-                    f"{mode_val:.2f}" if isinstance(mode_val, float) else str(mode_val),
-                ])
-            else:
-                table.append([name, "0", "-", "-"])
-
-        summary_str = f"── {label} 汇总 ──\n" + _format_table(headers, table)
-
-        # --- Distribution tables side by side ---
-        dist_tables = []
-        for name, rows in windows:
-            values = [r[key] for r in rows if r.get(key) is not None]
-            if not values:
-                continue
-            bins = compute_distribution(values)
-            dist_headers = ["区间", "数量", "占比"]
-            dist_table = []
-            for b in bins:
-                interval = f"{b['low']:.2f}~{b['high']:.2f}"
-                dist_table.append([
-                    interval,
-                    str(b["count"]),
-                    f"{b['pct']:.1f}%",
-                ])
-            dist_tables.append(
-                f"── {label} 分布 ({name},{len(values)}条) ──\n"
-                + _format_table(dist_headers, dist_table)
+        # --- Build summary tables for the pair ---
+        summaries = []
+        for key in pair:
+            label = SPREAD_LABELS[key]
+            headers = ["时段", "样本数", "均值", "中位数", "众数"]
+            table = []
+            for wname, rows in windows:
+                values = [r[key] for r in rows if r.get(key) is not None]
+                if values:
+                    try:
+                        mode_val = statistics.mode(values)
+                    except statistics.StatisticsError:
+                        mode_val = "-"
+                    table.append([
+                        wname,
+                        str(len(values)),
+                        f"{statistics.mean(values):.2f}",
+                        f"{statistics.median(values):.2f}",
+                        f"{mode_val:.2f}" if isinstance(mode_val, float) else str(mode_val),
+                    ])
+                else:
+                    table.append([wname, "0", "-", "-"])
+            summaries.append(
+                f"── {label} 汇总 ──\n" + _format_table(headers, table)
             )
 
-        print(summary_str)
+        # Print summaries side by side
+        print(_join_tables_side_by_side(summaries))
         print()
-        if dist_tables:
-            print(_join_tables_side_by_side(dist_tables))
+
+        # --- Distribution tables per spread in the pair ---
+        for key in pair:
+            label = SPREAD_LABELS[key]
+            dist_tables = []
+            for wname, rows in windows:
+                values = [r[key] for r in rows if r.get(key) is not None]
+                if not values:
+                    continue
+                bins = compute_distribution(values)
+                dist_headers = ["区间", "数量", "占比"]
+                dist_table = []
+                for b in bins:
+                    interval = f"{b['low']:.2f}~{b['high']:.2f}"
+                    dist_table.append([
+                        interval,
+                        str(b["count"]),
+                        f"{b['pct']:.1f}%",
+                    ])
+                dist_tables.append(
+                    f"── {label} 分布 ({wname},{len(values)}条) ──\n"
+                    + _format_table(dist_headers, dist_table)
+                )
+            if dist_tables:
+                print(_join_tables_side_by_side(dist_tables))
         print()
 
 

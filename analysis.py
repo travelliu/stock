@@ -19,6 +19,25 @@ DEFAULT_SPREADS = ["spread_oh", "spread_ol"]
 
 NUM_BINS = 10
 
+# Time window configuration: (days, None means all history)
+_WINDOW_DAYS = [None, 90, 30, 15]
+
+
+def make_windows(rows_sorted: list[dict], names: list[str]) -> list[tuple[str, list[dict]]]:
+    """Create time-window slices from sorted rows.
+
+    Args:
+        rows_sorted: rows sorted by trade_date descending
+        names: label for each window (must match _WINDOW_DAYS length)
+
+    Returns:
+        list of (window_name, sliced_rows)
+    """
+    return [
+        (name, rows_sorted if days is None else rows_sorted[:days])
+        for name, days in zip(names, _WINDOW_DAYS)
+    ]
+
 
 def compute_statistics(
     rows: list[dict[str, Any]],

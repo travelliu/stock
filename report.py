@@ -1,6 +1,8 @@
 import statistics
 from typing import Any
 
+from analysis import make_windows
+
 MODEL_SPREAD_KEYS = [
     "spread_oh", "spread_ol", "spread_hl",
     "spread_hc", "spread_lc", "spread_oc",
@@ -17,12 +19,7 @@ def _compute_window_means(
 ) -> dict[str, dict[str, float | None]]:
     """Compute mean for each spread key in each time window."""
     all_rows_sorted = sorted(all_rows, key=lambda r: r["trade_date"], reverse=True)
-    windows = [
-        ("历史", all_rows_sorted),
-        ("近3月", all_rows_sorted[:90]),
-        ("近1月", all_rows_sorted[:30]),
-        ("近2周", all_rows_sorted[:15]),
-    ]
+    windows = make_windows(all_rows_sorted, ["历史", "近3月", "近1月", "近2周"])
     result: dict[str, dict[str, float | None]] = {}
     for wname, rows in windows:
         result[wname] = {}

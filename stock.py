@@ -9,6 +9,7 @@ from db import DailyDB
 from fetcher import fetch_daily
 from analysis import (
     compute_statistics, compute_distribution, compute_recommended_range,
+    make_windows,
     SPREAD_LABELS, SPREAD_KEYS, DEFAULT_SPREADS,
 )
 from company import get_stock_name
@@ -199,12 +200,7 @@ def _print_analysis(
 ) -> None:
     # Build time windows by trading days (newest first in each window)
     all_rows_sorted = sorted(all_rows, key=lambda r: r["trade_date"], reverse=True)
-    windows = [
-        ("全部", all_rows_sorted),
-        ("近90日", all_rows_sorted[:90]),
-        ("近30日", all_rows_sorted[:30]),
-        ("近15日", all_rows_sorted[:15]),
-    ]
+    windows = make_windows(all_rows_sorted, ["全部", "近90日", "近30日", "近15日"])
 
     spread_keys = SPREAD_KEYS if show_all else DEFAULT_SPREADS
 
@@ -224,12 +220,7 @@ def _print_analysis(
                 "样本数", "均值", "中位数", "众数", "",
                 "高抛差价(高-开盘)", "低吸差价(开盘-低)",
             ]
-            ordered_windows = [
-                ("近15日", all_rows_sorted[:15]),
-                ("近30日", all_rows_sorted[:30]),
-                ("近90日", all_rows_sorted[:90]),
-                ("全部", all_rows_sorted),
-            ]
+            ordered_windows = list(reversed(windows))
             u_table: list[list[str]] = []
             for wname, rows in ordered_windows:
                 oh_vals = [r["spread_oh"] for r in rows if r.get("spread_oh") is not None]

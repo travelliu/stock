@@ -229,14 +229,9 @@ def _print_analysis(
                 f"── {label} 汇总 ──\n" + _format_table(headers, table)
             )
 
-        # Print summaries side by side
-        print(_join_tables_side_by_side(summaries))
-
         # --- Recommendation table (default pair only) ---
         if not show_all and pair == DEFAULT_SPREADS:
-            rec_headers = ["时段", "高抛差价(高-开盘)", "低吸差价(开盘-低)"]
             rec_table = []
-            # Shortest-to-longest window order
             ordered_windows = [
                 ("近15日", all_rows_sorted[:15]),
                 ("近30日", all_rows_sorted[:30]),
@@ -258,9 +253,14 @@ def _print_analysis(
                     f"{ol_range['low']:.2f}~{ol_range['high']:.2f} ({ol_range['cum_pct']:.1f}%)",
                 ])
             if rec_table:
-                print()
-                print(f"── 高抛低吸推荐 (累计占比≥60%) ──")
-                print(_format_table(rec_headers, rec_table))
+                rec_str = (
+                    "── 高抛低吸推荐 (累计占比≥60%) ──\n"
+                    + _format_table(["时段", "高抛差价(高-开盘)", "低吸差价(开盘-低)"], rec_table)
+                )
+                summaries.append(rec_str)
+
+        # Print summaries side by side
+        print(_join_tables_side_by_side(summaries))
         print()
 
         # --- Distribution tables per spread in the pair ---

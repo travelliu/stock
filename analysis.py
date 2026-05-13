@@ -437,7 +437,7 @@ class StockAnalyzer:
             "── 价差模型 ──",
             self._build_spread_model_table(window_means, composite_means),
             "",
-            "── 历史参考价 ──",
+            "── 预测收盘价(历史参考价) ──",
             self._build_reference_table(self.open_price, window_means, composite_means),
         ]
         return "\n".join(lines)

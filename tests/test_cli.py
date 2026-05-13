@@ -70,3 +70,35 @@ class TestRecommendationInOutput:
         _print_analysis("603778", rows, show_all=True)
         captured = capsys.readouterr()
         assert "高抛低吸推荐" not in captured.out
+
+
+import pytest
+
+
+class TestTradingPlanOption:
+    def test_parser_accepts_open(self):
+        from stock import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["show", "--stock", "603778", "--open", "200"])
+        assert args.open == 200.0
+
+    def test_parser_rejects_invalid_open(self):
+        from stock import build_parser
+        parser = build_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(["show", "--stock", "603778", "--open", "abc"])
+
+    def test_show_without_open_no_plan(self, capsys, monkeypatch):
+        from stock import build_parser, cmd_show
+        import db, company
+        parser = build_parser()
+        args = parser.parse_args(["show", "--stock", "603778"])
+        class FakeDB:
+            def init(self): pass
+            def query_daily(self, *a, **k): return []
+            def get_max_date(self, *a, **k): return None
+        monkeypatch.setattr(db, "DailyDB", lambda path: FakeDB())
+        monkeypatch.setattr(company, "get_stock_name", lambda code: "")
+        cmd_show(args)
+        captured = capsys.readouterr()
+        assert "交易计划" not in captured.out

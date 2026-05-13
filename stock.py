@@ -120,6 +120,11 @@ def cmd_show(args: argparse.Namespace) -> None:
 
     # Always show analysis (uses all data for multi-window)
     all_rows = db.query_daily(stock, "2000-01-01", "2099-12-31")
+    if args.open is not None:
+        from report import build_trading_plan
+        plan = build_trading_plan(stock, args.open, all_rows or [])
+        print(plan)
+        print()
     if all_rows:
         _print_analysis(stock, all_rows, show_all=show_all)
 
@@ -386,6 +391,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="End date (YYYY-MM-DD, default: today)")
     p_show.add_argument("--all", action="store_true",
                         help="Show all 6 spread types (default: only 高-开 and 开-低)")
+    p_show.add_argument("--open", type=float, default=None,
+                        help="Today's opening price. When provided, outputs a trading plan report.")
 
     return parser
 

@@ -77,35 +77,34 @@ class TestComputeRecommendedRange:
         assert result["high"] == pytest.approx(3.0)
         assert result["cum_pct"] == pytest.approx(100.0)
 
-    def test_basic_cumulative(self):
-        # 10 values from 0.0 to 9.0, 10 bins -> 1 value per bin, each 10%
+    def test_sliding_window_contiguous(self):
+        # 10 values 0-9, threshold 30% -> need 3 consecutive values
         values = list(range(10))
         result = compute_recommended_range(values, threshold=30.0)
         assert result is not None
-        assert result["cum_pct"] >= 30.0
-        # Top 3 bins by density are all tied at 10%, so 3 bins get selected = 30%
-        assert result["cum_pct"] == pytest.approx(30.0)
+        assert result["high"] - result["low"] == pytest.approx(2.0)  # narrowest 3-value span = 2
 
-    def test_skewed_distribution(self):
-        # Values concentrated in lower range
-        values = [0.1, 0.2, 0.15, 0.25, 0.3, 1.0, 2.0]
+    def test_skewed_distribution_tight_range(self):
+        # Values concentrated in lower range, 10 total
+        values = [0.1, 0.2, 0.15, 0.25, 0.3, 0.35, 0.18, 0.22, 1.0, 2.0]
         result = compute_recommended_range(values, threshold=60.0)
         assert result is not None
         assert result["cum_pct"] >= 60.0
-        # Range should cover the lower cluster
-        assert result["low"] <= 0.1
+        # Sliding window should find tight cluster in lower range
+        assert result["high"] - result["low"] < 1.0
 
-    def test_threshold_exceeds_all_bins(self):
-        # All bins equally distributed, threshold 95% with 10 bins
+    def test_high_threshold_nearly_full_range(self):
+        # 100 values, threshold 95% -> need 95 of 100, span = 94
         values = list(range(100))
         result = compute_recommended_range(values, threshold=95.0)
         assert result is not None
-        # Should include all bins (100%)
-        assert result["cum_pct"] == pytest.approx(100.0)
+        assert result["high"] - result["low"] == pytest.approx(94.0)
 
     def test_default_threshold_is_60(self):
-        # Create values where top 60%+ falls in a specific range
+        # 40 values at 0.1, 10 at 5.0 -> 60% needs 30 values, all from 0.1 cluster
         values = [0.1] * 40 + [5.0] * 10
         result = compute_recommended_range(values)
         assert result is not None
+        assert result["low"] == pytest.approx(0.1)
+        assert result["high"] == pytest.approx(0.1)
         assert result["cum_pct"] >= 60.0

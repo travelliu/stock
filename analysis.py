@@ -94,10 +94,9 @@ def compute_recommended_range(
     values: list[float],
     threshold: float = 60.0,
 ) -> dict[str, Any] | None:
-    """Return the spread range covering >= threshold% of observations.
+    """Return the narrowest contiguous range covering >= threshold% of observations.
 
-    Uses cumulative-percentage method: sort distribution bins by density
-    descending, accumulate until threshold is met.
+    Uses a sliding window on sorted values to find the tightest interval.
 
     Args:
         values: raw spread values for one window
@@ -109,29 +108,26 @@ def compute_recommended_range(
     if not values:
         return None
 
-    bins = compute_distribution(values)
+    sorted_vals = sorted(values)
+    n = len(sorted_vals)
 
-    # Single-bin case (all values identical)
-    if len(bins) == 1:
-        return {
-            "low": bins[0]["low"],
-            "high": bins[0]["high"],
-            "cum_pct": 100.0,
-        }
+    if n == 1:
+        return {"low": sorted_vals[0], "high": sorted_vals[0], "cum_pct": 100.0}
 
-    # Sort bins by percentage descending
-    sorted_bins = sorted(bins, key=lambda b: b["pct"], reverse=True)
+    # Number of values needed to reach threshold
+    needed = max(1, round(n * threshold / 100))
 
-    cum_pct = 0.0
-    selected: list[dict[str, Any]] = []
-    for b in sorted_bins:
-        selected.append(b)
-        cum_pct += b["pct"]
-        if cum_pct >= threshold:
-            break
+    # Sliding window: find narrowest span covering 'needed' consecutive values
+    best_low = sorted_vals[0]
+    best_high = sorted_vals[-1]
+    best_span = best_high - best_low
 
-    return {
-        "low": min(b["low"] for b in selected),
-        "high": max(b["high"] for b in selected),
-        "cum_pct": round(cum_pct, 1),
-    }
+    for i in range(n - needed + 1):
+        span = sorted_vals[i + needed - 1] - sorted_vals[i]
+        if span < best_span:
+            best_span = span
+            best_low = sorted_vals[i]
+            best_high = sorted_vals[i + needed - 1]
+
+    cum_pct = round(needed / n * 100, 1)
+    return {"low": best_low, "high": best_high, "cum_pct": cum_pct}

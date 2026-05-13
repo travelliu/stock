@@ -38,6 +38,10 @@ class TestComputeWindowMeans:
         assert means["历史"]["spread_oc"] == pytest.approx(1.0)
         assert means["历史"]["spread_hc"] == pytest.approx(0.5)
         assert means["历史"]["spread_lc"] == pytest.approx(1.5)
+        # All rows fall into every window (only 2 rows), so all windows should match
+        assert means["近3月"]["spread_oh"] == pytest.approx(1.5)
+        assert means["近1月"]["spread_oh"] == pytest.approx(1.5)
+        assert means["近2周"]["spread_oh"] == pytest.approx(1.5)
 
 
 class TestComputeCompositeMeans:
@@ -69,4 +73,19 @@ class TestComputeCompositeMeans:
         }
         composite = _compute_composite_means(window_means)
         assert composite["spread_oh"] == pytest.approx(1.875)
+        assert composite["spread_ol"] == 0.0
+
+    def test_all_none_values(self):
+        window_means = {
+            "历史": {"spread_oh": None, "spread_ol": None, "spread_hl": None,
+                     "spread_oc": None, "spread_hc": None, "spread_lc": None},
+            "近3月": {"spread_oh": None, "spread_ol": None, "spread_hl": None,
+                      "spread_oc": None, "spread_hc": None, "spread_lc": None},
+            "近1月": {"spread_oh": None, "spread_ol": None, "spread_hl": None,
+                      "spread_oc": None, "spread_hc": None, "spread_lc": None},
+            "近2周": {"spread_oh": None, "spread_ol": None, "spread_hl": None,
+                      "spread_oc": None, "spread_hc": None, "spread_lc": None},
+        }
+        composite = _compute_composite_means(window_means)
+        assert composite["spread_oh"] == 0.0
         assert composite["spread_ol"] == 0.0

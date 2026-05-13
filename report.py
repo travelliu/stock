@@ -1,9 +1,6 @@
 import statistics
 from typing import Any
 
-from analysis import SPREAD_KEYS
-
-
 MODEL_SPREAD_KEYS = [
     "spread_oh", "spread_ol", "spread_hl",
     "spread_hc", "spread_lc", "spread_oc",

@@ -357,11 +357,7 @@ class StockAnalyzer:
             high_row.append(f"{self.actual_low + hl_2w:.2f}")
         else:
             high_row.append("/")
-        lc_hist = window_means["历史"].get("spread_lc")
-        if self.actual_high is not None and lc_hist is not None:
-            high_row.append(f"{self.actual_high - lc_hist:.2f}")
-        else:
-            high_row.append("/")
+        high_row.append("/")
         nums = []
         for cell in high_row[1:5]:
             try:

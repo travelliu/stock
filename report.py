@@ -83,3 +83,38 @@ def _format_table(headers: list[str], rows: list[list[str]]) -> str:
         lines.append(data_line)
     lines.append(sep)
     return "\n".join(lines)
+
+
+def _format_header(
+    open_price: float,
+    composite_means: dict[str, float],
+) -> str:
+    high_price = open_price + composite_means.get("spread_oh", 0.0)
+    low_price = open_price - composite_means.get("spread_ol", 0.0)
+    close_price = open_price - composite_means.get("spread_oc", 0.0)
+    return (
+        f"开盘价: {open_price:.2f}   "
+        f"最高价: {high_price:.2f}   "
+        f"最低价: {low_price:.2f}   "
+        f"收盘价: {close_price:.2f}"
+    )
+
+
+def _build_spread_model_table(
+    window_means: dict[str, dict[str, float | None]],
+    composite_means: dict[str, float],
+) -> str:
+    headers = ["时段"] + MODEL_SPREAD_LABELS
+    rows: list[list[str]] = []
+    for wname in _WINDOW_NAMES:
+        row = [wname]
+        for key in MODEL_SPREAD_KEYS:
+            val = window_means[wname].get(key)
+            row.append(f"{val:.2f}" if val is not None else "-")
+        rows.append(row)
+    comp_row = ["综合均值"]
+    for key in MODEL_SPREAD_KEYS:
+        val = composite_means.get(key, 0.0)
+        comp_row.append(f"{val:.2f}")
+    rows.append(comp_row)
+    return _format_table(headers, rows)

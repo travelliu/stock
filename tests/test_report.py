@@ -7,6 +7,9 @@ from report import (
     _display_width,
     _rpad,
     _format_table,
+    _format_header,
+    _build_spread_model_table,
+    MODEL_SPREAD_LABELS,
 )
 
 
@@ -117,3 +120,45 @@ class TestTableFormatting:
         assert "+" in table
         lines = table.split("\n")
         assert len(lines) == 6
+
+
+class TestFormatHeader:
+    def test_basic(self):
+        composite = {"spread_oh": 3.77, "spread_ol": 3.82,
+                     "spread_oc": 4.07, "spread_hl": 8.21,
+                     "spread_hc": 4.07, "spread_lc": 3.25}
+        header = _format_header(200.0, composite)
+        assert "开盘价: 200.00" in header
+        assert "最高价: 203.77" in header
+        assert "最低价: 196.18" in header
+        assert "收盘价: 195.93" in header
+
+
+class TestBuildSpreadModelTable:
+    def test_structure(self):
+        window_means = {
+            "历史": {k: 1.0 for k in MODEL_SPREAD_KEYS},
+            "近3月": {k: 0.5 for k in MODEL_SPREAD_KEYS},
+            "近1月": {k: 0.3 for k in MODEL_SPREAD_KEYS},
+            "近2周": {k: 0.2 for k in MODEL_SPREAD_KEYS},
+        }
+        composite = {k: 0.5 for k in MODEL_SPREAD_KEYS}
+        table = _build_spread_model_table(window_means, composite)
+        assert "时段" in table
+        assert "开盘与最高价" in table
+        assert "综合均值" in table
+        assert "1.00" in table
+        lines = table.split("\n")
+        assert len(lines) == 9
+
+    def test_with_none(self):
+        window_means = {
+            "历史": {k: 1.0 for k in MODEL_SPREAD_KEYS},
+            "近3月": {k: None for k in MODEL_SPREAD_KEYS},
+            "近1月": {k: None for k in MODEL_SPREAD_KEYS},
+            "近2周": {k: None for k in MODEL_SPREAD_KEYS},
+        }
+        composite = {k: 1.0 for k in MODEL_SPREAD_KEYS}
+        table = _build_spread_model_table(window_means, composite)
+        assert "-" in table
+

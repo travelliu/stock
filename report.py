@@ -118,3 +118,67 @@ def _build_spread_model_table(
         comp_row.append(f"{val:.2f}")
     rows.append(comp_row)
     return _format_table(headers, rows)
+
+
+def _build_reference_table(
+    open_price: float,
+    window_means: dict[str, dict[str, float | None]],
+    composite_means: dict[str, float],
+) -> str:
+    headers = [
+        "", "历史参考价", "近3月参考价", "近1月参考价", "近2周参考价",
+        "最低价反推", "最高价反推", "均值", "正负算一",
+    ]
+
+    pred_high = open_price + composite_means.get("spread_oh", 0.0)
+    pred_low = open_price - composite_means.get("spread_ol", 0.0)
+    rows: list[list[str]] = []
+
+    # 最高价预测行
+    high_row = ["最高价预测"]
+    for wname in _WINDOW_NAMES:
+        val = window_means[wname].get("spread_oh")
+        high_row.append(f"{open_price + val:.2f}" if val is not None else "/")
+    lc_hist = window_means["历史"].get("spread_lc")
+    high_row.append(f"{pred_low + lc_hist:.2f}" if lc_hist is not None else "/")
+    high_row.append("/")
+    nums = []
+    for cell in high_row[1:5]:
+        try:
+            nums.append(float(cell))
+        except ValueError:
+            pass
+    high_row.append(f"{statistics.mean(nums):.2f}" if nums else "/")
+    high_row.append("+")
+    rows.append(high_row)
+
+    # 最低价预测行
+    low_row = ["最低价预测"]
+    for wname in _WINDOW_NAMES:
+        val = window_means[wname].get("spread_ol")
+        low_row.append(f"{open_price - val:.2f}" if val is not None else "/")
+    low_row.append("/")
+    hc_hist = window_means["历史"].get("spread_hc")
+    low_row.append(f"{pred_high - hc_hist:.2f}" if hc_hist is not None else "/")
+    nums = []
+    for cell in low_row[1:5]:
+        try:
+            nums.append(float(cell))
+        except ValueError:
+            pass
+    low_row.append(f"{statistics.mean(nums):.2f}" if nums else "/")
+    low_row.append("-")
+    rows.append(low_row)
+
+    # 收盘价预测行
+    close_row = ["收盘价预测"]
+    oc_comp = composite_means.get("spread_oc", 0.0)
+    close_val = open_price - oc_comp
+    close_row.append(f"{close_val:.2f}")
+    close_row.extend(["/", "/", "/"])
+    close_row.extend(["/", "/"])
+    close_row.append(f"{close_val:.2f}")
+    close_row.append("-")
+    rows.append(close_row)
+
+    return _format_table(headers, rows)

@@ -10,6 +10,7 @@ from report import (
     _format_header,
     _build_spread_model_table,
     MODEL_SPREAD_LABELS,
+    _build_reference_table,
 )
 
 
@@ -161,4 +162,49 @@ class TestBuildSpreadModelTable:
         composite = {k: 1.0 for k in MODEL_SPREAD_KEYS}
         table = _build_spread_model_table(window_means, composite)
         assert "-" in table
+
+
+class TestBuildReferenceTable:
+    def test_high_low_close_rows(self):
+        window_means = {
+            "历史": {"spread_oh": 3.77, "spread_ol": 3.82, "spread_hc": 4.07,
+                     "spread_lc": 3.25, "spread_hl": 8.21, "spread_oc": 4.07},
+            "近3月": {"spread_oh": 2.41, "spread_ol": 2.50, "spread_hc": 2.69,
+                      "spread_lc": 1.72, "spread_hl": 4.91, "spread_oc": 2.25},
+            "近1月": {"spread_oh": 1.72, "spread_ol": 1.59, "spread_hc": 1.97,
+                      "spread_lc": 1.14, "spread_hl": 3.36, "spread_oc": 1.86},
+            "近2周": {"spread_oh": 2.22, "spread_ol": 1.44, "spread_hc": 2.03,
+                      "spread_lc": 1.14, "spread_hl": 3.33, "spread_oc": 1.72},
+        }
+        composite = {
+            k: statistics.mean([window_means[w][k] for w in ["历史", "近3月", "近1月", "近2周"]])
+            for k in MODEL_SPREAD_KEYS
+        }
+        table = _build_reference_table(200.0, window_means, composite)
+        assert "最高价预测" in table
+        assert "最低价预测" in table
+        assert "收盘价预测" in table
+        assert "203.77" in table
+        assert "196.18" in table
+        oc_comp = composite["spread_oc"]
+        assert f"{200.0 - oc_comp:.2f}" in table
+        assert "+" in table
+        assert "-" in table
+
+    def test_mean_calculation(self):
+        window_means = {
+            "历史": {"spread_oh": 4.0, "spread_ol": 4.0, "spread_hc": 4.0,
+                     "spread_lc": 4.0, "spread_hl": 4.0, "spread_oc": 4.0},
+            "近3月": {"spread_oh": 2.0, "spread_ol": 2.0, "spread_hc": 2.0,
+                      "spread_lc": 2.0, "spread_hl": 2.0, "spread_oc": 2.0},
+            "近1月": {"spread_oh": 1.0, "spread_ol": 1.0, "spread_hc": 1.0,
+                      "spread_lc": 1.0, "spread_hl": 1.0, "spread_oc": 1.0},
+            "近2周": {"spread_oh": 0.5, "spread_ol": 0.5, "spread_hc": 0.5,
+                      "spread_lc": 0.5, "spread_hl": 0.5, "spread_oc": 0.5},
+        }
+        composite = {k: 1.875 for k in MODEL_SPREAD_KEYS}
+        table = _build_reference_table(100.0, window_means, composite)
+        assert "101.88" in table
+        assert "98.12" in table
+
 

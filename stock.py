@@ -203,65 +203,123 @@ def _print_analysis(
     for i in range(0, len(spread_keys), 2):
         pair = spread_keys[i : i + 2]
 
-        # --- Build summary tables for the pair ---
-        summaries = []
-        for key in pair:
-            label = SPREAD_LABELS[key]
-            headers = ["时段", "样本数", "均值", "中位数", "众数"]
-            table = []
-            for wname, rows in windows:
-                values = [r[key] for r in rows if r.get(key) is not None]
-                if values:
-                    try:
-                        mode_val = statistics.mode(values)
-                    except statistics.StatisticsError:
-                        mode_val = "-"
-                    table.append([
-                        wname,
-                        str(len(values)),
-                        f"{statistics.mean(values):.2f}",
-                        f"{statistics.median(values):.2f}",
-                        f"{mode_val:.2f}" if isinstance(mode_val, float) else str(mode_val),
-                    ])
-                else:
-                    table.append([wname, "0", "-", "-"])
-            summaries.append(
-                f"── {label} 汇总 ──\n" + _format_table(headers, table)
-            )
-
-        # --- Recommendation table (default pair only) ---
-        if not show_all and pair == DEFAULT_SPREADS:
-            rec_table = []
+        # --- Build summary + recommendation tables ---
+        if not show_all:
+            # Unified table with sub-headers (default pair only)
+            u_headers = [
+                "时段", "样本数", "均值", "中位数", "众数",
+                "样本数", "均值", "中位数", "众数",
+                "高抛差价(高-开盘)", "低吸差价(开盘-低)",
+            ]
             ordered_windows = [
                 ("近15日", all_rows_sorted[:15]),
                 ("近30日", all_rows_sorted[:30]),
                 ("近90日", all_rows_sorted[:90]),
                 ("全部", all_rows_sorted),
             ]
+            u_table: list[list[str]] = []
             for wname, rows in ordered_windows:
-                oh_values = [r["spread_oh"] for r in rows if r.get("spread_oh") is not None]
-                ol_values = [r["spread_ol"] for r in rows if r.get("spread_ol") is not None]
-                if not oh_values or not ol_values:
-                    continue
-                oh_range = compute_recommended_range(oh_values)
-                ol_range = compute_recommended_range(ol_values)
-                if oh_range is None or ol_range is None:
-                    continue
-                rec_table.append([
-                    wname,
-                    f"{oh_range['low']:.2f}~{oh_range['high']:.2f} ({oh_range['cum_pct']:.1f}%)",
-                    f"{ol_range['low']:.2f}~{ol_range['high']:.2f} ({ol_range['cum_pct']:.1f}%)",
-                ])
-            if rec_table:
-                rec_str = (
-                    "── 高抛低吸推荐 (累计占比≥60%) ──\n"
-                    + _format_table(["时段", "高抛差价(高-开盘)", "低吸差价(开盘-低)"], rec_table)
-                )
-                summaries.append(rec_str)
+                oh_vals = [r["spread_oh"] for r in rows if r.get("spread_oh") is not None]
+                ol_vals = [r["spread_ol"] for r in rows if r.get("spread_ol") is not None]
 
-        # Print summaries side by side
-        print(_join_tables_side_by_side(summaries))
-        print()
+                row: list[str] = [wname]
+
+                # OH summary
+                if oh_vals:
+                    try:
+                        mode_val = statistics.mode(oh_vals)
+                    except statistics.StatisticsError:
+                        mode_val = "-"
+                    row.extend([
+                        str(len(oh_vals)),
+                        f"{statistics.mean(oh_vals):.2f}",
+                        f"{statistics.median(oh_vals):.2f}",
+                        f"{mode_val:.2f}" if isinstance(mode_val, float) else str(mode_val),
+                    ])
+                else:
+                    row.extend(["0", "-", "-", "-"])
+
+                # OL summary
+                if ol_vals:
+                    try:
+                        mode_val = statistics.mode(ol_vals)
+                    except statistics.StatisticsError:
+                        mode_val = "-"
+                    row.extend([
+                        str(len(ol_vals)),
+                        f"{statistics.mean(ol_vals):.2f}",
+                        f"{statistics.median(ol_vals):.2f}",
+                        f"{mode_val:.2f}" if isinstance(mode_val, float) else str(mode_val),
+                    ])
+                else:
+                    row.extend(["0", "-", "-", "-"])
+
+                # Recommendation
+                oh_range = compute_recommended_range(oh_vals) if oh_vals else None
+                ol_range = compute_recommended_range(ol_vals) if ol_vals else None
+                row.append(
+                    f"{oh_range['low']:.2f}~{oh_range['high']:.2f} ({oh_range['cum_pct']:.1f}%)"
+                    if oh_range else "-"
+                )
+                row.append(
+                    f"{ol_range['low']:.2f}~{ol_range['high']:.2f} ({ol_range['cum_pct']:.1f}%)"
+                    if ol_range else "-"
+                )
+
+                u_table.append(row)
+
+            # Calculate column widths
+            col_widths = [_display_width(h) for h in u_headers]
+            for row in u_table:
+                for ci, cell in enumerate(row):
+                    col_widths[ci] = max(col_widths[ci], _display_width(cell))
+
+            # Print sub-header labels aligned to column sections
+            def _section_w(start: int, end: int) -> int:
+                return sum(col_widths[start:end + 1]) + 3 * (end - start + 1)
+
+            time_sw = col_widths[0] + 3
+            oh_sw = _section_w(1, 4)
+            ol_sw = _section_w(5, 8)
+            rec_sw = _section_w(9, 10)
+
+            sub_line = (
+                _rpad("", time_sw)
+                + _rpad("── 最高-开盘 ──", oh_sw)
+                + _rpad("── 开盘-最低 ──", ol_sw)
+                + _rpad("── 高抛低吸推荐 (累计占比≥60%) ──", rec_sw)
+            )
+            print(sub_line)
+            print(_format_table(u_headers, u_table))
+            print()
+        else:
+            # Side-by-side summary tables for --all mode
+            summaries = []
+            for key in pair:
+                label = SPREAD_LABELS[key]
+                headers = ["时段", "样本数", "均值", "中位数", "众数"]
+                table = []
+                for wname, rows in windows:
+                    values = [r[key] for r in rows if r.get(key) is not None]
+                    if values:
+                        try:
+                            mode_val = statistics.mode(values)
+                        except statistics.StatisticsError:
+                            mode_val = "-"
+                        table.append([
+                            wname,
+                            str(len(values)),
+                            f"{statistics.mean(values):.2f}",
+                            f"{statistics.median(values):.2f}",
+                            f"{mode_val:.2f}" if isinstance(mode_val, float) else str(mode_val),
+                        ])
+                    else:
+                        table.append([wname, "0", "-", "-"])
+                summaries.append(
+                    f"── {label} 汇总 ──\n" + _format_table(headers, table)
+                )
+            print(_join_tables_side_by_side(summaries))
+            print()
 
         # --- Distribution tables per spread in the pair ---
         for key in pair:

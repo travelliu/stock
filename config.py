@@ -20,8 +20,7 @@ DB_PATH = DATA_DIR / "stock_daily.db"
 # Default stocks (comma-separated in env var DEFAULT_STOCKS, or hardcoded fallback)
 DEFAULT_STOCKS = [
     s.strip() for s in os.environ.get(
-        "DEFAULT_STOCKS",
-        "600537,603778,000890,600186,300342,000593,600821,300476",
+        "DEFAULT_STOCKS", "",
     ).split(",") if s.strip()
 ]
 

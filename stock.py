@@ -75,7 +75,9 @@ def cmd_fetch(args: argparse.Namespace) -> None:
     db.init()
 
     for code in stocks:
-        print(f"Fetching {code} ...")
+        name = get_stock_name(code)
+        label = f"{code} {name}" if name else code
+        print(f"Fetching {label} ...")
 
         if args.days == "all":
             # Full fetch: lookback 10 years
@@ -265,8 +267,9 @@ def _print_analysis(
                 row.append("")  # separator
 
                 # Recommendation
-                oh_range = compute_recommended_range(oh_vals) if oh_vals else None
-                ol_range = compute_recommended_range(ol_vals) if ol_vals else None
+                rec_threshold = 60.0 if wname == "全部" else 30.0
+                oh_range = compute_recommended_range(oh_vals, threshold=rec_threshold) if oh_vals else None
+                ol_range = compute_recommended_range(ol_vals, threshold=rec_threshold) if ol_vals else None
                 row.append(
                     f"{oh_range['low']:.2f}~{oh_range['high']:.2f} ({oh_range['cum_pct']:.1f}%)"
                     if oh_range else "-"
@@ -297,7 +300,7 @@ def _print_analysis(
                 "|" + " " * time_sw + "|"
                 + _rpad("── 最高-开盘 ──", oh_sw) + "|"
                 + _rpad("── 开盘-最低 ──", ol_sw) + "|"
-                + _rpad("── 高抛低吸推荐 (累计占比≥60%) ──", rec_sw) + "|"
+                + _rpad("── 高抛低吸推荐 (累计占比) ──", rec_sw) + "|"
             )
             print(sub_line)
             print(_format_table(u_headers, u_table))

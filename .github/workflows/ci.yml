@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  go:
+    name: Go build + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+      - name: Go vet
+        run: go vet ./...
+      - name: Go test
+        run: go test -race -cover ./...
+      - name: Go build
+        run: |
+          mkdir -p bin
+          go build -o bin/stockd  ./cmd/stockd
+          go build -o bin/stockctl ./cmd/stockctl
+
+  web:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+        continue-on-error: true
+      - name: Frontend build
+        run: |
+          if [ -f web/package.json ]; then
+            cd web && pnpm install --frozen-lockfile && pnpm build
+          else
+            echo "web/package.json not present yet — skipping"
+          fi

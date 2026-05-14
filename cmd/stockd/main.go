@@ -1,9 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
 
-const Version = "0.0.0-dev"
+	"stock/pkg/version"
+)
 
 func main() {
-	fmt.Printf("stockd %s\n", Version)
+	fmt.Printf("stockd %s\n", version.GetShortVersion())
 }

@@ -289,28 +289,27 @@ class StockAnalyzer:
     def _format_header(
         self, open_price: float, composite_means: dict[str, float]
     ) -> str:
-        high_price = (
-            self.actual_high
-            if self.actual_high is not None
-            else open_price + composite_means.get("spread_oh", 0.0)
-        )
-        low_price = (
-            self.actual_low
-            if self.actual_low is not None
-            else open_price - composite_means.get("spread_ol", 0.0)
-        )
-        close_price = (
-            self.actual_close
-            if self.actual_close is not None
-            else open_price - composite_means.get("spread_oc", 0.0)
-        )
         parts = [
             f"开盘价: {open_price:.2f}",
-            f"最高价: {high_price:.2f}",
-            f"最低价: {low_price:.2f}",
+            # f"最高价: {high_price:.2f}",
+            # f"最低价: {low_price:.2f}",
+            # f"收盘价: {close_price:.2f}"
         ]
+        if self.actual_high is not None:
+            parts.append(f"最高价: {self.actual_high:.2f}")
+        else:
+            parts.append(f"最高价: ")
+
+        if self.actual_low is not None:
+            parts.append(f"最低价: {self.actual_low:.2f}")
+        else:
+            parts.append(f"最低价: ")
+
         if self.actual_close is not None:
-            parts.append(f"收盘价: {close_price:.2f}")
+            parts.append(f"收盘价: {self.actual_close:.2f}")
+        else:
+            parts.append(f"收盘价: ")
+
         return "   ".join(parts)
 
     def _build_spread_model_table(

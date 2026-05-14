@@ -1,4 +1,4 @@
-package stockcode_test
+package utils_test
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"stock/pkg/shared/stockcode"
+	"stock/pkg/utils"
 )
 
 func TestToTushareCode(t *testing.T) {
@@ -39,7 +39,7 @@ func TestToTushareCode(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := stockcode.ToTushareCode(tc.in)
+			got, err := utils.ToTushareCode(tc.in)
 			if tc.wantErr {
 				require.Error(t, err)
 				return

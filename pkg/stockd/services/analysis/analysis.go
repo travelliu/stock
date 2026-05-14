@@ -13,8 +13,7 @@ import (
 	"gorm.io/gorm"
 
 	pkganalysis "stock/pkg/analysis"
-	"stock/pkg/shared/spread"
-	"stock/pkg/stockd/models"
+	"stock/pkg/models"
 )
 
 type Service struct{ db *gorm.DB }
@@ -62,16 +61,6 @@ func (s *Service) Run(ctx context.Context, in Input) (pkganalysis.AnalysisResult
 		}
 	}
 
-	rows := make([]spread.Bar, 0, len(bars))
-	for _, b := range bars {
-		rows = append(rows, spread.Bar{
-			TsCode: b.TsCode, TradeDate: b.TradeDate,
-			Open: b.Open, High: b.High, Low: b.Low, Close: b.Close,
-			Vol: b.Vol, Amount: b.Amount,
-			Spreads: spread.Spreads{OH: b.SpreadOH, OL: b.SpreadOL, HL: b.SpreadHL, OC: b.SpreadOC, HC: b.SpreadHC, LC: b.SpreadLC},
-		})
-	}
-
 	var name string
 	var st models.Stock
 	if s.db.WithContext(ctx).First(&st, "ts_code = ?", in.TsCode).Error == nil {
@@ -80,7 +69,7 @@ func (s *Service) Run(ctx context.Context, in Input) (pkganalysis.AnalysisResult
 
 	res := pkganalysis.Build(pkganalysis.Input{
 		TsCode: in.TsCode, StockName: name,
-		Rows:        rows,
+		Rows:        bars,
 		OpenPrice:   in.OpenPrice,
 		ActualHigh:  in.ActualHigh,
 		ActualLow:   in.ActualLow,

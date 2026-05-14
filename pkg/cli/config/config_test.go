@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"stock/pkg/stockctl/config"
+	"stock/pkg/cli/config"
 )
 
 func TestRoundTrip(t *testing.T) {

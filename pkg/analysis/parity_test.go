@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"stock/pkg/analysis"
-	"stock/pkg/shared/spread"
+	"stock/pkg/models"
 )
 
 type pythonRow struct {
@@ -55,13 +55,13 @@ func TestParity_AgainstPythonFixtures(t *testing.T) {
 			var fx pythonFixture
 			require.NoError(t, json.Unmarshal(raw, &fx))
 
-			bars := make([]spread.Bar, 0, len(fx.Rows))
+			bars := make([]models.DailyBar, 0, len(fx.Rows))
 			for _, r := range fx.Rows {
-				bars = append(bars, spread.Bar{
+				bars = append(bars, models.DailyBar{
 					TsCode: r.TsCode, TradeDate: r.TradeDate,
 					Open: r.Open, High: r.High, Low: r.Low, Close: r.Close,
 					Vol: r.Vol, Amount: r.Amount,
-					Spreads: spread.Spreads{
+					Spreads: models.Spreads{
 						OH: r.SpreadOH, OL: r.SpreadOL, HL: r.SpreadHL,
 						OC: r.SpreadOC, HC: r.SpreadHC, LC: r.SpreadLC,
 					},

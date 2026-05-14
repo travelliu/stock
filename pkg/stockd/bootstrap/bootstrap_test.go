@@ -9,7 +9,7 @@ import (
 
 	"stock/pkg/stockd/bootstrap"
 	"stock/pkg/stockd/db"
-	"stock/pkg/stockd/models"
+	"stock/pkg/models"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

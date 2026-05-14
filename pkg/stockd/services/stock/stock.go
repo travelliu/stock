@@ -8,7 +8,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"stock/pkg/stockd/models"
+	"stock/pkg/models"
 	"stock/pkg/tushare"
 )
 

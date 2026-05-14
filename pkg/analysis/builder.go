@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"stock/pkg/shared/spread"
-	"stock/pkg/shared/window"
+	"stock/pkg/models"
 )
 
 // ModelSpreadKeys matches analysis.py MODEL_SPREAD_KEYS exactly.
@@ -22,14 +21,14 @@ var ModelSpreadLabels = []string{
 
 // Build runs the full pipeline.
 func Build(in Input) AnalysisResult {
-	windows := window.Make(in.Rows)
-	wmeans := window.Means(windows)
-	comp := window.Composite(wmeans)
+	windows := Make(in.Rows)
+	wmeans := Means(windows)
+	comp := Composite(wmeans)
 
 	result := AnalysisResult{
 		TsCode:         in.TsCode,
 		StockName:      in.StockName,
-		Windows:        window.Names,
+		Windows:        Names,
 		OpenPrice:      in.OpenPrice,
 		ActualHigh:     in.ActualHigh,
 		ActualLow:      in.ActualLow,
@@ -47,10 +46,10 @@ func Build(in Input) AnalysisResult {
 	return result
 }
 
-func buildModelTable(wmeans window.MeansResult, comp map[string]float64) ModelTable {
+func buildModelTable(wmeans MeansResult, comp map[string]float64) ModelTable {
 	headers := append([]string{"时段"}, ModelSpreadLabels...)
-	rows := make([][]string, 0, len(window.Names)+1)
-	for _, wname := range window.Names {
+	rows := make([][]string, 0, len(Names)+1)
+	for _, wname := range Names {
 		row := []string{wname}
 		for _, key := range ModelSpreadKeys {
 			row = append(row, formatPtr(wmeans[wname][key]))
@@ -65,8 +64,7 @@ func buildModelTable(wmeans window.MeansResult, comp map[string]float64) ModelTa
 	return ModelTable{Headers: headers, Rows: rows}
 }
 
-// buildReferenceTable mirrors analysis.py:336-422 exactly.
-func buildReferenceTable(openPrice float64, actualHigh, actualLow, actualClose *float64, wm window.MeansResult, _ map[string]float64) ReferenceTable {
+func buildReferenceTable(openPrice float64, actualHigh, actualLow, actualClose *float64, wm MeansResult, _ map[string]float64) ReferenceTable {
 	headers := []string{
 		"", "历史参考价", "近3月参考价", "近1月参考价", "近2周参考价",
 		"最低价反推(当日最低价)", "最高价反推(当日最高价)", "均值", "正负算一",
@@ -79,9 +77,9 @@ func buildReferenceTable(openPrice float64, actualHigh, actualLow, actualClose *
 	return ReferenceTable{Headers: headers, Rows: rows}
 }
 
-func highRow(openPrice float64, actualLow *float64, wm window.MeansResult) []string {
+func highRow(openPrice float64, actualLow *float64, wm MeansResult) []string {
 	row := []string{"最高价预测"}
-	for _, wname := range window.Names {
+	for _, wname := range Names {
 		v := wm[wname]["spread_oh"]
 		if v == nil {
 			row = append(row, "/")
@@ -101,9 +99,9 @@ func highRow(openPrice float64, actualLow *float64, wm window.MeansResult) []str
 	return row
 }
 
-func lowRow(openPrice float64, actualHigh *float64, wm window.MeansResult) []string {
+func lowRow(openPrice float64, actualHigh *float64, wm MeansResult) []string {
 	row := []string{"最低价预测"}
-	for _, wname := range window.Names {
+	for _, wname := range Names {
 		v := wm[wname]["spread_ol"]
 		if v == nil {
 			row = append(row, "/")
@@ -123,7 +121,7 @@ func lowRow(openPrice float64, actualHigh *float64, wm window.MeansResult) []str
 	return row
 }
 
-func closeRow(actualHigh, actualLow *float64, wm window.MeansResult) []string {
+func closeRow(actualHigh, actualLow *float64, wm MeansResult) []string {
 	row := []string{"收盘价预测", "/", "/", "/", "/"}
 	lc2w := wm["近2周"]["spread_lc"]
 	if actualLow != nil && lc2w != nil {
@@ -166,7 +164,7 @@ func formatPtr(p *float64) string {
 	return fmt.Sprintf("%.2f", *p)
 }
 
-func lastClose(rows []spread.Bar) *float64 {
+func lastClose(rows []models.DailyBar) *float64 {
 	if len(rows) == 0 {
 		return nil
 	}

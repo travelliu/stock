@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"stock/pkg/shared/spread"
+	"stock/pkg/models"
+	"stock/pkg/utils"
 )
 
 // DailyRequest mirrors Tushare `daily` parameters used by the project.
@@ -14,10 +15,10 @@ type DailyRequest struct {
 	EndDate   string // YYYYMMDD
 }
 
-// Daily fetches OHLCV rows and returns spread.Bars with spreads pre-computed.
+// Daily fetches OHLCV rows and returns models.DailyBar with spreads pre-computed.
 // Rows are returned in the order Tushare provides them (newest first); callers
 // re-sort as needed.
-func Daily(ctx context.Context, c *Client, token string, req DailyRequest) ([]spread.Bar, error) {
+func Daily(ctx context.Context, c *Client, token string, req DailyRequest) ([]models.DailyBar, error) {
 	params := map[string]any{
 		"ts_code":    req.TsCode,
 		"start_date": req.StartDate,
@@ -33,7 +34,7 @@ func Daily(ctx context.Context, c *Client, token string, req DailyRequest) ([]sp
 	if err != nil {
 		return nil, err
 	}
-	bars := make([]spread.Bar, 0, len(resp.Items))
+	bars := make([]models.DailyBar, 0, len(resp.Items))
 	for _, row := range resp.Items {
 		tsCode, _ := row[idx["ts_code"]].(string)
 		tradeDate, _ := row[idx["trade_date"]].(string)
@@ -43,7 +44,7 @@ func Daily(ctx context.Context, c *Client, token string, req DailyRequest) ([]sp
 		close, _ := toFloat(row[idx["close"]])
 		vol, _ := toFloat(row[idx["vol"]])
 		amount, _ := toFloat(row[idx["amount"]])
-		bar := spread.Bar{
+		bar := models.DailyBar{
 			TsCode:    tsCode,
 			TradeDate: tradeDate,
 			Open:      open,
@@ -53,7 +54,7 @@ func Daily(ctx context.Context, c *Client, token string, req DailyRequest) ([]sp
 			Vol:       vol,
 			Amount:    amount,
 		}
-		bar.Spreads = spread.Compute(spread.OHLC{Open: open, High: high, Low: low, Close: close})
+		bar.Spreads = utils.ComputeSpreads(open, high, low, close)
 		bars = append(bars, bar)
 	}
 	return bars, nil

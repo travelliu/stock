@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm"
 
 	"stock/pkg/stockd/db"
-	"stock/pkg/stockd/models"
+	"stock/pkg/models"
 	"stock/pkg/stockd/services/bars"
 	"stock/pkg/tushare"
 )
@@ -52,5 +52,5 @@ func TestSync_FromTushare(t *testing.T) {
 	assert.Equal(t, 1, n)
 	var bar models.DailyBar
 	require.NoError(t, gdb.First(&bar).Error)
-	assert.InDelta(t, 1.0, bar.SpreadOH, 1e-9)
+	assert.InDelta(t, 1.0, bar.Spreads.OH, 1e-9)
 }

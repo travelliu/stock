@@ -1,6 +1,6 @@
-// Package stockcode converts plain A-share codes (e.g. "600537") into
+// Package utils converts plain A-share codes (e.g. "600537") into
 // Tushare-suffixed codes ("600537.SH" / "000890.SZ").
-package stockcode
+package utils
 
 import (
 	"fmt"

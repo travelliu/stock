@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"stock/pkg/stockctl/client"
+	"stock/pkg/cli/client"
 )
 
 var loginCmd = &cobra.Command{

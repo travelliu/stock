@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"stock/pkg/stockd/auth"
-	"stock/pkg/stockd/models"
+	"stock/pkg/models"
 )
 
 type Service struct{ db *gorm.DB }

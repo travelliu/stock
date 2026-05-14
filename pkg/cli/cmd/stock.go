@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"stock/pkg/stockctl/client"
-	"stock/pkg/stockctl/render"
+	"stock/pkg/cli/client"
+	"stock/pkg/cli/render"
 )
 
 var stockCmd = &cobra.Command{

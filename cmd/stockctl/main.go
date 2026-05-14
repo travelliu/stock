@@ -1,7 +1,7 @@
 package main
 
 import (
-	"stock/pkg/stockctl/cmd"
+	"stock/pkg/cli/cmd"
 )
 
 var (

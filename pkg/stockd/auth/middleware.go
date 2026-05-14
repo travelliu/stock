@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	"stock/pkg/stockd/models"
+	"stock/pkg/models"
 )
 
 const (

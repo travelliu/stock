@@ -18,7 +18,7 @@ import (
 	"stock/pkg/stockd/db"
 	httppkg "stock/pkg/stockd/http"
 	"stock/pkg/stockd/http/handler"
-	"stock/pkg/stockd/models"
+	"stock/pkg/models"
 	"stock/pkg/stockd/services/analysis"
 	"stock/pkg/stockd/services/bars"
 	"stock/pkg/stockd/services/draft"

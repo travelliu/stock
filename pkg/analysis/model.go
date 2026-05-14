@@ -4,16 +4,13 @@
 // payload returned by the HTTP API and rendered by the CLI.
 package analysis
 
-import (
-	"stock/pkg/shared/spread"
-	"stock/pkg/shared/window"
-)
+import "stock/pkg/models"
 
 // Input is everything Build needs.
 type Input struct {
 	TsCode      string
 	StockName   string
-	Rows        []spread.Bar // raw daily history
+	Rows        []models.DailyBar // raw daily history
 	OpenPrice   *float64
 	ActualHigh  *float64
 	ActualLow   *float64
@@ -30,7 +27,7 @@ type AnalysisResult struct {
 	ActualHigh     *float64           `json:"actual_high,omitempty"`
 	ActualLow      *float64           `json:"actual_low,omitempty"`
 	ActualClose    *float64           `json:"actual_close,omitempty"`
-	WindowMeans    window.MeansResult `json:"window_means"` // window -> spread_key -> *float64
+	WindowMeans    MeansResult        `json:"window_means"` // window -> spread_key -> *float64
 	CompositeMeans map[string]float64 `json:"composite_means"`
 	ModelTable     ModelTable         `json:"model_table"`
 	ReferenceTable ReferenceTable     `json:"reference_table"`

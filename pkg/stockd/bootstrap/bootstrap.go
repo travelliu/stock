@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"stock/pkg/stockd/auth"
-	"stock/pkg/stockd/models"
+	"stock/pkg/models"
 )
 
 // EnsureAdmin seeds admin/<random-password> when the users table is empty.

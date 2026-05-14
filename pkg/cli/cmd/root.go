@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"stock/pkg/stockctl/config"
+	"stock/pkg/cli/config"
 )
 
 var (

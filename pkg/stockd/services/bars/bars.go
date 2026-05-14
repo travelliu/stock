@@ -8,7 +8,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"stock/pkg/stockd/models"
+	"stock/pkg/models"
 	"stock/pkg/tushare"
 )
 
@@ -72,8 +72,7 @@ func (s *Service) Sync(ctx context.Context, token, tsCode string) (int, error) {
 			TsCode: r.TsCode, TradeDate: r.TradeDate,
 			Open: r.Open, High: r.High, Low: r.Low, Close: r.Close,
 			Vol: r.Vol, Amount: r.Amount,
-			SpreadOH: r.Spreads.OH, SpreadOL: r.Spreads.OL, SpreadHL: r.Spreads.HL,
-			SpreadOC: r.Spreads.OC, SpreadHC: r.Spreads.HC, SpreadLC: r.Spreads.LC,
+			Spreads: r.Spreads,
 		}
 		if err := s.db.WithContext(ctx).Save(row).Error; err != nil {
 			return n, err

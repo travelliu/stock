@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"stock/pkg/stockd/models"
+	"stock/pkg/models"
 )
 
 // ImportCSV streams a `stock_basic`-shaped CSV (with header row) and upserts.

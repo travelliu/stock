@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 
 	"stock/pkg/stockd/db"
-	"stock/pkg/stockd/models"
+	"stock/pkg/models"
 	"stock/pkg/stockd/services/stock"
 )
 

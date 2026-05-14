@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 
 	"stock/pkg/stockd/db"
-	"stock/pkg/stockd/models"
+	"stock/pkg/models"
 	"stock/pkg/stockd/services/analysis"
 )
 
@@ -27,7 +27,7 @@ func p(v float64) *float64 { return &v }
 
 func TestRun_DrawsOpenFromDraftIfProvided(t *testing.T) {
 	gdb := openDB(t)
-	require.NoError(t, gdb.Create(&models.DailyBar{TsCode: "X.SH", TradeDate: "20250513", Open: 100, High: 102, Low: 98, Close: 101, SpreadOH: 2, SpreadOL: 2, SpreadHL: 4}).Error)
+	require.NoError(t, gdb.Create(&models.DailyBar{TsCode: "X.SH", TradeDate: "20250513", Open: 100, High: 102, Low: 98, Close: 101, Spreads: models.Spreads{OH: 2, OL: 2, HL: 4}}).Error)
 	today := time.Now().Format("20060102")
 	require.NoError(t, gdb.Create(&models.IntradayDraft{UserID: 1, TsCode: "X.SH", TradeDate: today, Open: p(105)}).Error)
 

@@ -12,7 +12,7 @@ import (
 	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
 
-	"stock/pkg/stockd/models"
+	"stock/pkg/models"
 )
 
 // JobFunc is the signature for registered jobs.

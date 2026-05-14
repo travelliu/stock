@@ -1,11 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"stock/pkg/stockctl/cmd"
+)
 
-	"stock/pkg/version"
+var (
+	Version   = "dev"
+	BuildTime = "unknown"
 )
 
 func main() {
-	fmt.Printf("stockctl %s\n", version.GetShortVersion())
+	cmd.Execute()
 }

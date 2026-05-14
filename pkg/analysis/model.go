@@ -11,29 +11,29 @@ import (
 
 // Input is everything Build needs.
 type Input struct {
-	TsCode       string
-	StockName    string
-	Rows         []spread.Bar // raw daily history
-	OpenPrice    *float64
-	ActualHigh   *float64
-	ActualLow    *float64
-	ActualClose  *float64
+	TsCode      string
+	StockName   string
+	Rows        []spread.Bar // raw daily history
+	OpenPrice   *float64
+	ActualHigh  *float64
+	ActualLow   *float64
+	ActualClose *float64
 }
 
 // AnalysisResult is the canonical output. Field naming matches the design spec §3.4.
 type AnalysisResult struct {
-	TsCode          string             `json:"ts_code"`
-	StockName       string             `json:"stock_name"`
-	YesterdayClose  *float64           `json:"yesterday_close,omitempty"`
-	Windows         []string           `json:"windows"` // ["历史","近3月","近1月","近2周"]
-	OpenPrice       *float64           `json:"open_price,omitempty"`
-	ActualHigh      *float64           `json:"actual_high,omitempty"`
-	ActualLow       *float64           `json:"actual_low,omitempty"`
-	ActualClose     *float64           `json:"actual_close,omitempty"`
-	WindowMeans     window.MeansResult `json:"window_means"`    // window -> spread_key -> *float64
-	CompositeMeans  map[string]float64 `json:"composite_means"`
-	ModelTable      ModelTable         `json:"model_table"`
-	ReferenceTable  ReferenceTable     `json:"reference_table"`
+	TsCode         string             `json:"ts_code"`
+	StockName      string             `json:"stock_name"`
+	YesterdayClose *float64           `json:"yesterday_close,omitempty"`
+	Windows        []string           `json:"windows"` // ["历史","近3月","近1月","近2周"]
+	OpenPrice      *float64           `json:"open_price,omitempty"`
+	ActualHigh     *float64           `json:"actual_high,omitempty"`
+	ActualLow      *float64           `json:"actual_low,omitempty"`
+	ActualClose    *float64           `json:"actual_close,omitempty"`
+	WindowMeans    window.MeansResult `json:"window_means"` // window -> spread_key -> *float64
+	CompositeMeans map[string]float64 `json:"composite_means"`
+	ModelTable     ModelTable         `json:"model_table"`
+	ReferenceTable ReferenceTable     `json:"reference_table"`
 }
 
 // ModelTable is the 4-window × 6-spread table (plus a composite row).

@@ -1,6 +1,26 @@
 package stock
 
-// Embed-related code lives here; see P4 task 33 for the //go:embed declaration.
-// Keeping the package non-empty so other packages can import "stock".
+import (
+	"embed"
+	"io/fs"
+	"net/http"
 
-const PackageName = "stock"
+	"github.com/gin-contrib/static"
+)
+
+//go:embed all:web/dist
+var StaticDir embed.FS
+
+type embedFS struct{ http.FileSystem }
+
+func (e embedFS) Exists(prefix, filepath string) bool {
+	if _, err := e.Open(filepath); err != nil {
+		return false
+	}
+	return true
+}
+
+func EmbedFolder() static.ServeFileSystem {
+	sub, _ := fs.Sub(StaticDir, "web/dist")
+	return embedFS{http.FS(sub)}
+}

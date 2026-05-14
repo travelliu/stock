@@ -7,6 +7,6 @@ type JobRun struct {
 	JobName    string    `gorm:"size:64;index;not null"`
 	StartedAt  time.Time `gorm:"not null"`
 	FinishedAt *time.Time
-	Status     string    `gorm:"size:16;not null"` // "running" | "success" | "error"
-	Message    string    `gorm:"type:text"`
+	Status     string `gorm:"size:16;not null"` // "running" | "success" | "error"
+	Message    string `gorm:"type:text"`
 }

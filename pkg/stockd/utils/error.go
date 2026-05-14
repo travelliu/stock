@@ -36,7 +36,7 @@ func Wrap(code int, err error, format string, messages ...interface{}) error {
 	return &errors{code, message, messages}
 }
 
-func (e *errors) Code() int        { return e.code }
+func (e *errors) Code() int           { return e.code }
 func (e *errors) Data() []interface{} { return e.data }
 
 func (e *errors) Error() string {

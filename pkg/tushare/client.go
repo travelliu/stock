@@ -74,7 +74,7 @@ func (c *Client) Call(ctx context.Context, token, apiName string, params map[str
 	if err != nil {
 		return nil, fmt.Errorf("marshal request: %w", err)
 	}
-	
+
 	var lastErr error
 	for attempt := 0; attempt <= c.maxRetries; attempt++ {
 		if attempt > 0 {
@@ -103,13 +103,13 @@ func (c *Client) doOnce(ctx context.Context, body []byte) (*Response, error) {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, retryable{err: err}
 	}
 	defer resp.Body.Close()
-	
+
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, retryable{err: err}
@@ -120,7 +120,7 @@ func (c *Client) doOnce(ctx context.Context, body []byte) (*Response, error) {
 	if resp.StatusCode >= 400 {
 		return nil, fmt.Errorf("tushare http %d: %s", resp.StatusCode, string(raw))
 	}
-	
+
 	var env envelope
 	if err := json.Unmarshal(raw, &env); err != nil {
 		return nil, fmt.Errorf("decode envelope: %w; body: %s", err, string(raw))

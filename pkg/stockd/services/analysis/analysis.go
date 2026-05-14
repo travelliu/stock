@@ -1,8 +1,8 @@
 // Package analysis orchestrates the analysis pipeline:
-//  - load all daily_bars for the ts_code
-//  - merge today's intraday_draft (when WithDraft=true and a row exists)
-//  - apply explicit param overrides (always win)
-//  - call pkg/analysis.Build
+//   - load all daily_bars for the ts_code
+//   - merge today's intraday_draft (when WithDraft=true and a row exists)
+//   - apply explicit param overrides (always win)
+//   - call pkg/analysis.Build
 package analysis
 
 import (

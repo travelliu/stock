@@ -18,9 +18,25 @@ const (
 	sessionUserKey = "uid"
 )
 
-// Middleware returns a gin handler that resolves the calling user from a
-// Bearer token (CLI/skill) or session cookie (browser). On success it
-// attaches *models.User and the effective Tushare token to the gin context.
+// ResolveUser returns a gin handler that resolves the calling user from Bearer
+// or session and attaches *models.User + effective token to the context.
+// It does NOT abort on failure — downstream middleware/handlers decide.
+func ResolveUser(gdb *gorm.DB, defaultTushareToken string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user, _ := resolveUser(c, gdb)
+		if user != nil {
+			c.Set(ctxUserKey, user)
+			token := defaultTushareToken
+			if user.TushareToken != "" {
+				token = user.TushareToken
+			}
+			c.Set(ctxTokenKey, token)
+		}
+		c.Next()
+	}
+}
+
+// Middleware is the strict variant: aborts with 401 if user cannot be resolved.
 func Middleware(gdb *gorm.DB, defaultTushareToken string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user, err := resolveUser(c, gdb)

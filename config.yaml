@@ -1,0 +1,26 @@
+server:
+  listen: ":8443"
+  base_url: "https://stock.example.com"
+  session_secret: "change-me-this-must-be-at-least-32-bytes-long"
+  tls:
+    enabled: true
+    cert_file: /etc/stockd/tls/fullchain.pem
+    key_file:  /etc/stockd/tls/privkey.pem
+
+database:
+  driver: sqlite                     # sqlite | mysql | postgres
+  dsn: "/var/lib/stockd/stock.db"
+
+tushare:
+  default_token: ""                  # required for sync to work
+  base_url: "http://api.tushare.pro"
+  timeout: 30s
+
+scheduler:
+  enabled: true
+  daily_fetch_cron:    "0 22 * * 1-5"
+  stocklist_sync_cron: "0 3 * * 0"
+
+logging:
+  level: info
+  format: json

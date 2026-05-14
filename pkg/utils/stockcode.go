@@ -3,7 +3,6 @@
 package utils
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -21,19 +20,19 @@ var szPrefixes = map[string]struct{}{
 
 // ToTushareCode converts a plain 6-digit A-share code to the Tushare suffix
 // form. Already-suffixed inputs (containing ".") pass through unchanged.
-func ToTushareCode(code string) (string, error) {
+func ToTushareCode(code string) string {
 	if strings.Contains(code, ".") {
-		return code, nil
+		return code
 	}
 	if len(code) < 6 {
-		return "", fmt.Errorf("invalid stock code %q: must be 6 digits", code)
+		return code
 	}
 	prefix := code[:3]
 	if _, ok := shPrefixes[prefix]; ok {
-		return code + ".SH", nil
+		return code + ".SH"
 	}
 	if _, ok := szPrefixes[prefix]; ok {
-		return code + ".SZ", nil
+		return code + ".SZ"
 	}
-	return "", fmt.Errorf("cannot determine market for stock code %q (prefix %q is not a known SH/SZ prefix)", code, prefix)
+	return code
 }

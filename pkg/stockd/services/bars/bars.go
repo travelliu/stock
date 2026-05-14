@@ -4,6 +4,7 @@ package bars
 import (
 	"context"
 	"errors"
+	"stock/pkg/stockd/utils"
 	"time"
 
 	"gorm.io/gorm"
@@ -69,7 +70,7 @@ func (s *Service) Sync(ctx context.Context, token, tsCode string) (int, error) {
 	n := 0
 	for _, r := range rows {
 		row := &models.DailyBar{
-			TsCode: r.TsCode, TradeDate: r.TradeDate,
+			TsCode: utils.TrimTsCode(r.TsCode), TradeDate: r.TradeDate,
 			Open: r.Open, High: r.High, Low: r.Low, Close: r.Close,
 			Vol: r.Vol, Amount: r.Amount,
 			Spreads: r.Spreads,

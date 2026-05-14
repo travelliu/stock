@@ -8,11 +8,11 @@ import (
 
 func ComputeSpreads(open, high, low, close float64) models.Spreads {
 	return models.Spreads{
-		OH: math.Abs(high - open),
-		OL: math.Abs(open - low),
-		HL: math.Abs(high - low),
-		OC: math.Abs(open - close),
-		HC: math.Abs(high - close),
-		LC: math.Abs(low - close),
+		OH: math.Round(math.Abs(high-open)*1000) / 1000,
+		OL: math.Round(math.Abs(open-low)*1000) / 1000,
+		HL: math.Round(math.Abs(high-low)*1000) / 1000,
+		OC: math.Round(math.Abs(open-close)*1000) / 1000,
+		HC: math.Round(math.Abs(high-close)*1000) / 1000,
+		LC: math.Round(math.Abs(low-close)*1000) / 1000,
 	}
 }

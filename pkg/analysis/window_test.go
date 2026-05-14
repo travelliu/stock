@@ -66,7 +66,7 @@ func TestWindowMeans_Empty(t *testing.T) {
 
 func TestCompositeMeans_NoneTreatedAsZero(t *testing.T) {
 	m := func(v float64) *float64 { return &v }
-	wm := analysis.MeansResult{
+	wm := models.MeansResult{
 		"历史":  {"spread_oh": m(4.0), "spread_ol": nil},
 		"近3月": {"spread_oh": m(2.0), "spread_ol": nil},
 		"近1月": {"spread_oh": m(1.0), "spread_ol": nil},

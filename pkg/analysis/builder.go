@@ -46,7 +46,7 @@ func Build(in models.Input) models.AnalysisResult {
 	return result
 }
 
-func buildModelTable(wmeans MeansResult, comp map[string]float64) models.ModelTable {
+func buildModelTable(wmeans models.MeansResult, comp map[string]float64) models.ModelTable {
 	headers := append([]string{"时段"}, ModelSpreadLabels...)
 	rows := make([][]string, 0, len(Names)+1)
 	for _, wname := range Names {
@@ -64,7 +64,7 @@ func buildModelTable(wmeans MeansResult, comp map[string]float64) models.ModelTa
 	return models.ModelTable{Headers: headers, Rows: rows}
 }
 
-func buildReferenceTable(openPrice float64, actualHigh, actualLow, actualClose *float64, wm MeansResult, _ map[string]float64) models.ReferenceTable {
+func buildReferenceTable(openPrice float64, actualHigh, actualLow, actualClose *float64, wm models.MeansResult, _ map[string]float64) models.ReferenceTable {
 	headers := []string{
 		"", "历史参考价", "近3月参考价", "近1月参考价", "近2周参考价",
 		"最低价反推(当日最低价)", "最高价反推(当日最高价)", "均值", "正负算一",
@@ -77,7 +77,7 @@ func buildReferenceTable(openPrice float64, actualHigh, actualLow, actualClose *
 	return models.ReferenceTable{Headers: headers, Rows: rows}
 }
 
-func highRow(openPrice float64, actualLow *float64, wm MeansResult) []string {
+func highRow(openPrice float64, actualLow *float64, wm models.MeansResult) []string {
 	row := []string{"最高价预测"}
 	for _, wname := range Names {
 		v := wm[wname]["spread_oh"]
@@ -99,7 +99,7 @@ func highRow(openPrice float64, actualLow *float64, wm MeansResult) []string {
 	return row
 }
 
-func lowRow(openPrice float64, actualHigh *float64, wm MeansResult) []string {
+func lowRow(openPrice float64, actualHigh *float64, wm models.MeansResult) []string {
 	row := []string{"最低价预测"}
 	for _, wname := range Names {
 		v := wm[wname]["spread_ol"]
@@ -121,7 +121,7 @@ func lowRow(openPrice float64, actualHigh *float64, wm MeansResult) []string {
 	return row
 }
 
-func closeRow(actualHigh, actualLow *float64, wm MeansResult) []string {
+func closeRow(actualHigh, actualLow *float64, wm models.MeansResult) []string {
 	row := []string{"收盘价预测", "/", "/", "/", "/"}
 	lc2w := wm["近2周"]["spread_lc"]
 	if actualLow != nil && lc2w != nil {

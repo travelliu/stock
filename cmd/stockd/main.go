@@ -33,7 +33,7 @@ func main() {
 		fmt.Printf("stockd %s (built %s)\n", Version, BuildTime)
 		return
 	}
-
+	fmt.Println(os.Getwd())
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
 

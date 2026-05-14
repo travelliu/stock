@@ -20,7 +20,7 @@ type DailyRequest struct {
 // re-sort as needed.
 func Daily(ctx context.Context, c *Client, token string, req DailyRequest) ([]models.DailyBar, error) {
 	params := map[string]any{
-		"ts_code":    req.TsCode,
+		"ts_code":    utils.ToTushareCode(req.TsCode),
 		"start_date": req.StartDate,
 		"end_date":   req.EndDate,
 	}

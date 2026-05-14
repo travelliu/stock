@@ -10,7 +10,11 @@ import (
 
 func AnalysisTable(r models.AnalysisResult) {
 	fmt.Printf("\n%s (%s)\n", r.StockName, r.TsCode)
-	fmt.Printf("昨收: %.2f\n\n", r.YesterdayClose)
+	if r.YesterdayClose != nil {
+		fmt.Printf("昨收: %.2f\n\n", *r.YesterdayClose)
+	} else {
+		fmt.Printf("昨收: -\n\n")
+	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(w, join(r.ModelTable.Headers, "\t")+"\t")

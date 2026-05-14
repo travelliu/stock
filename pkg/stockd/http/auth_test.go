@@ -15,9 +15,9 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
+	"stock/pkg/models"
 	"stock/pkg/stockd/auth"
 	"stock/pkg/stockd/db"
-	"stock/pkg/stockd/models"
 	"stock/pkg/stockd/services/analysis"
 	"stock/pkg/stockd/services/bars"
 	"stock/pkg/stockd/services/draft"
@@ -54,7 +54,7 @@ func setupAuthRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
 	h := http2.NewHandler(userSvc, tokenSvc, stockSvc, portfolioSvc, draftSvc, barsSvc, analysisSvc, schedulerSvc)
 	r.POST("/api/auth/login", h.Login)
 	r.POST("/api/auth/logout", h.Logout)
-	r.GET("/api/auth/me", AuthRequired(), h.Me)
+	r.GET("/api/auth/me", http2.AuthRequired(), h.Me)
 	return r, gdb
 }
 

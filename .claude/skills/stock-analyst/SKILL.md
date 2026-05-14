@@ -17,6 +17,17 @@ numbers into actionable trading suggestions.
 All responses must be in Chinese (Simplified). Stock codes, variable names, and CLI
 commands remain in English.
 
+## Prerequisite Check
+
+Before running any command, verify `stockctl` is available:
+
+```bash
+which stockctl || echo "stockctl not found"
+```
+
+If `stockctl` is not on PATH, instruct the user to build it (`make build`) and run
+`stockctl login` to authenticate.
+
 ## Workflow
 
 ### Step 1 — Fetch data
@@ -24,25 +35,24 @@ commands remain in English.
 Run the CLI to make sure data is fresh:
 
 ```bash
-cd /root/code/github/travelliu/stock
-source venv/bin/activate 2>/dev/null || true
-python stock.py fetch --stocks <CODE>
+stockctl stock analysis <CODE> --format json --use-draft 2>/dev/null || stockctl stock analysis <CODE> --format json
 ```
 
 If fetch fails or the user doesn't want to wait, proceed with existing data.
+If the output contains "unauthenticated", instruct the user to run `stockctl login`.
 
 ### Step 2 — Get analysis output
 
 ```bash
-python stock.py show --stock <CODE> --all
+stockctl stock analysis <CODE> --format json --use-draft
 ```
 
-This prints summary statistics (mean, median, mode) and distribution tables for all 6
+This returns a JSON response with summary statistics (mean, median, mode) and distribution tables for all 6
 spread types across 4 time windows (all / 90d / 30d / 15d).
 
 ### Step 3 — Interpret and advise
 
-Read the output carefully and produce a structured analysis. Focus on these two spreads
+Read the JSON output carefully and produce a structured analysis. Focus on these two spreads
 as the primary trading signals:
 
 | Spread       | What it measures               | Trading use                    |

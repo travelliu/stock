@@ -15,7 +15,6 @@ import (
 	root "stock"
 	"stock/pkg/stockd/auth"
 	"stock/pkg/stockd/config"
-	"stock/pkg/stockd/http/handler"
 	"stock/pkg/stockd/services/analysis"
 	"stock/pkg/stockd/services/bars"
 	"stock/pkg/stockd/services/draft"
@@ -37,7 +36,7 @@ func NewRouter(gdb *gorm.DB, cfg *config.Config, sched *scheduler.Service) *gin.
 	barsSvc := bars.New(gdb, tushare.NewClient(tushare.WithBaseURL(cfg.Tushare.BaseURL)))
 	analysisSvc := analysis.New(gdb)
 
-	h := handler.NewHandler(userSvc, tokenSvc, stockSvc, portfolioSvc, draftSvc, barsSvc, analysisSvc, sched)
+	h := NewHandler(userSvc, tokenSvc, stockSvc, portfolioSvc, draftSvc, barsSvc, analysisSvc, sched)
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
@@ -84,18 +83,19 @@ func NewRouter(gdb *gorm.DB, cfg *config.Config, sched *scheduler.Service) *gin.
 	me.POST("/password", h.ChangePassword)
 
 	api.GET("/stocks", h.SearchStocks)
-	api.GET("/stocks/:tsCode", h.GetStock)
+	api.GET("/stocks/"+tsCodeUrl, h.GetStock)
 
 	pr := api.Group("/portfolio")
 	pr.Use(AuthRequired())
 	pr.GET("", h.ListPortfolio)
 	pr.POST("", h.AddPortfolio)
-	pr.DELETE("/:tsCode", h.RemovePortfolio)
-	pr.PATCH("/:tsCode", h.UpdatePortfolioNote)
+	prTs := pr.Group("/" + tsCodeUrl)
+	prTs.DELETE("", h.RemovePortfolio)
+	prTs.PATCH("", h.UpdatePortfolioNote)
 
 	br := api.Group("/bars")
 	br.Use(AuthRequired())
-	br.GET("/:tsCode", h.QueryBars)
+	br.GET("/"+tsCodeUrl, h.QueryBars)
 
 	dr := api.Group("/drafts")
 	dr.Use(AuthRequired())
@@ -105,7 +105,7 @@ func NewRouter(gdb *gorm.DB, cfg *config.Config, sched *scheduler.Service) *gin.
 
 	anr := api.Group("/analysis")
 	anr.Use(AuthRequired())
-	anr.GET("/:tsCode", h.GetAnalysis)
+	anr.GET("/"+tsCodeUrl, h.GetAnalysis)
 
 	r.Use(static.Serve("/", root.EmbedFolder()))
 	r.NoRoute(func(c *gin.Context) {

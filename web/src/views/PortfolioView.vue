@@ -3,12 +3,12 @@
     <h2>我的持仓</h2>
     <el-button type="primary" @click="showAdd = true">添加股票</el-button>
     <el-table :data="portfolioStore.items" style="margin-top: 16px;">
-      <el-table-column prop="ts_code" label="代码" />
+      <el-table-column prop="tsCode" label="代码" />
       <el-table-column prop="note" label="备注" />
       <el-table-column label="操作">
         <template #default="{ row }">
-          <el-button link type="primary" @click="$router.push(`/stock/${row.ts_code}`)">详情</el-button>
-          <el-button link type="danger" @click="portfolioStore.remove(row.ts_code)">删除</el-button>
+          <el-button link type="primary" @click="$router.push(`/stock/${row.tsCode}`)">详情</el-button>
+          <el-button link type="danger" @click="portfolioStore.remove(row.tsCode)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -59,8 +59,8 @@ async function searchStocks(query: string) {
   if (!query) return
   const { data } = await client.get('/stocks', { params: { q: query, limit: 20 } })
   stockOptions.value = data.map((s: any) => ({
-    value: s.ts_code,
-    label: `${s.ts_code} ${s.name}`,
+    value: s.tsCode,
+    label: `${s.tsCode} ${s.name}`,
   }))
 }
 

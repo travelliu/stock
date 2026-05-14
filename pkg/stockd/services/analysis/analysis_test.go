@@ -11,8 +11,8 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	"stock/pkg/stockd/db"
 	"stock/pkg/models"
+	"stock/pkg/stockd/db"
 	"stock/pkg/stockd/services/analysis"
 )
 

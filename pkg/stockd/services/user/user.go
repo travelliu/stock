@@ -8,8 +8,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"stock/pkg/stockd/auth"
 	"stock/pkg/models"
+	"stock/pkg/stockd/auth"
 )
 
 var (
@@ -24,18 +24,18 @@ func New(db *gorm.DB) *Service { return &Service{db: db} }
 
 // DTO returned to callers. Never carries the password hash.
 type User struct {
-	ID           uint
-	Username     string
-	Role         string
-	Disabled     bool
-	TushareToken string
+	ID           uint   `json:"ID,omitempty"`
+	Username     string `json:"username,omitempty"`
+	Role         string `json:"role,omitempty"`
+	Disabled     bool   `json:"disabled,omitempty"`
+	TushareToken string `json:"tushareToken,omitempty"`
 }
 
 type CreateInput struct {
-	Username     string
-	Password     string
-	Role         string // "user" | "admin"
-	TushareToken string
+	Username     string `json:"username,omitempty"`
+	Password     string `json:"password,omitempty"`
+	Role         string `json:"role,omitempty"` // "user" | "admin"
+	TushareToken string `json:"tushareToken,omitempty"`
 }
 
 func toDTO(u *models.User) User {

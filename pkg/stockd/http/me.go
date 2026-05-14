@@ -1,4 +1,4 @@
-package handler
+package http
 
 import (
 	"strconv"
@@ -24,7 +24,7 @@ func (h *handler) ListTokens(c *gin.Context) {
 func (h *handler) IssueToken(c *gin.Context) {
 	var req struct {
 		Name      string     `json:"name"`
-		ExpiresAt *time.Time `json:"expires_at,omitempty"`
+		ExpiresAt *time.Time `json:"expiresAt,omitempty"`
 	}
 	if err := c.BindJSON(&req); err != nil {
 		utils.HTTPRequestFailedV4(c, err, 600)

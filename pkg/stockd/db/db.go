@@ -10,8 +10,8 @@ import (
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
-	"stock/pkg/stockd/config"
 	"stock/pkg/models"
+	"stock/pkg/stockd/config"
 )
 
 // Open returns a configured *gorm.DB and runs AutoMigrate.

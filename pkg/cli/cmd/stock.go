@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"stock/pkg/models"
 
 	"github.com/spf13/cobra"
 
@@ -21,10 +22,7 @@ var stockSearchCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := client.New(cfg.ServerURL, cfg.Token)
-		var res []struct {
-			TsCode string `json:"ts_code"`
-			Name   string `json:"name"`
-		}
+		var res []*models.Stock
 		if err := c.GET("/api/stocks?q="+args[0], &res); err != nil {
 			return err
 		}
@@ -73,7 +71,7 @@ var stockAnalysisCmd = &cobra.Command{
 			return nil
 		}
 
-		var result render.AnalysisResult
+		var result models.AnalysisResult
 		if err := c.GET(path, &result); err != nil {
 			return err
 		}
@@ -91,13 +89,7 @@ var stockHistoryCmd = &cobra.Command{
 		from, _ := cmd.Flags().GetString("from")
 		to, _ := cmd.Flags().GetString("to")
 		path := fmt.Sprintf("/api/bars/%s?from=%s&to=%s", args[0], from, to)
-		var res []struct {
-			TradeDate string  `json:"trade_date"`
-			Open      float64 `json:"open"`
-			High      float64 `json:"high"`
-			Low       float64 `json:"low"`
-			Close     float64 `json:"close"`
-		}
+		var res []*models.DailyBar
 		if err := c.GET(path, &res); err != nil {
 			return err
 		}

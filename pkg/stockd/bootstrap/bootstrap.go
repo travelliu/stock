@@ -9,8 +9,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 
-	"stock/pkg/stockd/auth"
 	"stock/pkg/models"
+	"stock/pkg/stockd/auth"
 )
 
 // EnsureAdmin seeds admin/<random-password> when the users table is empty.

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"stock/pkg/models"
 
 	"github.com/spf13/cobra"
 
@@ -18,10 +19,7 @@ var portfolioListCmd = &cobra.Command{
 	Short: "List tracked stocks",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := client.New(cfg.ServerURL, cfg.Token)
-		var res []struct {
-			TsCode string `json:"ts_code"`
-			Note   string `json:"note"`
-		}
+		var res []*models.PortfolioReq
 		if err := c.GET("/api/portfolio", &res); err != nil {
 			return err
 		}
@@ -39,7 +37,8 @@ var portfolioAddCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := client.New(cfg.ServerURL, cfg.Token)
 		note, _ := cmd.Flags().GetString("note")
-		return c.POST("/api/portfolio", map[string]string{"ts_code": args[0], "note": note}, nil)
+		return c.POST("/api/portfolio",
+			&models.PortfolioReq{Note: note, TsCode: args[0]}, nil)
 	},
 }
 

@@ -1,9 +1,10 @@
-package handler_test
+package http_test
 
 import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	http2 "stock/pkg/stockd/http"
 	"strings"
 	"testing"
 
@@ -16,9 +17,7 @@ import (
 
 	"stock/pkg/stockd/auth"
 	"stock/pkg/stockd/db"
-	httppkg "stock/pkg/stockd/http"
-	"stock/pkg/stockd/http/handler"
-	"stock/pkg/models"
+	"stock/pkg/stockd/models"
 	"stock/pkg/stockd/services/analysis"
 	"stock/pkg/stockd/services/bars"
 	"stock/pkg/stockd/services/draft"
@@ -52,10 +51,10 @@ func setupAuthRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
 	barsSvc := bars.New(gdb, tushare.NewClient())
 	analysisSvc := analysis.New(gdb)
 	schedulerSvc := scheduler.New(gdb)
-	h := handler.NewHandler(userSvc, tokenSvc, stockSvc, portfolioSvc, draftSvc, barsSvc, analysisSvc, schedulerSvc)
+	h := http2.NewHandler(userSvc, tokenSvc, stockSvc, portfolioSvc, draftSvc, barsSvc, analysisSvc, schedulerSvc)
 	r.POST("/api/auth/login", h.Login)
 	r.POST("/api/auth/logout", h.Logout)
-	r.GET("/api/auth/me", httppkg.AuthRequired(), h.Me)
+	r.GET("/api/auth/me", AuthRequired(), h.Me)
 	return r, gdb
 }
 

@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-table :data="bars" height="500">
-      <el-table-column prop="trade_date" label="日期" />
+      <el-table-column prop="tradeDate" label="日期" />
       <el-table-column prop="open" label="开盘" />
       <el-table-column prop="high" label="最高" />
       <el-table-column prop="low" label="最低" />

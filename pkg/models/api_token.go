@@ -3,11 +3,11 @@ package models
 import "time"
 
 type APIToken struct {
-	ID         uint   `gorm:"primaryKey"`
-	UserID     uint   `gorm:"index;not null"`
-	Name       string `gorm:"size:64;not null"`
-	TokenHash  string `gorm:"uniqueIndex;size:64;not null"`
-	LastUsedAt *time.Time
-	ExpiresAt  *time.Time
-	CreatedAt  time.Time
+	ID         uint       `gorm:"primaryKey" json:"id"`
+	UserID     uint       `gorm:"index;not null" json:"userID"`
+	Name       string     `gorm:"size:64;not null" json:"name"`
+	TokenHash  string     `gorm:"uniqueIndex;size:64;not null" json:"tokenHash"`
+	LastUsedAt *time.Time `json:"lastUsedAt"`
+	ExpiresAt  *time.Time `json:"expiresAt"`
+	CreatedAt  time.Time  `json:"createdAt"`
 }

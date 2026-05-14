@@ -67,7 +67,7 @@ func TestParity_AgainstPythonFixtures(t *testing.T) {
 					},
 				})
 			}
-			in := analysis.Input{
+			in := models.Input{
 				TsCode:      fx.Code,
 				Rows:        bars,
 				OpenPrice:   ptrFloatIf(fx.OpenPrice),

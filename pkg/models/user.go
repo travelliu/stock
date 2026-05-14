@@ -3,12 +3,12 @@ package models
 import "time"
 
 type User struct {
-	ID           uint   `gorm:"primaryKey"`
-	Username     string `gorm:"uniqueIndex;size:64;not null"`
-	PasswordHash string `gorm:"not null"`
-	Role         string `gorm:"size:16;not null"`
-	TushareToken string `gorm:"size:128"`
-	Disabled     bool   `gorm:"not null;default:false"`
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID           uint      `gorm:"primaryKey" json:"id,omitempty"`
+	Username     string    `gorm:"uniqueIndex;size:64;not null" json:"userName,omitempty"`
+	PasswordHash string    `gorm:"not null" json:"passwordHash,omitempty"`
+	Role         string    `gorm:"size:16;not null" json:"role,omitempty"`
+	TushareToken string    `gorm:"size:128" json:"tushareToken,omitempty"`
+	Disabled     bool      `gorm:"not null;default:false" json:"disabled,omitempty"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
 }

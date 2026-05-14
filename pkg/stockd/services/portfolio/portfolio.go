@@ -14,8 +14,6 @@ type Service struct{ db *gorm.DB }
 
 func New(db *gorm.DB) *Service { return &Service{db: db} }
 
-type Entry = models.Portfolio
-
 func (s *Service) Add(ctx context.Context, userID uint, tsCode, note string) error {
 	row := &models.Portfolio{
 		UserID: userID, TsCode: tsCode, Note: note, AddedAt: time.Now(),
@@ -39,8 +37,8 @@ func (s *Service) UpdateNote(ctx context.Context, userID uint, tsCode, note stri
 		Update("note", note).Error
 }
 
-func (s *Service) List(ctx context.Context, userID uint) ([]Entry, error) {
-	var rows []models.Portfolio
+func (s *Service) List(ctx context.Context, userID uint) ([]*models.Portfolio, error) {
+	var rows []*models.Portfolio
 	err := s.db.WithContext(ctx).
 		Where("user_id = ?", userID).
 		Order("added_at DESC").Find(&rows).Error

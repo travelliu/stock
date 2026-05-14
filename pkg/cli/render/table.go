@@ -4,26 +4,11 @@ package render
 import (
 	"fmt"
 	"os"
+	"stock/pkg/models"
 	"text/tabwriter"
 )
 
-// AnalysisResult mirrors pkg/analysis.AnalysisResult JSON shape.
-type AnalysisResult struct {
-	TsCode         string   `json:"ts_code"`
-	StockName      string   `json:"stock_name"`
-	YesterdayClose float64  `json:"yesterday_close"`
-	Windows        []string `json:"windows"`
-	ModelTable     struct {
-		Headers []string   `json:"headers"`
-		Rows    [][]string `json:"rows"`
-	} `json:"model_table"`
-	ReferenceTable struct {
-		Headers []string   `json:"headers"`
-		Rows    [][]string `json:"rows"`
-	} `json:"reference_table"`
-}
-
-func AnalysisTable(r AnalysisResult) {
+func AnalysisTable(r models.AnalysisResult) {
 	fmt.Printf("\n%s (%s)\n", r.StockName, r.TsCode)
 	fmt.Printf("昨收: %.2f\n\n", r.YesterdayClose)
 

@@ -18,34 +18,8 @@ var SpreadKeys = []string{
 	"spread_hc", "spread_lc", "spread_oc",
 }
 
-type Window struct {
-	Name string
-	Rows []models.DailyBar
-}
-
-func Make(rows []models.DailyBar) []Window {
-	sorted := make([]models.DailyBar, len(rows))
-	copy(sorted, rows)
-	sort.Slice(sorted, func(i, j int) bool { return sorted[i].TradeDate > sorted[j].TradeDate })
-	out := make([]Window, len(Names))
-	for i, name := range Names {
-		if Days[i] == nil {
-			out[i] = Window{Name: name, Rows: sorted}
-			continue
-		}
-		end := *Days[i]
-		if end > len(sorted) {
-			end = len(sorted)
-		}
-		out[i] = Window{Name: name, Rows: sorted[:end]}
-	}
-	return out
-}
-
-type MeansResult map[string]map[string]*float64
-
-func Means(windows []Window) MeansResult {
-	out := make(MeansResult, len(windows))
+func Means(windows []models.Window) models.MeansResult {
+	out := make(models.MeansResult, len(windows))
 	for _, w := range windows {
 		row := make(map[string]*float64, len(SpreadKeys))
 		for _, key := range SpreadKeys {
@@ -62,7 +36,7 @@ func Means(windows []Window) MeansResult {
 	return out
 }
 
-func Composite(m MeansResult) map[string]float64 {
+func Composite(m models.MeansResult) map[string]float64 {
 	out := make(map[string]float64, len(SpreadKeys))
 	for _, key := range SpreadKeys {
 		var vals []float64
@@ -76,6 +50,24 @@ func Composite(m MeansResult) map[string]float64 {
 			continue
 		}
 		out[key] = mean(vals)
+	}
+	return out
+}
+func Make(rows []models.DailyBar) []models.Window {
+	sorted := make([]models.DailyBar, len(rows))
+	copy(sorted, rows)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].TradeDate > sorted[j].TradeDate })
+	out := make([]models.Window, len(Names))
+	for i, name := range Names {
+		if Days[i] == nil {
+			out[i] = models.Window{Name: name, Rows: sorted}
+			continue
+		}
+		end := *Days[i]
+		if end > len(sorted) {
+			end = len(sorted)
+		}
+		out[i] = models.Window{Name: name, Rows: sorted[:end]}
 	}
 	return out
 }

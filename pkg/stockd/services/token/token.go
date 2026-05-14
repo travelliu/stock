@@ -7,8 +7,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"stock/pkg/stockd/auth"
 	"stock/pkg/models"
+	"stock/pkg/stockd/auth"
 )
 
 type Service struct{ db *gorm.DB }
@@ -16,19 +16,19 @@ type Service struct{ db *gorm.DB }
 func New(db *gorm.DB) *Service { return &Service{db: db} }
 
 type IssueInput struct {
-	UserID    uint
-	Name      string
-	ExpiresAt *time.Time
+	UserID    uint       `json:"userID,omitempty"`
+	Name      string     `json:"name,omitempty"`
+	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
 }
 
 type Token struct {
-	ID         uint
-	UserID     uint
-	Name       string
-	LastUsedAt *time.Time
-	ExpiresAt  *time.Time
-	CreatedAt  time.Time
-	PlainOnce  string // set only by Issue's return; never persisted/returned from List
+	ID         uint       `json:"id,omitempty"`
+	UserID     uint       `json:"userID,omitempty"`
+	Name       string     `json:"name,omitempty"`
+	LastUsedAt *time.Time `json:"lastUsedAt,omitempty"`
+	ExpiresAt  *time.Time `json:"expiresAt,omitempty"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	PlainOnce  string     `json:"plainOnce,omitempty"` // set only by Issue's return; never persisted/returned from List
 }
 
 // Issue creates a new API token and returns (plain, dto). The plain text is

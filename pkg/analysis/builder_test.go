@@ -16,7 +16,7 @@ func bar(date string, oh, ol, hl, hc, lc, oc float64) models.DailyBar {
 }
 
 func TestBuild_ModelTable(t *testing.T) {
-	in := Input{
+	in := models.Input{
 		TsCode:    "600519.SH",
 		StockName: "贵州茅台",
 		Rows:      []models.DailyBar{bar("20240104", 1, 0.5, 1.5, 0.5, 1.0, 0.5)},
@@ -33,7 +33,7 @@ func TestBuild_ReferenceTable_WithOpenPrice(t *testing.T) {
 		bar("20240104", 1, 0.5, 1.5, 0.5, 1.0, 0.5),
 		bar("20240103", 2, 1.0, 3.0, 1.0, 2.0, 1.0),
 	}
-	in := Input{TsCode: "X", Rows: rows, OpenPrice: &open}
+	in := models.Input{TsCode: "X", Rows: rows, OpenPrice: &open}
 	res := Build(in)
 	assert.NotEmpty(t, res.ReferenceTable.Rows)
 }

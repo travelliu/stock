@@ -6,10 +6,10 @@
 
     <h3 style="margin-top: 24px;">最近执行</h3>
     <el-table :data="jobs">
-      <el-table-column prop="job_name" label="任务" />
+      <el-table-column prop="jobName" label="任务" />
       <el-table-column prop="status" label="状态" />
-      <el-table-column prop="started_at" label="开始时间" />
-      <el-table-column prop="finished_at" label="结束时间" />
+      <el-table-column prop="startedAt" label="开始时间" />
+      <el-table-column prop="finishedAt" label="结束时间" />
     </el-table>
   </div>
 </template>

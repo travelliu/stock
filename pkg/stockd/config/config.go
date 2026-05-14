@@ -53,8 +53,10 @@ type LoggingConfig struct {
 
 func Load(path string) (*Config, error) {
 	v := viper.New()
-	v.SetConfigFile(path)
-
+	v.AddConfigPath(path)
+	v.AddConfigPath("./")
+	v.AddConfigPath("./config")
+	v.SetConfigName("config")
 	v.SetDefault("server.listen", ":8443")
 	v.SetDefault("database.driver", "sqlite")
 	v.SetDefault("scheduler.enabled", true)

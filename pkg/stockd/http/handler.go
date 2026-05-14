@@ -1,5 +1,5 @@
 // Package handler implements HTTP handlers for the stockd API.
-package handler
+package http
 
 import (
 	"stock/pkg/stockd/services/analysis"

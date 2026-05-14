@@ -1,10 +1,17 @@
-package handler
+package http
 
 import (
+	"stock/pkg/models"
+
 	"github.com/gin-gonic/gin"
 
 	"stock/pkg/stockd/auth"
 	"stock/pkg/stockd/utils"
+)
+
+const (
+	tsCodeValue = "tsCode"
+	tsCodeUrl   = ":tsCode"
 )
 
 func (h *handler) ListPortfolio(c *gin.Context) {
@@ -18,11 +25,8 @@ func (h *handler) ListPortfolio(c *gin.Context) {
 }
 
 func (h *handler) AddPortfolio(c *gin.Context) {
-	var req struct {
-		TsCode string `json:"ts_code"`
-		Note   string `json:"note,omitempty"`
-	}
-	if err := c.BindJSON(&req); err != nil {
+	var req *models.PortfolioReq
+	if err := c.BindJSON(req); err != nil {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return
 	}
@@ -36,7 +40,7 @@ func (h *handler) AddPortfolio(c *gin.Context) {
 
 func (h *handler) RemovePortfolio(c *gin.Context) {
 	u := auth.User(c)
-	if err := h.portfolioSvc.Remove(c.Request.Context(), u.ID, c.Param("tsCode")); err != nil {
+	if err := h.portfolioSvc.Remove(c.Request.Context(), u.ID, c.Param(tsCodeValue)); err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}
@@ -44,15 +48,13 @@ func (h *handler) RemovePortfolio(c *gin.Context) {
 }
 
 func (h *handler) UpdatePortfolioNote(c *gin.Context) {
-	var req struct {
-		Note string `json:"note"`
-	}
-	if err := c.BindJSON(&req); err != nil {
+	var req *models.PortfolioReq
+	if err := c.BindJSON(req); err != nil {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return
 	}
 	u := auth.User(c)
-	if err := h.portfolioSvc.UpdateNote(c.Request.Context(), u.ID, c.Param("tsCode"), req.Note); err != nil {
+	if err := h.portfolioSvc.UpdateNote(c.Request.Context(), u.ID, c.Param(tsCodeValue), req.Note); err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}

@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"stock/pkg/models"
 	"stock/pkg/stockd/auth"
 	"stock/pkg/stockd/db"
-	"stock/pkg/models"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

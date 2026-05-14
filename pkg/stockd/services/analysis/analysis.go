@@ -30,11 +30,11 @@ type Input struct {
 	WithDraft   bool
 }
 
-func (s *Service) Run(ctx context.Context, in Input) (pkganalysis.AnalysisResult, error) {
+func (s *Service) Run(ctx context.Context, in Input) (models.AnalysisResult, error) {
 	var bars []models.DailyBar
 	err := s.db.WithContext(ctx).Where("ts_code = ?", in.TsCode).Order("trade_date ASC").Find(&bars).Error
 	if err != nil {
-		return pkganalysis.AnalysisResult{}, err
+		return models.AnalysisResult{}, err
 	}
 
 	if in.WithDraft {
@@ -57,7 +57,7 @@ func (s *Service) Run(ctx context.Context, in Input) (pkganalysis.AnalysisResult
 				in.ActualClose = d.Close
 			}
 		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return pkganalysis.AnalysisResult{}, err
+			return models.AnalysisResult{}, err
 		}
 	}
 
@@ -67,7 +67,7 @@ func (s *Service) Run(ctx context.Context, in Input) (pkganalysis.AnalysisResult
 		name = st.Name
 	}
 
-	res := pkganalysis.Build(pkganalysis.Input{
+	res := pkganalysis.Build(models.Input{
 		TsCode: in.TsCode, StockName: name,
 		Rows:        bars,
 		OpenPrice:   in.OpenPrice,

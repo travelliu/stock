@@ -20,12 +20,12 @@ var ModelSpreadLabels = []string{
 }
 
 // Build runs the full pipeline.
-func Build(in Input) AnalysisResult {
+func Build(in models.Input) models.AnalysisResult {
 	windows := Make(in.Rows)
 	wmeans := Means(windows)
 	comp := Composite(wmeans)
 
-	result := AnalysisResult{
+	result := models.AnalysisResult{
 		TsCode:         in.TsCode,
 		StockName:      in.StockName,
 		Windows:        Names,
@@ -46,7 +46,7 @@ func Build(in Input) AnalysisResult {
 	return result
 }
 
-func buildModelTable(wmeans MeansResult, comp map[string]float64) ModelTable {
+func buildModelTable(wmeans MeansResult, comp map[string]float64) models.ModelTable {
 	headers := append([]string{"时段"}, ModelSpreadLabels...)
 	rows := make([][]string, 0, len(Names)+1)
 	for _, wname := range Names {
@@ -61,10 +61,10 @@ func buildModelTable(wmeans MeansResult, comp map[string]float64) ModelTable {
 		comprow = append(comprow, fmt.Sprintf("%.2f", comp[key]))
 	}
 	rows = append(rows, comprow)
-	return ModelTable{Headers: headers, Rows: rows}
+	return models.ModelTable{Headers: headers, Rows: rows}
 }
 
-func buildReferenceTable(openPrice float64, actualHigh, actualLow, actualClose *float64, wm MeansResult, _ map[string]float64) ReferenceTable {
+func buildReferenceTable(openPrice float64, actualHigh, actualLow, actualClose *float64, wm MeansResult, _ map[string]float64) models.ReferenceTable {
 	headers := []string{
 		"", "历史参考价", "近3月参考价", "近1月参考价", "近2周参考价",
 		"最低价反推(当日最低价)", "最高价反推(当日最高价)", "均值", "正负算一",
@@ -74,7 +74,7 @@ func buildReferenceTable(openPrice float64, actualHigh, actualLow, actualClose *
 		lowRow(openPrice, actualHigh, wm),
 		closeRow(actualHigh, actualLow, wm),
 	}
-	return ReferenceTable{Headers: headers, Rows: rows}
+	return models.ReferenceTable{Headers: headers, Rows: rows}
 }
 
 func highRow(openPrice float64, actualLow *float64, wm MeansResult) []string {

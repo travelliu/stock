@@ -1,4 +1,4 @@
-package handler
+package http
 
 import (
 	"strconv"
@@ -20,7 +20,7 @@ func (h *handler) SearchStocks(c *gin.Context) {
 }
 
 func (h *handler) GetStock(c *gin.Context) {
-	tsCode := c.Param("tsCode")
+	tsCode := c.Param(tsCodeValue)
 	s, err := h.stockSvc.Get(c.Request.Context(), tsCode)
 	if err != nil {
 		utils.HTTPRequestFailedV4(c, nil, utils.ErrStockNotFound)

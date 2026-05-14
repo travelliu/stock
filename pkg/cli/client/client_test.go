@@ -21,7 +21,9 @@ func TestGET(t *testing.T) {
 	defer srv.Close()
 
 	c := client.New(srv.URL, "stk_test")
-	var out struct{ Key string `json:"key"` }
+	var out struct {
+		Key string `json:"key"`
+	}
 	require.NoError(t, c.GET("/test", &out))
 	assert.Equal(t, "val", out.Key)
 }

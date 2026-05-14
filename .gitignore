@@ -1,7 +1,17 @@
-.venv/
+# Go
+/bin/
+*.test
+coverage.out
+coverage.html
+
+# Frontend
+/web/node_modules/
+/web/dist/
+
+# Existing Python (preserve)
 __pycache__/
 *.pyc
-data/
+.venv/
 .pytest_cache/
 .env
-docs/superpowers
+data/*.db

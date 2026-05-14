@@ -24,4 +24,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
   },
+  test: {
+    exclude: ['e2e/**', 'node_modules/**'],
+    passWithNoTests: true,
+  },
 })

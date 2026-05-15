@@ -144,14 +144,14 @@ function buildRows(): PredictRow[] {
           {{ row.values[i] }}
         </template>
       </el-table-column>
-      <el-table-column label="反推(低)" align="right" prop="reverse" />
-      <el-table-column label="反推(高)" align="right">
+      <el-table-column label="最低价反推" align="right" prop="reverse" />
+      <el-table-column label="最高价反推" align="right">
         <template #default="{ row }">
           {{ (row as any)._reverseHigh ?? '/' }}
         </template>
       </el-table-column>
       <el-table-column label="均值" align="right" prop="mean" />
-      <el-table-column label="方向" width="60" align="center" prop="direction" />
+      <el-table-column label="正负算一" width="70" align="center" prop="direction" />
     </el-table>
   </el-card>
 </template>

@@ -6,6 +6,8 @@ import { queryBars } from '@/apis/stocks'
 import { getAnalysis, getPredictions, recalcPredictions } from '@/apis/analysis'
 import type { AnalysisResult, AnalysisPrediction, DailyBar } from '@/types/api'
 import SpreadModelTable from '@/components/SpreadModelTable.vue'
+import TradePlanTable from '@/components/TradePlanTable.vue'
+import SpreadAnalysisTable from '@/components/SpreadAnalysisTable.vue'
 import SpreadHistogram from '@/components/SpreadHistogram.vue'
 
 const route = useRoute()
@@ -99,6 +101,10 @@ onMounted(load)
     </el-card>
 
     <SpreadModelTable :result="analysis" />
+
+    <TradePlanTable :result="analysis" />
+
+    <SpreadAnalysisTable :result="analysis" />
 
     <div style="margin-top: 16px">
       <SpreadHistogram :bars="bars" />

@@ -6,12 +6,12 @@ const props = defineProps<{ result?: AnalysisResult | null }>()
 const spreadKeys = ['spreadOH', 'spreadOL', 'spreadHL', 'spreadHC', 'spreadLC', 'spreadOC'] as const
 
 const spreadLabels: Record<string, string> = {
-  spreadOH: 'OH',
-  spreadOL: 'OL',
-  spreadHL: 'HL',
-  spreadHC: 'HC',
-  spreadLC: 'LC',
-  spreadOC: 'OC',
+  spreadOH: '开盘与最高价',
+  spreadOL: '开盘与最低价',
+  spreadHL: '最高与最低价',
+  spreadHC: '最高与收盘价',
+  spreadLC: '最低与收盘价',
+  spreadOC: '开盘与收盘价',
 }
 
 function windowName(id: string): string {

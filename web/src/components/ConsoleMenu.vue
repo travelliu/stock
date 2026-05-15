@@ -11,6 +11,11 @@ const router = useRouter()
 const auth = useAuthStore()
 const lang = useLangStore()
 
+function doLogout() {
+  auth.logout()
+  router.push('/login')
+}
+
 const activeIndex = computed(() => route.path)
 
 function switchLang() {
@@ -51,6 +56,10 @@ function switchLang() {
       <div class="menu-item" @click="switchLang">
         <GIcon name="Globe" />
         <span>{{ lang.lang === 'zh' ? '中' : 'EN' }}</span>
+      </div>
+      <div class="menu-item" @click="doLogout">
+        <GIcon name="SwitchButton" />
+        <span>{{ $t('menu.logout') }}</span>
       </div>
     </div>
   </div>

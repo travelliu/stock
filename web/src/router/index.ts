@@ -45,8 +45,11 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const auth = useAuthStore()
+  if (!auth.initialized) {
+    await auth.fetchMe()
+  }
   if (to.meta.requiresAuth && !auth.user) {
     next('/login')
   } else if (to.meta.requiresAdmin && auth.user?.role !== 'admin') {

@@ -5,12 +5,15 @@ import * as authApi from '@/apis/auth'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
+  const initialized = ref(false)
 
   async function fetchMe() {
     try {
       user.value = await authApi.me()
     } catch {
       user.value = null
+    } finally {
+      initialized.value = true
     }
   }
 
@@ -28,5 +31,5 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
   }
 
-  return { user, fetchMe, login, logout }
+  return { user, initialized, fetchMe, login, logout }
 })

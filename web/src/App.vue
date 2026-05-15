@@ -1,20 +1,10 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import ConsoleMenu from '@/components/ConsoleMenu.vue'
 
 const route = useRoute()
-const router = useRouter()
 const auth = useAuthStore()
-
-onMounted(() => {
-  auth.fetchMe().then(() => {
-    if (!auth.user && route.meta.requiresAuth) {
-      router.push('/login')
-    }
-  })
-})
 </script>
 
 <template>

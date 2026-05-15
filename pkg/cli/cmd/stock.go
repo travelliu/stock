@@ -98,13 +98,11 @@ var stockHistoryCmd = &cobra.Command{
 		from, _ := cmd.Flags().GetString("from")
 		to, _ := cmd.Flags().GetString("to")
 		path := fmt.Sprintf("/api/bars/%s?from=%s&to=%s", args[0], from, to)
-		var res []*models.DailyBar
+		var res *models.BarsPage
 		if err := c.GET(path, &res); err != nil {
 			return err
 		}
-		for _, b := range res {
-			fmt.Printf("%s  O:%.2f H:%.2f L:%.2f C:%.2f\n", b.TradeDate, b.Open, b.High, b.Low, b.Close)
-		}
+		render.BarsTable(res.Items)
 		return nil
 	},
 }

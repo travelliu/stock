@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"stock/pkg/stockd/services"
 	"strconv"
-	
+
 	"github.com/gin-gonic/gin"
-	
+
 	"stock/pkg/models"
 	"stock/pkg/stockd/utils"
 )

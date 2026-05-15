@@ -398,6 +398,22 @@ func joinSideBySide(tables []string, gap int) string {
 	return strings.Join(lines, "\n")
 }
 
+func BarsTable(items []*models.DailyBar) {
+	headers := []string{"日期", "开盘", "最高", "最低", "收盘", "成交量"}
+	var rows [][]string
+	for _, b := range items {
+		rows = append(rows, []string{
+			b.TradeDate,
+			fmt.Sprintf("%.2f", b.Open),
+			fmt.Sprintf("%.2f", b.High),
+			fmt.Sprintf("%.2f", b.Low),
+			fmt.Sprintf("%.2f", b.Close),
+			fmt.Sprintf("%.0f", b.Vol),
+		})
+	}
+	fmt.Println(analysis.FormatTable(headers, rows))
+}
+
 // PredictionsTable renders prediction records.
 func PredictionsTable(tsCode, stockName string, preds []models.AnalysisPrediction) {
 	fmt.Printf("\n%s (%s) 预测记录\n\n", stockName, tsCode)

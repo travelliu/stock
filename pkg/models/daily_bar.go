@@ -11,3 +11,11 @@ type DailyBar struct {
 	Amount    float64 `json:"amount,omitempty"`
 	Spreads   Spreads `gorm:"embedded;embeddedPrefix:spread_" json:"spreads"`
 }
+
+// BarsPage is the paginated response from QueryStockDailyBarsPage.
+type BarsPage struct {
+	Items []*DailyBar `json:"items"`
+	Total int64       `json:"total"`
+	Page  int         `json:"page"`
+	Limit int         `json:"limit"`
+}

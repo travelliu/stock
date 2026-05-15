@@ -6,9 +6,9 @@ import (
 	"errors"
 	"stock/pkg/stockd/utils"
 	"time"
-
+	
 	"gorm.io/gorm"
-
+	
 	"stock/pkg/models"
 	"stock/pkg/tushare"
 )
@@ -25,16 +25,8 @@ func (s *Service) QueryStockDailyBar(ctx context.Context, tsCode, from, to strin
 	return out, tx.Find(&out).Error
 }
 
-// BarsPage is the paginated response from QueryStockDailyBarsPage.
-type BarsPage struct {
-	Items []models.DailyBar `json:"items"`
-	Total int64             `json:"total"`
-	Page  int               `json:"page"`
-	Limit int               `json:"limit"`
-}
-
 // QueryStockDailyBarsPage returns paginated daily bars ordered newest-first.
-func (s *Service) QueryStockDailyBarsPage(ctx context.Context, tsCode, from, to string, page, limit int) (*BarsPage, error) {
+func (s *Service) QueryStockDailyBarsPage(ctx context.Context, tsCode, from, to string, page, limit int) (*models.BarsPage, error) {
 	if page <= 0 {
 		page = 1
 	}
@@ -52,14 +44,14 @@ func (s *Service) QueryStockDailyBarsPage(ctx context.Context, tsCode, from, to 
 	if err := tx.Count(&total).Error; err != nil {
 		return nil, err
 	}
-	var items []models.DailyBar
+	var items []*models.DailyBar
 	err := tx.Order("trade_date DESC").
 		Offset((page - 1) * limit).Limit(limit).
 		Find(&items).Error
 	if err != nil {
 		return nil, err
 	}
-	return &BarsPage{Items: items, Total: total, Page: page, Limit: limit}, nil
+	return &models.BarsPage{Items: items, Total: total, Page: page, Limit: limit}, nil
 }
 
 func (s *Service) MaxDate(ctx context.Context, tsCode string) (string, error) {

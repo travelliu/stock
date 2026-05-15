@@ -30,8 +30,13 @@ func (h *handler) AddPortfolio(c *gin.Context) {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return
 	}
+	tsCode, err := h.svc.ResolveTsCode(req.GetCode())
+	if err != nil {
+		utils.HTTPRequestFailedV4(c, nil, utils.ErrStockNotFound)
+		return
+	}
 	u := auth.User(c)
-	if err := h.svc.AddPortfolio(c.Request.Context(), u.ID, req.TsCode, req.Note); err != nil {
+	if err := h.svc.AddPortfolio(c.Request.Context(), u.ID, tsCode, req.Note); err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}

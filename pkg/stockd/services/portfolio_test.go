@@ -3,15 +3,16 @@ package services_test
 import (
 	"context"
 	"fmt"
-	"stock/pkg/stockd/services"
 	"testing"
-	
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	
+
+	"stock/pkg/models"
 	"stock/pkg/stockd/db"
+	"stock/pkg/stockd/services"
 )
 
 func openDB(t *testing.T) *gorm.DB {
@@ -53,4 +54,17 @@ func TestRemoveOnlyAffectsOwner(t *testing.T) {
 	require.NoError(t, svc.Remove(ctx, 1, "600519.SH"))
 	list2, _ := svc.List(ctx, 2)
 	assert.Len(t, list2, 1)
+}
+
+func TestListPortfolioEnrichesName(t *testing.T) {
+	gdb := openDB(t)
+	require.NoError(t, gdb.Create(&models.Stock{TsCode: "600519.SH", Code: "600519", Name: "贵州茅台"}).Error)
+	svc := services.New(gdb)
+	require.NoError(t, svc.LoadStockCache(context.Background()))
+	require.NoError(t, svc.Add(context.Background(), 1, "600519.SH", ""))
+	list, err := svc.List(context.Background(), 1)
+	require.NoError(t, err)
+	require.Len(t, list, 1)
+	assert.Equal(t, "贵州茅台", list[0].Name)
+	assert.Equal(t, "600519", list[0].Code)
 }

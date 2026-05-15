@@ -8,23 +8,16 @@ import (
 	"stock/pkg/models"
 )
 
-type StockInfo struct {
-	TsCode   string
-	Name     string
-	Industry string
-}
-
 func (s *Service) LoadStockCache(ctx context.Context) error {
-	var stocks []models.Stock
+	var stocks []*models.Stock
 	if err := s.db.WithContext(ctx).Find(&stocks).Error; err != nil {
 		return err
 	}
-	byCode := make(map[string]StockInfo, len(stocks))
-	byTsCode := make(map[string]StockInfo, len(stocks))
+	byCode := make(map[string]*models.Stock, len(stocks))
+	byTsCode := make(map[string]*models.Stock, len(stocks))
 	for _, st := range stocks {
-		info := StockInfo{TsCode: st.TsCode, Name: st.Name, Industry: st.Industry}
-		byCode[st.Code] = info
-		byTsCode[st.TsCode] = info
+		byCode[st.Code] = st
+		byTsCode[st.TsCode] = st
 	}
 	s.cacheMu.Lock()
 	s.stockCacheByCode = byCode
@@ -35,20 +28,13 @@ func (s *Service) LoadStockCache(ctx context.Context) error {
 
 func (s *Service) ResolveTsCode(code string) (string, error) {
 	if strings.Contains(code, ".") {
-		s.cacheMu.RLock()
-		_, ok := s.stockCacheByTsCode[code]
-		s.cacheMu.RUnlock()
-		if ok {
-			return code, nil
-		}
-		// Accept full codes even if not in cache (e.g. empty cache scenario).
 		return code, nil
 	}
 	s.cacheMu.RLock()
-	info, ok := s.stockCacheByCode[code]
+	st, ok := s.stockCacheByCode[code]
 	s.cacheMu.RUnlock()
 	if !ok {
-		return "", fmt.Errorf("stock not found: %s", code)
+		return "", fmt.Errorf("stock %q not found in cache", code)
 	}
-	return info.TsCode, nil
+	return st.TsCode, nil
 }

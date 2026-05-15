@@ -89,8 +89,8 @@ func TestModelJSONFields(t *testing.T) {
 		},
 		{
 			name: "PortfolioReq",
-			val:  models.PortfolioReq{TsCode: "600519.SH", Note: "test"},
-			want: []string{"tsCode", "note"},
+			val:  models.PortfolioReq{Code: "600519", Note: "test"},
+			want: []string{"code", "note"},
 		},
 		{
 			name:    "APIToken",

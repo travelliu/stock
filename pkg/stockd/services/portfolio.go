@@ -4,7 +4,7 @@ package services
 import (
 	"context"
 	"time"
-	
+
 	"stock/pkg/models"
 )
 
@@ -36,7 +36,22 @@ func (s *Service) ListPortfolio(ctx context.Context, userID uint) ([]*models.Por
 	err := s.db.WithContext(ctx).
 		Where("user_id = ?", userID).
 		Order("added_at DESC").Find(&rows).Error
-	return rows, err
+	if err != nil {
+		return nil, err
+	}
+	s.cacheMu.RLock()
+	for _, r := range rows {
+		if info, ok := s.stockCacheByTsCode[r.TsCode]; ok {
+			r.Name = info.Name
+			r.Code = info.Code
+		}
+		if info, ok := s.stockCacheByCode[r.TsCode]; ok {
+			r.Name = info.Name
+			r.Code = info.Code
+		}
+	}
+	s.cacheMu.RUnlock()
+	return rows, nil
 }
 
 // DistinctTsCodes returns every ts_code referenced by any portfolio (used by

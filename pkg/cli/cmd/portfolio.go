@@ -38,7 +38,7 @@ var portfolioAddCmd = &cobra.Command{
 		c := client.New(cfg.ServerURL, cfg.Token)
 		note, _ := cmd.Flags().GetString("note")
 		return c.POST("/api/portfolio",
-			&models.PortfolioReq{Note: note, TsCode: args[0]}, nil)
+			&models.PortfolioReq{Note: note, Code: args[0]}, nil)
 	},
 }
 

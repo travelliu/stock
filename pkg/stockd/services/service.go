@@ -26,8 +26,8 @@ type Service struct {
 	sf     singleflight.Group
 	logger *logrus.Logger
 
-	stockCacheByCode   map[string]StockInfo
-	stockCacheByTsCode map[string]StockInfo
+	stockCacheByCode   map[string]*models.Stock
+	stockCacheByTsCode map[string]*models.Stock
 	cacheMu            sync.RWMutex
 }
 

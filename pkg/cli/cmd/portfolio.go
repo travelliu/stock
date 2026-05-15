@@ -24,7 +24,7 @@ var portfolioListCmd = &cobra.Command{
 			return err
 		}
 		for _, p := range res {
-			fmt.Printf("%s\t%s\n", p.TsCode, p.Note)
+			fmt.Printf("%s\t%s\t%s\n", p.TsCode, p.Name, p.Note)
 		}
 		return nil
 	},

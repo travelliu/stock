@@ -16,12 +16,15 @@ var loginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Store API token in config",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("API Token (stk_...): ")
-		tok, _ := reader.ReadString('\n')
-		tok = strings.TrimSpace(tok)
+		tok := cfg.Token
 		if tok == "" {
-			return fmt.Errorf("token required")
+			reader := bufio.NewReader(os.Stdin)
+			fmt.Print("API Token (stk_...): ")
+			tok, _ = reader.ReadString('\n')
+			tok = strings.TrimSpace(tok)
+			if tok == "" {
+				return fmt.Errorf("token required")
+			}
 		}
 		c := client.New(cfg.ServerURL, tok)
 		var me models.User

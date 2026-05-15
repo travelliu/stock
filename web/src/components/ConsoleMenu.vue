@@ -31,6 +31,16 @@ function switchLang() {
         <GIcon name="TrendCharts" />
         <span>{{ $t('menu.stock') }}</span>
       </div>
+      <template v-if="auth.user?.role === 'admin'">
+        <div class="menu-item" :class="{ active: activeIndex.startsWith('/admin/users') }" @click="router.push('/admin/users')">
+          <GIcon name="UserFilled" />
+          <span>{{ $t('menu.users') }}</span>
+        </div>
+        <div class="menu-item" :class="{ active: activeIndex.startsWith('/admin/sync') }" @click="router.push('/admin/sync')">
+          <GIcon name="Refresh" />
+          <span>{{ $t('menu.sync') }}</span>
+        </div>
+      </template>
     </div>
 
     <div class="menu-bottom">

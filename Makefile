@@ -36,7 +36,7 @@ GOLDFLAGS = -ldflags '$(LDFLAGS)'
 
 .PHONY: all build test lint fmt vet clean info help web-build \
         dev-up dev-down dev-logs \
-        prod-build prod-up prod-down prod-logs prod-restart
+        selfhost selfhost-build selfhost-stop selfhost-logs
 
 ##@ Build
 
@@ -69,34 +69,6 @@ fmt: ; $(info $(M) running gofmt) @ ## Run go fmt on all source files
 vet: ; $(info $(M) running go vet) @ ## Run go vet
 	$(GO) vet ./...
 
-##@ Dev (local)
-
-dev-up: ; $(info $(M) starting dev MySQL) @ ## Start local MySQL for development
-	$(COMPOSE) up -d
-
-dev-down: ; $(info $(M) stopping dev MySQL) @ ## Stop local MySQL
-	$(COMPOSE) down
-
-dev-logs: ; $(info $(M) tailing dev logs) @ ## Tail MySQL logs
-	$(COMPOSE) logs -f mysql
-
-##@ Production
-
-prod-build: web-build ; $(info $(M) building production image) @ ## Build web then production Docker image
-	VERSION=$(BINARY_VERSION)$(GIT_DIRTY) COMMIT=$(GIT_COMMIT) \
-		$(COMPOSE) -f docker-compose.prod.yml build
-
-prod-up: ; $(info $(M) starting production) @ ## Start production stack (detached)
-	$(COMPOSE) -f docker-compose.prod.yml up -d
-
-prod-down: ; $(info $(M) stopping production) @ ## Stop production stack
-	$(COMPOSE) -f docker-compose.prod.yml down
-
-prod-logs: ; $(info $(M) tailing production logs) @ ## Tail stockd production logs
-	$(COMPOSE) -f docker-compose.prod.yml logs -f stockd
-
-prod-restart: prod-down prod-up ## Rebuild image and restart production stack
-
 ##@ Info
 
 info: ; $(info) @ ## Print build info
@@ -105,6 +77,41 @@ info: ; $(info) @ ## Print build info
 	@echo "Git Commit:     \"$(GIT_COMMIT)\""
 	@echo "Git Tag:        \"$(GIT_TAG)\""
 	@echo "Build Time:     \"$(BUILD_TIME)\""
+
+##@ Dev (local)
+
+dev-up: ; $(info $(M) starting dev MySQL) @ ## Start local MySQL (for go run ./cmd/stockd)
+	$(COMPOSE) up -d mysql
+
+dev-down: ; $(info $(M) stopping dev MySQL) @ ## Stop local MySQL
+	$(COMPOSE) down
+
+dev-logs: ; $(info $(M) tailing MySQL logs) @ ## Tail MySQL logs
+	$(COMPOSE) logs -f mysql
+
+##@ Self-host
+
+selfhost: ; $(info $(M) starting self-hosted stack) @ ## Start stack with pre-built image
+	$(COMPOSE) up -d
+
+selfhost-build: web-build ; $(info $(M) building and starting self-hosted stack) @ ## Build web+image from source and start
+	@if [ ! -f .env ]; then cp .env.example .env; fi
+	VERSION=$(BINARY_VERSION)$(GIT_DIRTY) COMMIT=$(GIT_COMMIT) \
+		$(COMPOSE) -f docker-compose.yml -f docker-compose.self.yml up -d --build
+	@echo "==> Waiting for /health..."
+	@for i in $$(seq 1 30); do \
+		if curl -sf http://localhost:$${STOCKD_PORT:-8443}/health > /dev/null 2>&1; then \
+			echo "✓ stockd is ready at http://localhost:$${STOCKD_PORT:-8443}"; \
+			break; \
+		fi; \
+		sleep 2; \
+	done
+
+selfhost-stop: ; $(info $(M) stopping self-hosted stack) @ ## Stop the self-hosted stack
+	$(COMPOSE) -f docker-compose.yml -f docker-compose.self.yml down
+
+selfhost-logs: ; $(info $(M) tailing stockd logs) @ ## Tail stockd logs
+	$(COMPOSE) -f docker-compose.yml -f docker-compose.self.yml logs -f stockd
 
 ##@ Cleanup
 

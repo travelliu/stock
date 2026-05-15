@@ -1,25 +1,12 @@
-# Local dev: starts MySQL only.
-# Run the Go server directly: go run ./cmd/stockd
-#
-# Usage:
-#   make dev-up     # start MySQL
-#   make dev-down   # stop MySQL
-
-name: stock
+# Build override: build stockd from the current checkout instead of pulling an image.
+# Merged on top of docker-compose.yml via: make selfhost-build
 
 services:
-  mysql:
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-stockd}
-      MYSQL_USER: ${MYSQL_USER:-stockd}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    ports:
-      - "3306:3306"
-    volumes:
-      - data/mysql/:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 5s
-      retries: 10
+  stockd:
+    image: stockd:dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
+        COMMIT: ${COMMIT:-unknown}

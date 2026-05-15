@@ -3,16 +3,18 @@ import { computed } from 'vue'
 import type { Stock, DailyBar } from '@/types/api'
 import { fmtPrice, fmtPct, priceClass } from '@/utils/format'
 
-const props = defineProps<{ stock: Stock; lastBar?: DailyBar }>()
+const props = defineProps<{ stock: Stock; lastBar?: DailyBar; prevClose?: number }>()
 
 const changeClass = computed(() => {
   if (!props.lastBar) return 'g-flat'
-  return priceClass(props.lastBar.close, props.lastBar.open)
+  const base = props.prevClose || props.lastBar.open
+  return priceClass(props.lastBar.close, base)
 })
 
 const changePct = computed(() => {
   if (!props.lastBar) return '--'
-  return fmtPct(props.lastBar.close, props.lastBar.open)
+  const base = props.prevClose || props.lastBar.open
+  return fmtPct(props.lastBar.close, base)
 })
 </script>
 

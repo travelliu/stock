@@ -12,6 +12,7 @@ const code = route.params.code as string
 
 const stock = ref<Stock | null>(null)
 const lastBar = ref<DailyBar | undefined>(undefined)
+const prevClose = ref(0)
 const loading = ref(false)
 
 const activeTab = computed(() => {
@@ -31,10 +32,11 @@ onMounted(async () => {
   try {
     const [s, barsPage] = await Promise.all([
       getStock(code),
-      queryBars(code, { limit: 1 }),
+      queryBars(code, { limit: 2 }),
     ])
     stock.value = s
     lastBar.value = barsPage.items[0]
+    prevClose.value = barsPage.items[1]?.close ?? 0
   } catch (e: unknown) {
     wMessage('error', e instanceof Error ? e.message : '加载失败')
   } finally {
@@ -49,7 +51,7 @@ onMounted(async () => {
       <el-button link @click="router.push('/stocks')">← 返回列表</el-button>
     </div>
     <div v-if="stock" style="margin-top: 8px">
-      <StockBasicCard :stock="stock" :last-bar="lastBar" />
+      <StockBasicCard :stock="stock" :last-bar="lastBar" :prev-close="prevClose" />
     </div>
     <el-tabs
       :model-value="activeTab"

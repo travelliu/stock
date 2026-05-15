@@ -3,8 +3,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { wMessage } from '@/utils/message'
 import { usePortfolioStore } from '@/stores/portfolio'
-import { searchStocks } from '@/apis/stocks'
-import type { Stock, Portfolio } from '@/types/api'
+import { searchStocks, queryBars } from '@/apis/stocks'
+import type { Stock, Portfolio, DailyBar } from '@/types/api'
 
 const router = useRouter()
 const portfolioStore = usePortfolioStore()
@@ -14,31 +14,52 @@ const note = ref('')
 const stockOptions = ref<{ value: string; label: string }[]>([])
 const loadingAdd = ref(false)
 
-onMounted(() => {
-  portfolioStore.fetch()
+interface BarInfo {
+  bar: DailyBar
+  pctChg: number
+}
+const barMap = ref<Record<string, BarInfo>>({})
+const loadingBars = ref(false)
+
+async function loadBars(items: Portfolio[]) {
+  if (!items.length) return
+  loadingBars.value = true
+  try {
+    const results = await Promise.all(items.map(p => queryBars(p.code, { limit: 2 })))
+    const map: Record<string, BarInfo> = {}
+    results.forEach((res, i) => {
+      const bars = res.items
+      if (!bars.length) return
+      const bar = bars[0]
+      const prevClose = bars[1]?.close
+      const pctChg = prevClose ? (bar.close - prevClose) / prevClose * 100 : 0
+      map[items[i].code] = { bar, pctChg }
+    })
+    barMap.value = map
+  } catch {
+    // silently ignore price fetch errors
+  } finally {
+    loadingBars.value = false
+  }
+}
+
+onMounted(async () => {
+  await portfolioStore.fetch()
+  loadBars(portfolioStore.items)
 })
 
 async function searchStockOptions(query: string) {
-  if (!query) {
-    stockOptions.value = []
-    return
-  }
+  if (!query) { stockOptions.value = []; return }
   try {
     const list = await searchStocks(query, 20)
-    stockOptions.value = list.map((s: Stock) => ({
-      value: s.code,
-      label: `${s.code} ${s.name}`,
-    }))
+    stockOptions.value = list.map((s: Stock) => ({ value: s.code, label: `${s.code} ${s.name}` }))
   } catch {
     stockOptions.value = []
   }
 }
 
 async function doAdd() {
-  if (!selectedCode.value) {
-    wMessage('warning', '请选择股票')
-    return
-  }
+  if (!selectedCode.value) { wMessage('warning', '请选择股票'); return }
   loadingAdd.value = true
   try {
     await portfolioStore.add(selectedCode.value, note.value)
@@ -46,6 +67,7 @@ async function doAdd() {
     showAdd.value = false
     selectedCode.value = ''
     note.value = ''
+    loadBars(portfolioStore.items)
   } finally {
     loadingAdd.value = false
   }
@@ -58,6 +80,26 @@ function goDetail(row: Portfolio) {
 function removeItem(row: Portfolio) {
   portfolioStore.remove(row.code)
 }
+
+function fmtDate(d: string): string {
+  if (!d || d.length !== 8) return d
+  return `${d.slice(4, 6)}/${d.slice(6, 8)}`
+}
+
+function fmtPrice(v: number): string {
+  return v ? v.toFixed(2) : '-'
+}
+
+function pctClass(v: number): string {
+  if (v > 0) return 'up'
+  if (v < 0) return 'down'
+  return ''
+}
+
+function fmtPct(v: number): string {
+  if (!v) return '-'
+  return (v > 0 ? '+' : '') + v.toFixed(2) + '%'
+}
 </script>
 
 <template>
@@ -67,15 +109,43 @@ function removeItem(row: Portfolio) {
       <el-button type="primary" @click="showAdd = true">{{ $t('stockList.addStock') }}</el-button>
     </div>
 
-    <el-table :data="portfolioStore.items" style="margin-top: 16px">
-      <el-table-column prop="code" :label="$t('stockList.code')">
+    <el-table :data="portfolioStore.items" v-loading="loadingBars" style="margin-top: 16px">
+      <el-table-column prop="code" :label="$t('stockList.code')" width="100">
         <template #default="{ row }">
           <el-button link type="primary" @click="goDetail(row)">{{ row.code }}</el-button>
         </template>
       </el-table-column>
-      <el-table-column prop="name" :label="$t('stockList.name')" />
+      <el-table-column prop="name" :label="$t('stockList.name')" width="120" />
+      <el-table-column label="日期" width="60" align="center">
+        <template #default="{ row }">
+          <span class="secondary">{{ fmtDate(barMap[row.code]?.bar.tradeDate ?? '') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="开盘" align="right" width="80">
+        <template #default="{ row }">{{ fmtPrice(barMap[row.code]?.bar.open ?? 0) }}</template>
+      </el-table-column>
+      <el-table-column label="最高" align="right" width="80">
+        <template #default="{ row }">{{ fmtPrice(barMap[row.code]?.bar.high ?? 0) }}</template>
+      </el-table-column>
+      <el-table-column label="最低" align="right" width="80">
+        <template #default="{ row }">{{ fmtPrice(barMap[row.code]?.bar.low ?? 0) }}</template>
+      </el-table-column>
+      <el-table-column label="收盘" align="right" width="80">
+        <template #default="{ row }">
+          <span :class="pctClass(barMap[row.code]?.pctChg ?? 0)">
+            {{ fmtPrice(barMap[row.code]?.bar.close ?? 0) }}
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="涨跌幅" align="right" width="90">
+        <template #default="{ row }">
+          <span :class="pctClass(barMap[row.code]?.pctChg ?? 0)">
+            {{ fmtPct(barMap[row.code]?.pctChg ?? 0) }}
+          </span>
+        </template>
+      </el-table-column>
       <el-table-column prop="note" :label="$t('stockList.note')" />
-      <el-table-column :label="$t('stockList.action')" width="140">
+      <el-table-column :label="$t('stockList.action')" width="120">
         <template #default="{ row }">
           <el-button link type="primary" @click="goDetail(row)">{{ $t('stockList.detail') }}</el-button>
           <el-button link type="danger" @click="removeItem(row)">{{ $t('common.delete') }}</el-button>
@@ -90,9 +160,7 @@ function removeItem(row: Portfolio) {
             v-model="selectedCode"
             :options="stockOptions"
             :placeholder="$t('stockList.selectStock')"
-            clearable
-            filterable
-            remote
+            clearable filterable remote
             :remote-method="searchStockOptions"
             style="width: 100%"
           />
@@ -115,4 +183,7 @@ function removeItem(row: Portfolio) {
   justify-content: space-between;
   align-items: center;
 }
+.up   { color: var(--el-color-danger); }
+.down { color: var(--el-color-success); }
+.secondary { color: var(--el-text-color-secondary); font-size: 12px; }
 </style>

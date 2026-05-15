@@ -14,6 +14,15 @@ const spreadLabels: Record<string, string> = {
   spreadOC: '开盘与收盘价',
 }
 
+const spreadTips: Record<string, string> = {
+  spreadOH: '高开价差\n= 最高价 − 开盘价\n用于预测当日最高价\n\n表中均值 = (平均值 + 中位数) / 2',
+  spreadOL: '开低价差\n= 开盘价 − 最低价\n用于预测当日最低价\n\n表中均值 = (平均值 + 中位数) / 2',
+  spreadHL: '高低价差\n= 最高价 − 最低价\n用于由最低价反推最高价（或反之）\n\n表中均值 = (平均值 + 中位数) / 2',
+  spreadHC: '高收价差\n= 最高价 − 收盘价\n用于由最高价反推收盘价\n\n表中均值 = (平均值 + 中位数) / 2',
+  spreadLC: '低收价差\n= 收盘价 − 最低价\n用于由最低价反推收盘价\n\n表中均值 = (平均值 + 中位数) / 2',
+  spreadOC: '开收价差\n= |收盘价 − 开盘价|\n反映当日波动幅度\n\n表中均值 = (平均值 + 中位数) / 2',
+}
+
 function windowName(id: string): string {
   const map: Record<string, string> = { All: '历史', last_90: '近3月', last_30: '近1月', last_15: '近2周' }
   return map[id] || id
@@ -51,7 +60,15 @@ function compositeVal(key: string): string {
           {{ row.info.id === 'composite' ? '综合均值' : windowName(row.info.id) }}
         </template>
       </el-table-column>
-      <el-table-column v-for="key in spreadKeys" :key="key" :label="spreadLabels[key]" align="right">
+      <el-table-column v-for="key in spreadKeys" :key="key" align="right">
+        <template #header>
+          <el-tooltip placement="top" effect="dark">
+            <template #content>
+              <span style="white-space: pre-line">{{ spreadTips[key] }}</span>
+            </template>
+            <span class="tip-header">{{ spreadLabels[key] }}</span>
+          </el-tooltip>
+        </template>
         <template #default="{ row }">
           {{ row.info.id === 'composite' ? compositeVal(key) : getMean(row.means, key) }}
         </template>
@@ -59,3 +76,10 @@ function compositeVal(key: string): string {
     </el-table>
   </el-card>
 </template>
+
+<style scoped>
+.tip-header {
+  cursor: help;
+  border-bottom: 1px dashed var(--el-text-color-secondary);
+}
+</style>

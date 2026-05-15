@@ -130,9 +130,9 @@ onMounted(load)
       </table>
     </el-card>
 
-    <SpreadModelTable :result="analysis" />
-
     <TradePlanTable :result="analysis" />
+
+    <SpreadModelTable :result="analysis" />
 
     <SpreadAnalysisTable :result="analysis" />
 

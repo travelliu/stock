@@ -21,17 +21,17 @@ One row per stock per trading day. Upsert on `(ts_code, trade_date)`.
 | open_price       | float64       |                                   | Actual open price for that day           |
 | predict_high     | float64       |                                   | open + spread_oh (近2周 mean)             |
 | predict_low      | float64       |                                   | open - spread_ol (近2周 mean)             |
-| predict_close    | *float64      |                                   | Reserved, currently null (algorithm TBD) |
-| actual_high      | *float64      |                                   | Actual high (null if market hasn't closed)|
-| actual_low       | *float64      |                                   | Actual low                               |
-| actual_close     | *float64      |                                   | Actual close                             |
+| predict_close    | float64       |                                   | 0 = not calculated yet (algorithm TBD)   |
+| actual_high      | float64       |                                   | 0 = not available yet                    |
+| actual_low       | float64       |                                   | 0 = not available yet                    |
+| actual_close     | float64       |                                   | 0 = not available yet                    |
 | created_at       | time.Time     |                                   |                                          |
 | updated_at       | time.Time     |                                   |                                          |
 
 **Prediction formula** (using "近2周" window means):
 - `predict_high = open_price + mean(spread_oh)`
 - `predict_low = open_price - mean(spread_ol)`
-- `predict_close` = null (algorithm TBD, reserved for future)
+- `predict_close` = 0 (algorithm TBD, 0 means not calculated)
 
 ## 2. Calculation flow
 
@@ -47,7 +47,7 @@ For each stock (or single stock if filtered):
      d. Extract "近2周" window means
      e. predict_high = bars[i].Open + means.SpreadOH.Mean
      f. predict_low = bars[i].Open - means.SpreadOL.Mean
-     g. predict_close = nil (TBD)
+     g. predict_close = 0 (TBD)
      h. actual_high/low/close = bars[i].High/Low/Close
      i. Upsert into analysis_predictions
 ```
@@ -103,10 +103,10 @@ type AnalysisPrediction struct {
     OpenPrice      float64         `json:"openPrice"`
     PredictHigh    float64         `json:"predictHigh"`
     PredictLow     float64         `json:"predictLow"`
-    PredictClose   *float64        `json:"predictClose"`
-    ActualHigh     *float64        `json:"actualHigh"`
-    ActualLow      *float64        `json:"actualLow"`
-    ActualClose    *float64        `json:"actualClose"`
+    PredictClose   float64         `json:"predictClose"`
+    ActualHigh     float64         `json:"actualHigh"`
+    ActualLow      float64         `json:"actualLow"`
+    ActualClose    float64         `json:"actualClose"`
     CreatedAt      time.Time       `json:"createdAt"`
     UpdatedAt      time.Time       `json:"updatedAt"`
 }
@@ -125,7 +125,7 @@ type AnalysisPrediction struct {
 ### `stockctl analysis predictions <code>`
 
 - Calls `GET /api/analysis/predictions?ts_code=xxx`
-- Prints ASCII table matching Python style:
+- Renders using `github.com/olekukonko/tablewriter`
 
 ```
 603778 (中国交建) 预测记录

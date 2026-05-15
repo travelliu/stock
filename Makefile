@@ -31,7 +31,8 @@ LDFLAGS := -s -w \
 
 GOLDFLAGS = -ldflags '$(LDFLAGS)'
 
-.PHONY: all build test lint fmt vet clean info help web-build
+.PHONY: all build test lint fmt vet clean info help web-build \
+        docker-build docker-up docker-down docker-logs docker-restart
 
 all: build ## Build all binaries (default)
 
@@ -70,6 +71,20 @@ info: ; $(info) @ ## Print build info
 help: ; $(info) @ ## Print this help
 	@grep -E '^[a-zA-Z1-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+docker-build: web-build ; $(info $(M) building docker image) @ ## Build web then docker image
+	docker compose build
+
+docker-up: ; $(info $(M) starting services) @ ## Start all services (detached)
+	docker compose up -d
+
+docker-down: ; $(info $(M) stopping services) @ ## Stop and remove containers
+	docker compose down
+
+docker-logs: ; $(info $(M) tailing logs) @ ## Tail stockd logs
+	docker compose logs -f stockd
+
+docker-restart: docker-down docker-up ## Rebuild image and restart all services
 
 clean: ; $(info $(M) cleaning) @ ## Remove build artifacts
 	rm -rf $(BIN) coverage.out coverage.html

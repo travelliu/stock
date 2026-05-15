@@ -460,8 +460,8 @@ class StockAnalyzer:
 
             if not self.show_all:
                 u_headers = [
-                    "时段", "样本数", "均值", "中位数", "众数", "",
-                    "样本数", "均值", "中位数", "众数", "",
+                    "时段", "样本数", "平均值", "中位数", "均值", "",
+                    "样本数", "平均值", "中位数", "均值", "",
                     "高抛差价(高-开盘)", "低吸差价(开盘-低)",
                 ]
                 ordered_windows = list(reversed(windows))
@@ -479,17 +479,17 @@ class StockAnalyzer:
                     row: list[str] = [wname]
 
                     if oh_vals:
-                        try:
-                            mode_val = statistics.mode(oh_vals)
-                        except statistics.StatisticsError:
-                            mode_val = "-"
+                        # 平均数
+                        mean = statistics.mean(oh_vals)
+                        # 中位数
+                        median = statistics.median(oh_vals)
+                        # 中位数和平均数的平均
+                        mode_val = statistics.mean([mean,median])
                         row.extend([
                             str(len(oh_vals)),
-                            f"{statistics.mean(oh_vals):.2f}",
-                            f"{statistics.median(oh_vals):.2f}",
+                            f"{mean:.2f}",
+                            f"{median:.2f}",
                             f"{mode_val:.2f}"
-                            if isinstance(mode_val, float)
-                            else str(mode_val),
                         ])
                     else:
                         row.extend(["0", "-", "-", "-"])
@@ -497,17 +497,16 @@ class StockAnalyzer:
                     row.append("")
 
                     if ol_vals:
-                        try:
-                            mode_val = statistics.mode(ol_vals)
-                        except statistics.StatisticsError:
-                            mode_val = "-"
+                        mean = statistics.mean(ol_vals)
+                        # 中位数
+                        median = statistics.median(ol_vals)
+                        # 中位数和平均数的平均
+                        mode_val = statistics.mean([mean,median])
                         row.extend([
                             str(len(ol_vals)),
-                            f"{statistics.mean(ol_vals):.2f}",
-                            f"{statistics.median(ol_vals):.2f}",
+                            f"{mean:.2f}",
+                            f"{median:.2f}",
                             f"{mode_val:.2f}"
-                            if isinstance(mode_val, float)
-                            else str(mode_val),
                         ])
                     else:
                         row.extend(["0", "-", "-", "-"])
@@ -577,15 +576,14 @@ class StockAnalyzer:
                             r[key] for r in rows if r.get(key) is not None
                         ]
                         if values:
-                            try:
-                                mode_val = statistics.mode(values)
-                            except statistics.StatisticsError:
-                                mode_val = "-"
+                            mean = statistics.mean(values)
+                            median = statistics.median(values)
+                            mode_val = statistics.mean([mean,median])
                             table.append([
                                 wname,
                                 str(len(values)),
-                                f"{statistics.mean(values):.2f}",
-                                f"{statistics.median(values):.2f}",
+                                f"{mean:.2f}",
+                                f"{median:.2f}",
                                 f"{mode_val:.2f}"
                                 if isinstance(mode_val, float)
                                 else str(mode_val),

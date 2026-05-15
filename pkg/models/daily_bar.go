@@ -1,9 +1,9 @@
 package models
 
 type DailyBar struct {
-	TsCode    string  `gorm:"primaryKey;size:16"  json:"tsCode,omitempty"`
+	TsCode    string  `gorm:"primaryKey;size:16" json:"tsCode,omitempty"`
 	TradeDate string  `gorm:"primaryKey;size:8" json:"tradeDate,omitempty"`
-	Open      float64 `json:"open" json:"open,omitempty"`
+	Open      float64 `json:"open,omitempty"`
 	High      float64 `json:"high,omitempty"`
 	Low       float64 `json:"low,omitempty"`
 	Close     float64 `json:"close,omitempty"`

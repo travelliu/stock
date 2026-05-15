@@ -20,7 +20,11 @@ func (h *handler) SearchStocks(c *gin.Context) {
 }
 
 func (h *handler) GetStock(c *gin.Context) {
-	tsCode := c.Param(tsCodeValue)
+	tsCode, err := h.svc.ResolveTsCode(c.Param(codeValue))
+	if err != nil {
+		utils.HTTPRequestFailedV4(c, nil, utils.ErrStockNotFound)
+		return
+	}
 	s, err := h.svc.GetStock(c.Request.Context(), tsCode)
 	if err != nil {
 		utils.HTTPRequestFailedV4(c, nil, utils.ErrStockNotFound)

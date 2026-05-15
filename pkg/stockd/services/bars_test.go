@@ -2,11 +2,10 @@ package services_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"stock/pkg/stockd/config"
-	"stock/pkg/stockd/services"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -14,7 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"stock/pkg/models"
-
+	"stock/pkg/stockd/config"
+	"stock/pkg/stockd/services"
 	"stock/pkg/tushare"
 )
 
@@ -26,6 +26,25 @@ func TestQueryRange(t *testing.T) {
 	out, err := svc.QueryStockDailyBar(context.Background(), "X.SH", "20250101", "20250110")
 	require.NoError(t, err)
 	assert.Len(t, out, 2)
+}
+
+func TestQueryBarsPage(t *testing.T) {
+	gdb := openDB(t)
+	for i := 1; i <= 25; i++ {
+		date := fmt.Sprintf("202501%02d", i)
+		require.NoError(t, gdb.Create(&models.DailyBar{
+			TsCode: "X.SH", TradeDate: date, Open: 1, High: 2, Low: 0.5, Close: 1.5,
+		}).Error)
+	}
+	svc := services.NewService(gdb, tushare.NewClient(), &config.Config{}, logrus.New())
+	page, err := svc.QueryStockDailyBarsPage(context.Background(), "X.SH", "", "", 1, 20)
+	require.NoError(t, err)
+	assert.Equal(t, int64(25), page.Total)
+	assert.Len(t, page.Items, 20)
+	assert.Equal(t, 1, page.Page)
+	assert.Equal(t, 20, page.Limit)
+	page2, _ := svc.QueryStockDailyBarsPage(context.Background(), "X.SH", "", "", 2, 20)
+	assert.Len(t, page2.Items, 5)
 }
 
 func TestSync_FromTushare(t *testing.T) {

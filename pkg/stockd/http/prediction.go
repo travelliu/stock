@@ -9,7 +9,16 @@ import (
 )
 
 func (h *handler) RecalcPredictions(c *gin.Context) {
-	tsCode := c.DefaultQuery("ts_code", "")
+	code := c.DefaultQuery("code", "")
+	tsCode := ""
+	if code != "" {
+		var err error
+		tsCode, err = h.svc.ResolveTsCode(code)
+		if err != nil {
+			utils.HTTPRequestFailedV4(c, nil, utils.ErrStockNotFound)
+			return
+		}
+	}
 	res, err := h.svc.Recalc(c.Request.Context(), tsCode)
 	if err != nil {
 		utils.HTTPRequestFailedV5(c, err)
@@ -19,15 +28,17 @@ func (h *handler) RecalcPredictions(c *gin.Context) {
 }
 
 func (h *handler) ListPredictions(c *gin.Context) {
-	tsCode := c.Param("tsCode")
-	from := c.Query("from")
-	to := c.Query("to")
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "30"))
-
-	preds, err := h.svc.ListAnalysisPrediction(c.Request.Context(), tsCode, from, to, limit)
+	tsCode, err := h.svc.ResolveTsCode(c.Param(codeValue))
+	if err != nil {
+		utils.HTTPRequestFailedV4(c, nil, utils.ErrStockNotFound)
+		return
+	}
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	result, err := h.svc.ListPredictionsPage(c.Request.Context(), tsCode, c.Query("from"), c.Query("to"), page, limit)
 	if err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}
-	utils.HTTPRequestSuccess(c, 200, preds)
+	utils.HTTPRequestSuccess(c, 200, result)
 }

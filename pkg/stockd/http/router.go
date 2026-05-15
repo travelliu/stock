@@ -83,19 +83,19 @@ func NewRouter(svc *services.Service, logger *logrus.Logger) *gin.Engine {
 	me.POST("/password", h.ChangePassword)
 
 	api.GET("/stocks", h.SearchStocks)
-	api.GET("/stocks/"+tsCodeUrl, h.GetStock)
+	api.GET("/stocks/"+codeUrl, h.GetStock)
 
 	pr := api.Group("/portfolio")
 	pr.Use(AuthRequired())
 	pr.GET("", h.ListPortfolio)
 	pr.POST("", h.AddPortfolio)
-	prTs := pr.Group("/" + tsCodeUrl)
+	prTs := pr.Group("/" + codeUrl)
 	prTs.DELETE("", h.RemovePortfolio)
 	prTs.PATCH("", h.UpdatePortfolioNote)
 
 	br := api.Group("/bars")
 	br.Use(AuthRequired())
-	br.GET("/"+tsCodeUrl, h.QueryBars)
+	br.GET("/"+codeUrl, h.QueryBars)
 
 	dr := api.Group("/drafts")
 	dr.Use(AuthRequired())
@@ -105,9 +105,9 @@ func NewRouter(svc *services.Service, logger *logrus.Logger) *gin.Engine {
 
 	anr := api.Group("/analysis")
 	anr.Use(AuthRequired())
-	anr.GET("/"+tsCodeUrl, h.GetAnalysis)
+	anr.GET("/"+codeUrl, h.GetAnalysis)
 	anr.POST("/recalc", h.RecalcPredictions)
-	anr.GET("/predictions/"+tsCodeUrl, h.ListPredictions)
+	anr.GET("/predictions/"+codeUrl, h.ListPredictions)
 
 	r.Use(static.Serve("/", root.EmbedFolder()))
 	r.NoRoute(func(c *gin.Context) {

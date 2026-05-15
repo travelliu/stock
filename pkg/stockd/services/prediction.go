@@ -113,6 +113,43 @@ func (s *Service) recalcStock(ctx context.Context, tsCode string) (int, error) {
 	return count, nil
 }
 
+// PredictionsPage is the paginated response from ListPredictionsPage.
+type PredictionsPage struct {
+	Items []models.AnalysisPrediction `json:"items"`
+	Total int64                       `json:"total"`
+	Page  int                         `json:"page"`
+	Limit int                         `json:"limit"`
+}
+
+// ListPredictionsPage returns paginated predictions ordered newest-first.
+func (s *Service) ListPredictionsPage(ctx context.Context, tsCode, from, to string, page, limit int) (*PredictionsPage, error) {
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 || limit > 200 {
+		limit = 20
+	}
+	q := s.db.WithContext(ctx).Model(&models.AnalysisPrediction{}).Where("ts_code = ?", tsCode)
+	if from != "" {
+		q = q.Where("trade_date >= ?", from)
+	}
+	if to != "" {
+		q = q.Where("trade_date <= ?", to)
+	}
+	var total int64
+	if err := q.Count(&total).Error; err != nil {
+		return nil, err
+	}
+	var items []models.AnalysisPrediction
+	err := q.Order("trade_date DESC").
+		Offset((page - 1) * limit).Limit(limit).
+		Find(&items).Error
+	if err != nil {
+		return nil, err
+	}
+	return &PredictionsPage{Items: items, Total: total, Page: page, Limit: limit}, nil
+}
+
 func (s *Service) ListAnalysisPrediction(ctx context.Context, tsCode, from, to string, limit int) ([]models.AnalysisPrediction, error) {
 	if limit <= 0 {
 		limit = 30

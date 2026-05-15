@@ -14,6 +14,7 @@ func (h *handler) SyncStocklist(c *gin.Context) {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}
+	_ = h.svc.LoadStockCache(c.Request.Context())
 	utils.HTTPRequestSuccess(c, 200, gin.H{"synced": n})
 }
 
@@ -37,6 +38,7 @@ func (h *handler) ImportCSV(c *gin.Context) {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}
+	_ = h.svc.LoadStockCache(c.Request.Context())
 	utils.HTTPRequestSuccess(c, 200, gin.H{"imported": n})
 }
 

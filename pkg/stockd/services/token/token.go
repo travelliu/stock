@@ -16,17 +16,17 @@ type Service struct{ db *gorm.DB }
 func New(db *gorm.DB) *Service { return &Service{db: db} }
 
 type IssueInput struct {
-	UserID    uint       `json:"userID,omitempty"`
+	UserID    uint       `json:"userId"`
 	Name      string     `json:"name,omitempty"`
 	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
 }
 
 type Token struct {
-	ID         uint       `json:"id,omitempty"`
-	UserID     uint       `json:"userID,omitempty"`
+	ID         uint       `json:"id"`
+	UserID     uint       `json:"userId"`
 	Name       string     `json:"name,omitempty"`
-	LastUsedAt *time.Time `json:"lastUsedAt,omitempty"`
-	ExpiresAt  *time.Time `json:"expiresAt,omitempty"`
+	LastUsedAt *time.Time `json:"lastUsedAt"`
+	ExpiresAt  *time.Time `json:"expiresAt"`
 	CreatedAt  time.Time  `json:"createdAt"`
 	PlainOnce  string     `json:"plainOnce,omitempty"` // set only by Issue's return; never persisted/returned from List
 }

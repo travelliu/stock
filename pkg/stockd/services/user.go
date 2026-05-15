@@ -1,4 +1,4 @@
-// Package user implements user-management business logic.
+// Package services implements user-management business logic.
 package services
 
 import (
@@ -25,7 +25,7 @@ type User struct {
 	TushareToken string `json:"tushareToken,omitempty"`
 }
 
-type CreateInput struct {
+type CreateUserInput struct {
 	Username     string `json:"username,omitempty"`
 	Password     string `json:"password,omitempty"`
 	Role         string `json:"role,omitempty"` // "user" | "admin"
@@ -39,7 +39,7 @@ func toDTO(u *models.User) User {
 	}
 }
 
-func (s *Service) CreateUser(ctx context.Context, in CreateInput) (*User, error) {
+func (s *Service) CreateUser(ctx context.Context, in CreateUserInput) (*User, error) {
 	if in.Username == "" {
 		return nil, fmt.Errorf("username is required")
 	}

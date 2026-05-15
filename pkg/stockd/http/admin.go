@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"stock/pkg/stockd/services"
 	"strconv"
-
+	
 	"github.com/gin-gonic/gin"
-
+	
 	"stock/pkg/models"
 	"stock/pkg/stockd/utils"
 )
@@ -17,7 +17,7 @@ func (h *handler) CreateUser(c *gin.Context) {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return
 	}
-	u, err := h.svc.CreateUser(c.Request.Context(), services.CreateInput{
+	u, err := h.svc.CreateUser(c.Request.Context(), services.CreateUserInput{
 		Username: req.Username, Password: req.Password, Role: req.Role, TushareToken: req.TushareToken,
 	})
 	if err != nil {

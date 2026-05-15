@@ -3,6 +3,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -40,6 +41,13 @@ type TushareConfig struct {
 	Timeout      time.Duration `mapstructure:"timeout"`
 }
 
+func (t *TushareConfig) GetDefaultToken(s string) string {
+	if s == "" {
+		return t.DefaultToken
+	}
+	return s
+}
+
 type SchedulerConfig struct {
 	Enabled           bool   `mapstructure:"enabled"`
 	DailyFetchCron    string `mapstructure:"daily_fetch_cron"`
@@ -49,6 +57,7 @@ type SchedulerConfig struct {
 type LoggingConfig struct {
 	Level  string `mapstructure:"level"`
 	Format string `mapstructure:"format"`
+	Dir    string `mapstructure:"dir"`
 }
 
 func Load(path string) (*Config, error) {
@@ -66,6 +75,18 @@ func Load(path string) (*Config, error) {
 	v.SetDefault("tushare.timeout", "30s")
 	v.SetDefault("logging.level", "info")
 	v.SetDefault("logging.format", "json")
+	v.SetDefault("logging.dir", "logs")
+
+	v.SetEnvPrefix("STOCKD")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
+	// Explicit bindings for keys that may not appear in config file
+	_ = v.BindEnv("database.dsn")
+	_ = v.BindEnv("database.driver")
+	_ = v.BindEnv("server.listen")
+	_ = v.BindEnv("server.session_secret")
+	_ = v.BindEnv("tushare.default_token")
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("read config: %w", err)

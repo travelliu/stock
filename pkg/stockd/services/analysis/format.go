@@ -3,7 +3,6 @@ package analysis
 import (
 	"strings"
 	"unicode"
-	"unicode/utf8"
 )
 
 // DisplayWidth returns the terminal cell width, treating CJK wide chars as 2.
@@ -54,9 +53,6 @@ func isWide(r rune) bool {
 		return true
 	}
 	if unicode.Is(unicode.Han, r) {
-		return true
-	}
-	if utf8.RuneLen(r) >= 3 { // catch-all conservative
 		return true
 	}
 	return false

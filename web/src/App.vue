@@ -1,38 +1,44 @@
-<template>
-  <el-container v-if="authStore.user" style="height: 100vh;">
-    <el-aside width="200px">
-      <el-menu :router="true" :default-active="$route.path">
-        <el-menu-item index="/portfolio">
-          <span>我的持仓</span>
-        </el-menu-item>
-        <el-menu-item index="/settings">
-          <span>设置</span>
-        </el-menu-item>
-        <el-menu-item v-if="authStore.user?.role === 'admin'" index="/admin/users">
-          <span>用户管理</span>
-        </el-menu-item>
-        <el-menu-item v-if="authStore.user?.role === 'admin'" index="/admin/sync">
-          <span>数据同步</span>
-        </el-menu-item>
-        <el-menu-item @click="authStore.logout">
-          <span>退出</span>
-        </el-menu-item>
-      </el-menu>
-    </el-aside>
-    <el-main>
-      <router-view />
-    </el-main>
-  </el-container>
-  <router-view v-else />
-</template>
-
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { useAuthStore } from './stores/auth'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import ConsoleMenu from '@/components/ConsoleMenu.vue'
 
-const authStore = useAuthStore()
+const route = useRoute()
+const router = useRouter()
+const auth = useAuthStore()
 
 onMounted(() => {
-  authStore.fetchMe()
+  auth.fetchMe().then(() => {
+    if (!auth.user && route.meta.requiresAuth) {
+      router.push('/login')
+    }
+  })
 })
 </script>
+
+<template>
+  <div class="app-root">
+    <template v-if="auth.user && route.path !== '/login'">
+      <ConsoleMenu />
+      <div class="main">
+        <router-view />
+      </div>
+    </template>
+    <template v-else>
+      <router-view />
+    </template>
+  </div>
+</template>
+
+<style scoped lang="scss">
+.app-root {
+  display: flex;
+  min-height: 100vh;
+}
+.main {
+  flex: 1;
+  padding: 16px;
+  overflow: auto;
+}
+</style>

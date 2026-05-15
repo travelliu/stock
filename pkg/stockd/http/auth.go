@@ -17,7 +17,7 @@ func (h *handler) Login(c *gin.Context) {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return
 	}
-	u, err := h.userSvc.Authenticate(c.Request.Context(), req.Username, req.Password)
+	u, err := h.svc.Authenticate(c.Request.Context(), req.Username, req.Password)
 	if err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return

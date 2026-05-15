@@ -8,6 +8,7 @@ package analysis
 import (
 	"context"
 	"errors"
+	"stock/pkg/stockd/config"
 	"time"
 
 	"gorm.io/gorm"
@@ -15,9 +16,12 @@ import (
 	"stock/pkg/models"
 )
 
-type Service struct{ db *gorm.DB }
+type Service struct {
+	db  *gorm.DB
+	cfg *config.Config
+}
 
-func New(db *gorm.DB) *Service { return &Service{db: db} }
+func New(db *gorm.DB, cfg *config.Config) *Service { return &Service{db: db, cfg: cfg} }
 
 type Input struct {
 	UserID      uint
@@ -56,7 +60,7 @@ func (s *Service) Run(ctx context.Context, in Input) (*models.AnalysisResult, er
 				in.ActualClose = d.Close
 			}
 		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return &models.AnalysisResult{}, err
+			return &models.AnalysisResult{}, nil
 		}
 	}
 

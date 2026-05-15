@@ -1,19 +1,19 @@
 package http
 
 import (
+	"stock/pkg/stockd/services"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"stock/pkg/models"
 	"stock/pkg/stockd/auth"
-	"stock/pkg/stockd/services/token"
 	"stock/pkg/stockd/utils"
 )
 
 func (h *handler) ListTokens(c *gin.Context) {
 	u := auth.User(c)
-	list, err := h.tokenSvc.List(c.Request.Context(), u.ID)
+	list, err := h.svc.ListTokens(c.Request.Context(), u.ID)
 	if err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
@@ -28,7 +28,7 @@ func (h *handler) IssueToken(c *gin.Context) {
 		return
 	}
 	u := auth.User(c)
-	plain, tok, err := h.tokenSvc.Issue(c.Request.Context(), token.IssueInput{
+	plain, tok, err := h.svc.Issue(c.Request.Context(), services.IssueInput{
 		UserID: u.ID, Name: req.Name, ExpiresAt: req.ExpiresAt,
 	})
 	if err != nil {
@@ -47,7 +47,7 @@ func (h *handler) IssueToken(c *gin.Context) {
 func (h *handler) RevokeToken(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	u := auth.User(c)
-	if err := h.tokenSvc.Revoke(c.Request.Context(), u.ID, uint(id)); err != nil {
+	if err := h.svc.RevokeToken(c.Request.Context(), u.ID, uint(id)); err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}
@@ -61,7 +61,7 @@ func (h *handler) SetTushareToken(c *gin.Context) {
 		return
 	}
 	u := auth.User(c)
-	if err := h.userSvc.SetTushareToken(c.Request.Context(), u.ID, req.Token); err != nil {
+	if err := h.svc.SetUserTushareToken(c.Request.Context(), u.ID, req.Token); err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}
@@ -75,7 +75,7 @@ func (h *handler) ChangePassword(c *gin.Context) {
 		return
 	}
 	u := auth.User(c)
-	if err := h.userSvc.ChangePassword(c.Request.Context(), u.ID, req.Old, req.New); err != nil {
+	if err := h.svc.ChangePassword(c.Request.Context(), u.ID, req.Old, req.New); err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}

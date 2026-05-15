@@ -1,0 +1,198 @@
+// keep in sync with pkg/models
+// @see pkg/models/foo.go::Foo
+
+export interface User {
+  id: number
+  username: string
+  role: string
+  tushareToken: string
+  disabled: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Portfolio {
+  id: number
+  userId: number
+  tsCode: string
+  note: string
+  addedAt: string
+}
+
+export interface PortfolioReq {
+  tsCode: string
+  note?: string
+}
+
+export interface Stock {
+  tsCode: string
+  code: string
+  name: string
+  area: string
+  industry: string
+  market: string
+  exchange: string
+  listDate: string
+  delisted: boolean
+  updatedAt: string
+}
+
+export interface Spreads {
+  oh: number
+  ol: number
+  hl: number
+  oc: number
+  hc: number
+  lc: number
+}
+
+export interface DailyBar {
+  tsCode: string
+  tradeDate: string
+  open: number
+  high: number
+  low: number
+  close: number
+  vol: number
+  amount: number
+  spreads: Spreads
+}
+
+export interface WindowInfo {
+  id: string
+  name: string
+  day: number
+}
+
+export interface RecommendRangeResult {
+  low: number
+  high: number
+  cumPct: number
+}
+
+export interface MeansAvgData {
+  count: number
+  avg: number
+  median: number
+  mean: number
+  distribution: DistBucket[] | null
+  recommend: RecommendRangeResult | null
+}
+
+export interface DistBucket {
+  lower: number
+  upper: number
+  count: number
+  pct: number
+}
+
+export interface MeansData {
+  spreadOH: MeansAvgData | null
+  spreadOL: MeansAvgData | null
+  spreadHL: MeansAvgData | null
+  spreadHC: MeansAvgData | null
+  spreadLC: MeansAvgData | null
+  spreadOC: MeansAvgData | null
+}
+
+export interface WindowData {
+  info: WindowInfo
+  means: MeansData | null
+}
+
+export interface AnalysisResult {
+  tsCode: string
+  stockName: string
+  windows: WindowData[]
+  compositeMeans: Record<string, number>
+  openPrice?: number
+  actualHigh?: number
+  actualLow?: number
+  actualClose?: number
+}
+
+export interface AnalysisPrediction {
+  id: number
+  tsCode: string
+  tradeDate: string
+  sampleCounts: Record<string, number> | null
+  windowMeans: unknown
+  compositeMeans: Record<string, number> | null
+  openPrice: number
+  predictHigh: number
+  predictLow: number
+  predictClose: number
+  actualHigh: number
+  actualLow: number
+  actualClose: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface IntradayDraft {
+  id: number
+  userId: number
+  tsCode: string
+  tradeDate: string
+  open?: number
+  high?: number
+  low?: number
+  close?: number
+  updatedAt: string
+}
+
+export interface APIToken {
+  id: number
+  userId: number
+  name: string
+  tokenHash: string
+  lastUsedAt: string | null
+  expiresAt: string | null
+  createdAt: string
+}
+
+export interface JobRun {
+  id: number
+  jobName: string
+  startedAt: string
+  finishedAt: string | null
+  status: string
+  message: string
+}
+
+export interface LoginReq {
+  username: string
+  password: string
+}
+
+export interface ChangePasswordReq {
+  old: string
+  new: string
+}
+
+export interface SetTushareTokenReq {
+  token: string
+}
+
+export interface IssueTokenReq {
+  name: string
+  expiresAt?: string
+}
+
+export interface IssueTokenResp {
+  token: string
+  metadata: APIToken
+}
+
+export interface CreateUserReq {
+  username: string
+  password: string
+  role: string
+  tushareToken?: string
+}
+
+export interface PatchUserReq {
+  role?: string
+  disabled?: boolean
+  tushareToken?: string
+}

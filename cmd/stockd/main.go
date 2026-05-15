@@ -7,19 +7,15 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"stock/pkg/logs"
+	"stock/pkg/stockd/services"
 	"syscall"
 	"time"
-
-	"github.com/sirupsen/logrus"
 
 	"stock/pkg/stockd/bootstrap"
 	"stock/pkg/stockd/config"
 	"stock/pkg/stockd/db"
 	httpkg "stock/pkg/stockd/http"
-	"stock/pkg/stockd/services/bars"
-	"stock/pkg/stockd/services/portfolio"
-	"stock/pkg/stockd/services/scheduler"
-	"stock/pkg/stockd/services/stock"
 	"stock/pkg/tushare"
 )
 
@@ -34,8 +30,6 @@ func main() {
 		return
 	}
 	fmt.Println(os.Getwd())
-	logger := logrus.New()
-	logger.SetFormatter(&logrus.JSONFormatter{})
 
 	cfgPath := os.Getenv("STOCKD_CONFIG")
 	if cfgPath == "" {
@@ -43,49 +37,34 @@ func main() {
 	}
 	cfg, err := config.Load(cfgPath)
 	if err != nil {
-		logger.WithError(err).Fatal("config load failed")
+		fmt.Printf("config load failed %s\n", err.Error())
+		return
+	}
+	logger, err := logs.NewLogRusDir(cfg.Logging.Dir, "stockd.log", cfg.Logging.Level)
+	if err != nil {
+		fmt.Printf("config load failed %s\n", err.Error())
+		return
 	}
 
-	lvl, _ := logrus.ParseLevel(cfg.Logging.Level)
-	logger.SetLevel(lvl)
-
-	gdb, err := db.Open(cfg)
+	gdb, err := db.Open(cfg, logger)
 	if err != nil {
 		logger.WithError(err).Fatal("database open failed")
+		return
 	}
 
 	if _, err := bootstrap.EnsureAdmin(gdb, logger); err != nil {
 		logger.WithError(err).Fatal("bootstrap failed")
 	}
 
-	sched := scheduler.New(gdb)
+	tc := tushare.NewClient(tushare.WithBaseURL(cfg.Tushare.BaseURL))
+	svc := services.NewService(gdb, tc, cfg, logger)
 	if cfg.Scheduler.Enabled {
-		tc := tushare.NewClient(tushare.WithBaseURL(cfg.Tushare.BaseURL))
-		barsSvc := bars.New(gdb, tc)
-		stockSvc := stock.New(gdb)
-		portfolioSvc := portfolio.New(gdb)
-
-		sched.RegisterCron("daily-fetch", cfg.Scheduler.DailyFetchCron, func(ctx context.Context) error {
-			codes, err := portfolioSvc.DistinctTsCodes(ctx)
-			if err != nil {
-				return err
-			}
-			for _, code := range codes {
-				if _, err := barsSvc.Sync(ctx, cfg.Tushare.DefaultToken, code); err != nil {
-					logger.WithError(err).WithField("ts_code", code).Error("daily sync failed")
-				}
-			}
-			return nil
-		})
-		sched.RegisterCron("stocklist-sync", cfg.Scheduler.StocklistSyncCron, func(ctx context.Context) error {
-			_, err := stockSvc.SyncFromTushare(ctx, cfg.Tushare.DefaultToken)
-			return err
-		})
-		sched.Start()
-		defer sched.Stop()
+		svc.InitCron()
+		svc.StartCron()
+		defer svc.StopCron()
 	}
 
-	router := httpkg.NewRouter(gdb, cfg, sched)
+	router := httpkg.NewRouter(svc, logger)
 
 	srv := &http.Server{
 		Addr:    cfg.Server.Listen,

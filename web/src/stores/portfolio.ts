@@ -1,29 +1,22 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import client from '@/api/client'
-
-interface PortfolioEntry {
-  id: number
-  ts_code: string
-  note: string
-  added_at: string
-}
+import type { Portfolio } from '@/types/api'
+import { listPortfolio, addPortfolio, removePortfolio } from '@/apis/portfolio'
 
 export const usePortfolioStore = defineStore('portfolio', () => {
-  const items = ref<PortfolioEntry[]>([])
+  const items = ref<Portfolio[]>([])
 
   async function fetch() {
-    const { data } = await client.get('/portfolio')
-    items.value = data
+    items.value = await listPortfolio()
   }
 
   async function add(tsCode: string, note: string) {
-    await client.post('/portfolio', { ts_code: tsCode, note })
+    await addPortfolio({ tsCode, note })
     await fetch()
   }
 
   async function remove(tsCode: string) {
-    await client.delete(`/portfolio/${tsCode}`)
+    await removePortfolio(tsCode)
     await fetch()
   }
 

@@ -1,81 +1,473 @@
-// Package render formats analysis output for terminal display.
 package render
 
 import (
 	"fmt"
-	"os"
-	"stock/pkg/models"
+	"strings"
 
-	"github.com/olekukonko/tablewriter"
+	"stock/pkg/models"
+	"stock/pkg/stockd/services/analysis"
 )
 
-/*
-开盘价: 354.83   最高价: 354.83   最低价:    收盘价:
+// i18n keys for table headers. CLI maps these to Chinese for display.
+const (
+	KeyTimePeriod     = "time_period"
+	KeyHistory        = "history"
+	KeyLast90         = "last_90"
+	KeyLast30         = "last_30"
+	KeyLast15         = "last_15"
+	KeyComposite      = "composite"
+	KeySpreadOH       = "spread_oh"
+	KeySpreadOL       = "spread_ol"
+	KeySpreadHL       = "spread_hl"
+	KeySpreadHC       = "spread_hc"
+	KeySpreadLC       = "spread_lc"
+	KeySpreadOC       = "spread_oc"
+	KeyPredictHigh    = "predict_high"
+	KeyPredictLow     = "predict_low"
+	KeyPredictClose   = "predict_close"
+	KeyReverseLow     = "reverse_low"
+	KeyReverseHigh    = "reverse_high"
+	KeyMean           = "mean"
+	KeyDirection      = "direction"
+	KeySampleCount    = "sample_count"
+	KeyAvg            = "avg"
+	KeyMedian         = "median"
+	KeyRecommendOH    = "recommend_oh"
+	KeyRecommendOL    = "recommend_ol"
+	KeyDate           = "date"
+	KeyPredictHighVal = "predict_high_val"
+	KeyActualHighVal  = "actual_high_val"
+	KeyDevHigh        = "dev_high"
+	KeyPredictLowVal  = "predict_low_val"
+	KeyActualLowVal   = "actual_low_val"
+	KeyDevLow         = "dev_low"
+)
 
-── 价差模型 ──
-+----------+--------------+--------------+--------------+--------------+--------------+--------------+
-| 时段     | 开盘与最高价 | 开盘与最低价 | 最高与最低价 | 最高与收盘价 | 最低与收盘价 | 开盘与收盘价 |
-+----------+--------------+--------------+--------------+--------------+--------------+--------------+
-| 历史     | 1.39         | 1.07         | 2.46         | 1.20         | 1.26         | 1.25         |
-| 近3月    | 8.41         | 6.12         | 14.53        | 7.41         | 7.13         | 7.61         |
-| 近1月    | 11.35        | 6.36         | 17.71        | 8.26         | 9.45         | 10.16        |
-| 近2周    | 12.17        | 8.61         | 20.78        | 10.36        | 10.41        | 12.51        |
-| 综合均值 | 8.33         | 5.54         | 13.87        | 6.81         | 7.06         | 7.88         |
-+----------+--------------+--------------+--------------+--------------+--------------+--------------+
-
-── 预测收盘价(历史参考价) ──
-+------------+------------+-------------+-------------+-------------+------------------------+------------------------+--------+----------+
-|            | 历史参考价 | 近3月参考价 | 近1月参考价 | 近2周参考价 | 最低价反推(当日最低价) | 最高价反推(当日最高价) | 均值   | 正负算一 |
-+------------+------------+-------------+-------------+-------------+------------------------+------------------------+--------+----------+
-| 最高价预测 | 356.22     | 363.24      | 366.18      | 367.00      | /                      | /                      | 363.16 | +        |
-| 最低价预测 | 353.76     | 348.71      | 348.47      | 346.22      | /                      | 334.05                 | 349.29 | -        |
-| 收盘价预测 | /          | /           | /           | /           | /                      | 344.47                 | 344.47 | -        |
-+------------+------------+-------------+-------------+-------------+------------------------+------------------------+--------+----------+
-
-=== 价差分析 ===
-
-|       |── 最高-开盘 ──                       |── 开盘-最低 ──                      |── 高抛低吸推荐 (累计占比) ──            |
-+-------+--------+--------+--------+-------+--+--------+--------+--------+------+--+-------------------+--------------------+
-| 时段  | 样本数 | 平均值 | 中位数 | 均值  |  | 样本数 | 平均值 | 中位数 | 均值 |  | 高抛差价(高-开盘) | 低吸差价(开盘-低)  |
-+-------+--------+--------+--------+-------+--+--------+--------+--------+------+--+-------------------+--------------------+
-| 近2周 | 15     | 12.17  | 8.48   | 10.32 |  | 15     | 8.61   | 6.94   | 7.77 |  | 6.92~8.88 (26.7%) | 8.99~10.72 (26.7%) |
-| 近1月 | 30     | 11.35  | 8.42   | 9.89  |  | 30     | 6.36   | 4.12   | 5.24 |  | 1.89~5.38 (30.0%) | 2.00~3.93 (30.0%)  |
-| 近3月 | 90     | 8.41   | 6.05   | 7.23  |  | 90     | 6.12   | 4.61   | 5.37 |  | 0.56~3.29 (30.0%) | 2.00~4.13 (30.0%)  |
-| 历史  | 2421   | 1.39   | 0.42   | 0.90  |  | 2421   | 1.07   | 0.38   | 0.73 |  | 0.00~0.22 (30.0%) | 0.00~0.19 (30.0%)  |
-+-------+--------+--------+--------+-------+--+--------+--------+--------+------+--+-------------------+--------------------+
-*/
-
-func AnalysisTable(r models.AnalysisResult) {
-	fmt.Printf("\n%s (%s)\n", r.StockName, r.TsCode)
-
-	fmt.Println("--- 价差模型 ----")
-	w := tablewriter.NewWriter(os.Stdout)
-	w.Header(r.ModelTable.Headers)
-	w.Bulk(r.ModelTable.Rows)
-	w.Render()
-	// fmt.Fprintln(w, join(r.ModelTable.Headers, "\t")+"\t")
-	// for _, row := range r.ModelTable.Rows {
-	// 	fmt.Fprintln(w, join(row, "\t")+"\t")
-	// }
-	// w.Flush()
-
-	// fmt.Println("\n参考区间:")
-	// w2 := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	// fmt.Fprintln(w2, join(r.ReferenceTable.Headers, "\t")+"\t")
-	// for _, row := range r.ReferenceTable.Rows {
-	// 	fmt.Fprintln(w2, join(row, "\t")+"\t")
-	// }
-	// w2.Flush()
-	w.Render()
+var zh = map[string]string{
+	KeyTimePeriod:     "时段",
+	KeyHistory:        "历史",
+	KeyLast90:         "近3月",
+	KeyLast30:         "近1月",
+	KeyLast15:         "近2周",
+	KeyComposite:      "综合均值",
+	KeySpreadOH:       "开盘与最高价",
+	KeySpreadOL:       "开盘与最低价",
+	KeySpreadHL:       "最高与最低价",
+	KeySpreadHC:       "最高与收盘价",
+	KeySpreadLC:       "最低与收盘价",
+	KeySpreadOC:       "开盘与收盘价",
+	KeyPredictHigh:    "最高价预测",
+	KeyPredictLow:     "最低价预测",
+	KeyPredictClose:   "收盘价预测",
+	KeyReverseLow:     "最低价反推(当日最低价)",
+	KeyReverseHigh:    "最高价反推(当日最高价)",
+	KeyMean:           "均值",
+	KeyDirection:      "正负算一",
+	KeySampleCount:    "样本数",
+	KeyAvg:            "平均值",
+	KeyMedian:         "中位数",
+	KeyRecommendOH:    "高抛差价(高-开盘)",
+	KeyRecommendOL:    "低吸差价(开盘-低)",
+	KeyDate:           "日期",
+	KeyPredictHighVal: "预测高",
+	KeyActualHighVal:  "实际高",
+	KeyDevHigh:        "偏差",
+	KeyPredictLowVal:  "预测低",
+	KeyActualLowVal:   "实际低",
+	KeyDevLow:         "偏差",
 }
 
-func join(ss []string, sep string) string {
-	if len(ss) == 0 {
-		return ""
+func t(key string) string {
+	if v, ok := zh[key]; ok {
+		return v
 	}
-	out := ss[0]
-	for _, s := range ss[1:] {
-		out += sep + s
+	return key
+}
+
+var spreadKeys = []string{
+	"spread_oh", "spread_ol", "spread_hl",
+	"spread_hc", "spread_lc", "spread_oc",
+}
+
+var spreadLabels = []string{
+	KeySpreadOH, KeySpreadOL, KeySpreadHL,
+	KeySpreadHC, KeySpreadLC, KeySpreadOC,
+}
+
+var windowIdToKey = map[string]string{
+	"All":     KeyHistory,
+	"last_90": KeyLast90,
+	"last_30": KeyLast30,
+	"last_15": KeyLast15,
+}
+
+func windowKeyName(id string) string {
+	if k, ok := windowIdToKey[id]; ok {
+		return t(k)
 	}
-	return out
+	return id
+}
+
+func AnalysisTable(r models.AnalysisResult) {
+	fmt.Printf("\n=== %s (%s) 交易计划 ===\n", r.StockName, r.TsCode)
+
+	// Price line
+	parts := []string{}
+	if r.OpenPrice != nil {
+		parts = append(parts, fmt.Sprintf("开盘价: %.2f", *r.OpenPrice))
+	}
+	if r.ActualHigh != nil {
+		parts = append(parts, fmt.Sprintf("最高价: %.2f", *r.ActualHigh))
+	} else {
+		parts = append(parts, "最高价: ")
+	}
+	if r.ActualLow != nil {
+		parts = append(parts, fmt.Sprintf("最低价: %.2f", *r.ActualLow))
+	} else {
+		parts = append(parts, "最低价: ")
+	}
+	if r.ActualClose != nil {
+		parts = append(parts, fmt.Sprintf("收盘价: %.2f", *r.ActualClose))
+	} else {
+		parts = append(parts, "收盘价: ")
+	}
+	fmt.Println(strings.Join(parts, "   "))
+
+	// Model table
+	fmt.Println("\n── 价差模型 ──")
+	headers := []string{t(KeyTimePeriod)}
+	for _, lbl := range spreadLabels {
+		headers = append(headers, t(lbl))
+	}
+	var rows [][]string
+	for _, win := range r.Windows {
+		row := []string{windowKeyName(win.Info.Id)}
+		if win.Means != nil {
+			row = append(row, formatMeans(win.Means)...)
+		} else {
+			for range spreadKeys {
+				row = append(row, "-")
+			}
+		}
+		rows = append(rows, row)
+	}
+	compRow := []string{t(KeyComposite)}
+	for _, key := range spreadKeys {
+		compRow = append(compRow, fmt.Sprintf("%.2f", r.CompositeMeans[key]))
+	}
+	rows = append(rows, compRow)
+	fmt.Println(analysis.FormatTable(headers, rows))
+
+	// Reference table (only if open price available)
+	if r.OpenPrice != nil {
+		fmt.Println("── 预测收盘价(历史参考价) ──")
+		refTable(r)
+	}
+
+	// Analysis table
+	fmt.Println("\n=== 价差分析 ===")
+	analysisTable(r)
+
+	// Distribution tables
+	distributionTables(r)
+}
+
+func formatMeans(md *models.MeansData) []string {
+	fields := []*models.MeansAvgData{
+		md.SpreadOH, md.SpreadOL, md.SpreadHL,
+		md.SpreadHC, md.SpreadLC, md.SpreadOC,
+	}
+	var row []string
+	for _, m := range fields {
+		if m != nil {
+			row = append(row, fmt.Sprintf("%.2f", m.Mean))
+		} else {
+			row = append(row, "-")
+		}
+	}
+	return row
+}
+
+func refTable(r models.AnalysisResult) {
+	openPrice := *r.OpenPrice
+
+	lastWin := r.Windows[len(r.Windows)-1]
+	lastMeans := lastWin.Means
+
+	headers := []string{""}
+	for _, win := range r.Windows {
+		headers = append(headers, windowKeyName(win.Info.Id))
+	}
+	headers = append(headers, t(KeyReverseLow), t(KeyReverseHigh), t(KeyMean), t(KeyDirection))
+
+	var rows [][]string
+
+	// High prediction
+	highRow := []string{t(KeyPredictHigh)}
+	var numCells []string
+	for _, win := range r.Windows {
+		if win.Means != nil && win.Means.SpreadOH != nil && win.Means.SpreadOH.Mean != 0 {
+			s := fmt.Sprintf("%.2f", openPrice+win.Means.SpreadOH.Mean)
+			highRow = append(highRow, s)
+			numCells = append(numCells, s)
+		} else {
+			highRow = append(highRow, "/")
+		}
+	}
+	if r.ActualLow != nil && lastMeans != nil && lastMeans.SpreadHL != nil && lastMeans.SpreadHL.Mean != 0 {
+		s := fmt.Sprintf("%.2f", *r.ActualLow+lastMeans.SpreadHL.Mean)
+		highRow = append(highRow, s)
+		numCells = append(numCells, s)
+	} else {
+		highRow = append(highRow, "/")
+	}
+	highRow = append(highRow, "/")
+	highRow = append(highRow, analysis.MeanOfNumericCells(numCells))
+	highRow = append(highRow, "+")
+	rows = append(rows, highRow)
+
+	// Low prediction
+	lowRow := []string{t(KeyPredictLow)}
+	numCells = nil
+	for _, win := range r.Windows {
+		if win.Means != nil && win.Means.SpreadOL != nil && win.Means.SpreadOL.Mean != 0 {
+			s := fmt.Sprintf("%.2f", openPrice-win.Means.SpreadOL.Mean)
+			lowRow = append(lowRow, s)
+			numCells = append(numCells, s)
+		} else {
+			lowRow = append(lowRow, "/")
+		}
+	}
+	lowRow = append(lowRow, "/")
+	if r.ActualHigh != nil && lastMeans != nil && lastMeans.SpreadHL != nil && lastMeans.SpreadHL.Mean != 0 {
+		s := fmt.Sprintf("%.2f", *r.ActualHigh-lastMeans.SpreadHL.Mean)
+		lowRow = append(lowRow, s)
+		numCells = append(numCells, s)
+	} else {
+		lowRow = append(lowRow, "/")
+	}
+	lowRow = append(lowRow, analysis.MeanOfNumericCells(numCells))
+	lowRow = append(lowRow, "-")
+	rows = append(rows, lowRow)
+
+	// Close prediction
+	closeRow := []string{t(KeyPredictClose)}
+	for range r.Windows {
+		closeRow = append(closeRow, "/")
+	}
+	numCells = nil
+	if r.ActualLow != nil && lastMeans != nil && lastMeans.SpreadLC != nil && lastMeans.SpreadLC.Mean != 0 {
+		s := fmt.Sprintf("%.2f", *r.ActualLow+lastMeans.SpreadLC.Mean)
+		closeRow = append(closeRow, s)
+		numCells = append(numCells, s)
+	} else {
+		closeRow = append(closeRow, "/")
+	}
+	if r.ActualHigh != nil && lastMeans != nil && lastMeans.SpreadHC != nil && lastMeans.SpreadHC.Mean != 0 {
+		s := fmt.Sprintf("%.2f", *r.ActualHigh-lastMeans.SpreadHC.Mean)
+		closeRow = append(closeRow, s)
+		numCells = append(numCells, s)
+	} else {
+		closeRow = append(closeRow, "/")
+	}
+	closeRow = append(closeRow, analysis.MeanOfNumericCells(numCells))
+	closeRow = append(closeRow, "-")
+	rows = append(rows, closeRow)
+
+	fmt.Println(analysis.FormatTable(headers, rows))
+}
+
+func analysisTable(r models.AnalysisResult) {
+	uHeaders := []string{
+		t(KeyTimePeriod), t(KeySampleCount), t(KeyAvg), t(KeyMedian), t(KeyMean), "",
+		t(KeySampleCount), t(KeyAvg), t(KeyMedian), t(KeyMean), "",
+		t(KeyRecommendOH), t(KeyRecommendOL),
+	}
+
+	ordered := make([]*models.WindowData, len(r.Windows))
+	copy(ordered, r.Windows)
+	for i, j := 0, len(ordered)-1; i < j; i, j = i+1, j-1 {
+		ordered[i], ordered[j] = ordered[j], ordered[i]
+	}
+
+	var uTable [][]string
+	for _, win := range ordered {
+		row := []string{windowKeyName(win.Info.Id)}
+
+		if win.Means != nil && win.Means.SpreadOH != nil {
+			m := win.Means.SpreadOH
+			row = append(row, fmt.Sprintf("%d", m.Count), fmt.Sprintf("%.2f", m.Avg), fmt.Sprintf("%.2f", m.Median), fmt.Sprintf("%.2f", m.Mean))
+		} else {
+			row = append(row, "0", "-", "-", "-")
+		}
+		row = append(row, "")
+
+		if win.Means != nil && win.Means.SpreadOL != nil {
+			m := win.Means.SpreadOL
+			row = append(row, fmt.Sprintf("%d", m.Count), fmt.Sprintf("%.2f", m.Avg), fmt.Sprintf("%.2f", m.Median), fmt.Sprintf("%.2f", m.Mean))
+		} else {
+			row = append(row, "0", "-", "-", "-")
+		}
+		row = append(row, "")
+
+		row = append(row, formatRecommend(win.Means, func(md *models.MeansData) *models.MeansAvgData { return md.SpreadOH }))
+		row = append(row, formatRecommend(win.Means, func(md *models.MeansData) *models.MeansAvgData { return md.SpreadOL }))
+
+		uTable = append(uTable, row)
+	}
+
+	// Compute column widths for sub-header
+	colW := make([]int, len(uHeaders))
+	for i, h := range uHeaders {
+		colW[i] = analysis.DisplayWidth(h)
+	}
+	for _, row := range uTable {
+		for i, cell := range row {
+			if i < len(colW) && analysis.DisplayWidth(cell) > colW[i] {
+				colW[i] = analysis.DisplayWidth(cell)
+			}
+		}
+	}
+
+	sectionW := func(start, end int) int {
+		w := 0
+		for i := start; i <= end; i++ {
+			w += colW[i] + 3
+		}
+		return w
+	}
+
+	timeSW := colW[0] + 2
+	ohSW := sectionW(1, 5)
+	olSW := sectionW(6, 10)
+	recSW := sectionW(11, 12)
+
+	subLine := "|" + strings.Repeat(" ", timeSW) + "|" +
+		analysis.Rpad("── 最高-开盘 ──", ohSW) + "|" +
+		analysis.Rpad("── 开盘-最低 ──", olSW) + "|" +
+		analysis.Rpad("── 高抛低吸推荐 (累计占比) ──", recSW) + "|"
+
+	fmt.Println()
+	fmt.Println(subLine)
+	fmt.Println(analysis.FormatTable(uHeaders, uTable))
+}
+
+func formatRecommend(means *models.MeansData, get func(*models.MeansData) *models.MeansAvgData) string {
+	if means == nil {
+		return "-"
+	}
+	m := get(means)
+	if m == nil || m.Recommend == nil {
+		return "-"
+	}
+	return fmt.Sprintf("%.2f~%.2f (%.1f%%)", m.Recommend.Low, m.Recommend.High, m.Recommend.CumPct)
+}
+
+func distributionTables(r models.AnalysisResult) {
+	keys := []struct {
+		label string
+		get   func(*models.MeansData) *models.MeansAvgData
+	}{
+		{"最高-开盘", func(m *models.MeansData) *models.MeansAvgData { return m.SpreadOH }},
+		{"开盘-最低", func(m *models.MeansData) *models.MeansAvgData { return m.SpreadOL }},
+	}
+
+	distHeaders := []string{"区间", "数量", "占比"}
+
+	for _, k := range keys {
+		var tables []string
+		for _, win := range r.Windows {
+			if win.Means == nil {
+				continue
+			}
+			m := k.get(win.Means)
+			if m == nil || m.Count == 0 || len(m.Distribution) == 0 {
+				continue
+			}
+			var rows [][]string
+			for _, b := range m.Distribution {
+				rows = append(rows, []string{
+					fmt.Sprintf("%.2f~%.2f", b.Lower, b.Upper),
+					fmt.Sprintf("%d", b.Count),
+					fmt.Sprintf("%.1f%%", b.Pct),
+				})
+			}
+			block := fmt.Sprintf("── %s 分布 (%s,%d条) ──\n", k.label, windowKeyName(win.Info.Id), m.Count) +
+				analysis.FormatTable(distHeaders, rows)
+			tables = append(tables, block)
+		}
+		if len(tables) > 0 {
+			fmt.Println()
+			fmt.Println(joinSideBySide(tables, 4))
+		}
+	}
+}
+
+func joinSideBySide(tables []string, gap int) string {
+	split := make([][]string, len(tables))
+	for i, tbl := range tables {
+		split[i] = strings.Split(tbl, "\n")
+	}
+
+	// Normalize each block to same width
+	normalized := make([][]string, len(split))
+	for i, block := range split {
+		maxW := 0
+		for _, line := range block {
+			if w := analysis.DisplayWidth(line); w > maxW {
+				maxW = w
+			}
+		}
+		padded := make([]string, len(block))
+		for j, line := range block {
+			padded[j] = analysis.Rpad(line, maxW)
+		}
+		normalized[i] = padded
+	}
+
+	maxLines := 0
+	for _, b := range normalized {
+		if len(b) > maxLines {
+			maxLines = len(b)
+		}
+	}
+
+	pad := strings.Repeat(" ", gap)
+	var lines []string
+	for i := 0; i < maxLines; i++ {
+		var parts []string
+		for _, b := range normalized {
+			if i < len(b) {
+				parts = append(parts, b[i])
+			} else {
+				parts = append(parts, strings.Repeat(" ", analysis.DisplayWidth(b[0])))
+			}
+		}
+		lines = append(lines, strings.Join(parts, pad))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// PredictionsTable renders prediction records.
+func PredictionsTable(tsCode, stockName string, preds []models.AnalysisPrediction) {
+	fmt.Printf("\n%s (%s) 预测记录\n\n", stockName, tsCode)
+
+	headers := []string{
+		t(KeyDate),
+		t(KeyPredictHighVal), t(KeyActualHighVal), t(KeyDevHigh),
+		t(KeyPredictLowVal), t(KeyActualLowVal), t(KeyDevLow),
+	}
+	var rows [][]string
+	for _, p := range preds {
+		rows = append(rows, []string{
+			p.TradeDate,
+			fmt.Sprintf("%.2f", p.PredictHigh),
+			fmt.Sprintf("%.2f", p.ActualHigh),
+			fmt.Sprintf("%+.2f", p.ActualHigh-p.PredictHigh),
+			fmt.Sprintf("%.2f", p.PredictLow),
+			fmt.Sprintf("%.2f", p.ActualLow),
+			fmt.Sprintf("%+.2f", p.ActualLow-p.PredictLow),
+		})
+	}
+	fmt.Println(analysis.FormatTable(headers, rows))
 }

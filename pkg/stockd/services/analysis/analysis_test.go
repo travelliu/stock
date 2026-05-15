@@ -32,7 +32,7 @@ func TestRun_DrawsOpenFromDraftIfProvided(t *testing.T) {
 	today := time.Now().Format("20060102")
 	require.NoError(t, gdb.Create(&models.IntradayDraft{UserID: 1, TsCode: "X.SH", TradeDate: today, Open: p(105)}).Error)
 
-	svc := analysis.New(gdb)
+	svc := analysis.New(gdb, nil)
 	res, err := svc.Run(context.Background(), analysis.Input{UserID: 1, TsCode: "X.SH", WithDraft: true})
 	require.NoError(t, err)
 	require.NotNil(t, res.OpenPrice)
@@ -45,7 +45,7 @@ func TestRun_ExplicitOverridesBeatDraft(t *testing.T) {
 	today := time.Now().Format("20060102")
 	require.NoError(t, gdb.Create(&models.IntradayDraft{UserID: 1, TsCode: "X.SH", TradeDate: today, Open: p(105)}).Error)
 
-	svc := analysis.New(gdb)
+	svc := analysis.New(gdb, nil)
 	res, err := svc.Run(context.Background(), analysis.Input{UserID: 1, TsCode: "X.SH", WithDraft: true, OpenPrice: p(110)})
 	require.NoError(t, err)
 	require.NotNil(t, res.OpenPrice)
@@ -59,6 +59,6 @@ func TestA1(t *testing.T) {
 	gdb, err := gorm.Open(sqlite.Open(fmt.Sprintf("file:%s?cache=shared", "/root/code/github/travelliu/stock/data/stock.db")),
 		&gorm.Config{})
 	require.NoError(t, err)
-	s := analysis.New(gdb)
+	s := analysis.New(gdb, nil)
 	s.Run(context.Background(), analysis.Input{UserID: 1, TsCode: "300476"})
 }

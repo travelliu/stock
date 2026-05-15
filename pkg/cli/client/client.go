@@ -68,7 +68,6 @@ func (c *Client) do(req *http.Request, out any) error {
 	if env.Code != 200 {
 		return fmt.Errorf("%s", env.Message)
 	}
-	fmt.Println(string(env.Data))
 	if out != nil && len(env.Data) > 0 {
 		return json.Unmarshal(env.Data, out)
 	}

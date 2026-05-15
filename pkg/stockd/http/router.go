@@ -2,58 +2,58 @@ package http
 
 import (
 	"net/http"
+	"stock/pkg/stockd/services"
 	"strings"
 
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"gorm.io/gorm"
 
 	root "stock"
 	"stock/pkg/stockd/auth"
-	"stock/pkg/stockd/config"
+
 	"stock/pkg/stockd/services/analysis"
-	"stock/pkg/stockd/services/bars"
-	"stock/pkg/stockd/services/draft"
-	"stock/pkg/stockd/services/portfolio"
-	"stock/pkg/stockd/services/scheduler"
-	stocksvc "stock/pkg/stockd/services/stock"
-	"stock/pkg/stockd/services/token"
-	"stock/pkg/stockd/services/user"
 	"stock/pkg/stockd/utils"
-	"stock/pkg/tushare"
 )
 
-func NewRouter(gdb *gorm.DB, cfg *config.Config, sched *scheduler.Service) *gin.Engine {
-	userSvc := user.New(gdb)
-	tokenSvc := token.New(gdb)
-	stockSvc := stocksvc.New(gdb)
-	portfolioSvc := portfolio.New(gdb)
-	draftSvc := draft.New(gdb)
-	barsSvc := bars.New(gdb, tushare.NewClient(tushare.WithBaseURL(cfg.Tushare.BaseURL)))
-	analysisSvc := analysis.New(gdb)
+func initGin(logger *logrus.Logger) *gin.Engine {
+	gin.DisableConsoleColor()
+	gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {
+		logger.Infof("%v %v %v %v", httpMethod, absolutePath, handlerName, nuHandlers)
+	}
+	router := gin.New()
 
-	h := NewHandler(userSvc, tokenSvc, stockSvc, portfolioSvc, draftSvc, barsSvc, analysisSvc, sched)
+	router.Use(utils.RequestID(), Logger(logger), Cors())
+	router.Use(gzip.Gzip(gzip.DefaultCompression))
+	router.Use(Recovery(logger))
+	router.Use(utils.Language())
 
-	gin.SetMode(gin.ReleaseMode)
-	r := gin.New()
-	r.Use(utils.Recovery())
-	r.Use(utils.RequestID())
-	r.Use(utils.Language())
+	return router
+}
+
+func NewRouter(svc *services.Service, logger *logrus.Logger) *gin.Engine {
+
+	analysisSvc := analysis.New(svc.GetDB(), nil)
+
+	h := NewHandler(svc, analysisSvc)
+
+	r := initGin(logger)
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"http://localhost:5173"}
+	corsConfig.AllowOrigins = []string{"*"}
 	corsConfig.AllowCredentials = true
 	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "Lang")
 	r.Use(cors.New(corsConfig))
 
-	store := auth.NewSessionStore([]byte(cfg.Server.SessionSecret))
+	store := auth.NewSessionStore([]byte(svc.GetConfig().Server.SessionSecret))
 	r.Use(sessions.Sessions(auth.SessionName, store))
 
-	r.Use(auth.ResolveUser(gdb, cfg.Tushare.DefaultToken))
+	r.Use(auth.ResolveUser(svc.GetDB(), svc.GetConfig().Tushare.DefaultToken))
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -106,6 +106,8 @@ func NewRouter(gdb *gorm.DB, cfg *config.Config, sched *scheduler.Service) *gin.
 	anr := api.Group("/analysis")
 	anr.Use(AuthRequired())
 	anr.GET("/"+tsCodeUrl, h.GetAnalysis)
+	anr.POST("/recalc", h.RecalcPredictions)
+	anr.GET("/predictions/"+tsCodeUrl, h.ListPredictions)
 
 	r.Use(static.Serve("/", root.EmbedFolder()))
 	r.NoRoute(func(c *gin.Context) {

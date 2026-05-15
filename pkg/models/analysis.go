@@ -1,25 +1,33 @@
 package models
 
 type WindowInfo struct {
-	Id   string
-	Name string
-	Day  int
+	Id   string `json:"id"`
+	Name string `json:"name"`
+	Day  int    `json:"day"` // 数据查询前多少天
+}
+
+type RecommendRangeResult struct {
+	Low    float64 `json:"low"`
+	High   float64 `json:"high"`
+	CumPct float64 `json:"cumPct"`
 }
 
 type MeansAvgData struct {
-	Avg          float64       `json:"avg"`          // 平均值
-	Median       float64       `json:"median"`       // 中位数
-	Mean         float64       `json:"mean"`         // 中位数和平均数的平均
-	Distribution []*DistBucket `json:"distribution"` // 区间分布
+	Count        int                  `json:"count"`
+	Avg          float64              `json:"avg"`
+	Median       float64              `json:"median"`
+	Mean         float64              `json:"mean"`
+	Distribution []*DistBucket        `json:"distribution"`
+	Recommend    *RecommendRangeResult `json:"recommend,omitempty"`
 }
 
 type MeansData struct {
-	SpreadOH *MeansAvgData `json:"spreadOH"` // 开盘与最高价
-	SpreadOL *MeansAvgData `json:"spreadOL"` // 开盘与最低价
-	SpreadHL *MeansAvgData `json:"spreadHL"` // 最高与最低价
-	SpreadHC *MeansAvgData `json:"spreadHC"` // 最高与收盘价
-	SpreadLC *MeansAvgData `json:"spreadLC"` // 最低与收盘价
-	SpreadOC *MeansAvgData `json:"spreadOC"` // 开盘与收盘价
+	SpreadOH *MeansAvgData `json:"spreadOH"`
+	SpreadOL *MeansAvgData `json:"spreadOL"`
+	SpreadHL *MeansAvgData `json:"spreadHL"`
+	SpreadHC *MeansAvgData `json:"spreadHC"`
+	SpreadLC *MeansAvgData `json:"spreadLC"`
+	SpreadOC *MeansAvgData `json:"spreadOC"`
 }
 
 type WindowData struct {
@@ -29,46 +37,32 @@ type WindowData struct {
 }
 
 type DistBucket struct {
-	Lower float64 `json:"lower,omitempty"` // 区间下界（含）
-	Upper float64 `json:"upper,omitempty"` // 区间上界（不含，最后一个含）
-	Count int     `json:"count,omitempty"` // 落入数量
-	Pct   float64 `json:"pct,omitempty"`   // 占比 0~100
+	Lower float64 `json:"lower,omitempty"`
+	Upper float64 `json:"upper,omitempty"`
+	Count int     `json:"count,omitempty"`
+	Pct   float64 `json:"pct,omitempty"`
 }
 
 // Input is everything Build needs.
 type Input struct {
 	TsCode      string      `json:"tsCode,omitempty"`
 	StockName   string      `json:"stockName,omitempty"`
-	Rows        []*DailyBar `json:"rows,omitempty"` // raw daily history
+	Rows        []*DailyBar `json:"rows,omitempty"`
 	OpenPrice   *float64    `json:"openPrice,omitempty"`
 	ActualHigh  *float64    `json:"actualHigh,omitempty"`
 	ActualLow   *float64    `json:"actualLow,omitempty"`
 	ActualClose *float64    `json:"actualClose,omitempty"`
 }
 
-// AnalysisResult is the canonical output. Field naming matches the design spec §3.4.
+// AnalysisResult is the canonical output with raw computed data.
+// Table rendering (CLI/Web) builds display tables from Windows + CompositeMeans.
 type AnalysisResult struct {
 	TsCode         string             `json:"tsCode"`
 	StockName      string             `json:"stockName"`
-	Windows        []*WindowInfo      `json:"windows"` // ["历史","近3月","近1月","近2周"]
+	Windows        []*WindowData      `json:"windows"`
+	CompositeMeans map[string]float64 `json:"compositeMeans"`
 	OpenPrice      *float64           `json:"openPrice,omitempty"`
 	ActualHigh     *float64           `json:"actualHigh,omitempty"`
 	ActualLow      *float64           `json:"actualLow,omitempty"`
 	ActualClose    *float64           `json:"actualClose,omitempty"`
-	CompositeMeans map[string]float64 `json:"compositeMeans"`
-	ModelTable     ModelTable         `json:"modelTable"` // 价差
-	ReferenceTable ReferenceTable     `json:"referenceTable"`
-}
-
-// ModelTable is the 4-window × 6-spread table (plus a composite row).
-// 价差模型
-type ModelTable struct {
-	Headers []string   `json:"headers"` // ["时段","开盘与最高价",...]
-	Rows    [][]string `json:"rows"`    // formatted cells, "%.2f" or "-"
-}
-
-// ReferenceTable is the 3-prediction-row table (high/low/close).
-type ReferenceTable struct {
-	Headers []string   `json:"headers"`
-	Rows    [][]string `json:"rows"`
 }

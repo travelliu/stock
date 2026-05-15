@@ -2,12 +2,12 @@ package http
 
 import (
 	"net/http"
+	"stock/pkg/stockd/services"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"stock/pkg/models"
-	"stock/pkg/stockd/services/user"
 	"stock/pkg/stockd/utils"
 )
 
@@ -17,7 +17,7 @@ func (h *handler) CreateUser(c *gin.Context) {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return
 	}
-	u, err := h.userSvc.Create(c.Request.Context(), user.CreateInput{
+	u, err := h.svc.CreateUser(c.Request.Context(), services.CreateInput{
 		Username: req.Username, Password: req.Password, Role: req.Role, TushareToken: req.TushareToken,
 	})
 	if err != nil {
@@ -28,7 +28,7 @@ func (h *handler) CreateUser(c *gin.Context) {
 }
 
 func (h *handler) ListUsers(c *gin.Context) {
-	list, err := h.userSvc.List(c.Request.Context())
+	list, err := h.svc.ListUser(c.Request.Context())
 	if err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
@@ -44,20 +44,20 @@ func (h *handler) PatchUser(c *gin.Context) {
 		return
 	}
 	if req.Role != nil {
-		_ = h.userSvc.SetRole(c.Request.Context(), uint(id), *req.Role)
+		_ = h.svc.SetUserRole(c.Request.Context(), uint(id), *req.Role)
 	}
 	if req.Disabled != nil {
-		_ = h.userSvc.SetDisabled(c.Request.Context(), uint(id), *req.Disabled)
+		_ = h.svc.SetUserDisabled(c.Request.Context(), uint(id), *req.Disabled)
 	}
 	if req.TushareToken != nil {
-		_ = h.userSvc.SetTushareToken(c.Request.Context(), uint(id), *req.TushareToken)
+		_ = h.svc.SetUserTushareToken(c.Request.Context(), uint(id), *req.TushareToken)
 	}
 	utils.HTTPRequestSuccess(c, http.StatusOK, gin.H{"message": "updated"})
 }
 
 func (h *handler) DeleteUser(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	if err := h.userSvc.Delete(c.Request.Context(), uint(id)); err != nil {
+	if err := h.svc.DeleteUser(c.Request.Context(), uint(id)); err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}

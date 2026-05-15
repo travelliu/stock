@@ -1,6 +1,7 @@
 package http
 
 import (
+	"stock/pkg/stockd/services"
 	"strconv"
 	"time"
 
@@ -8,14 +9,13 @@ import (
 
 	"stock/pkg/models"
 	"stock/pkg/stockd/auth"
-	"stock/pkg/stockd/services/draft"
 	"stock/pkg/stockd/utils"
 )
 
 func (h *handler) GetDraftToday(c *gin.Context) {
 	u := auth.User(c)
 	tradeDate := c.DefaultQuery("trade_date", time.Now().Format("20060102"))
-	d, err := h.draftSvc.GetByDate(c.Request.Context(), u.ID, c.Query("ts_code"), tradeDate)
+	d, err := h.svc.GetDraftByDate(c.Request.Context(), u.ID, c.Query("ts_code"), tradeDate)
 	if err != nil {
 		utils.HTTPRequestFailedV4(c, nil, utils.ErrInvalidParam)
 		return
@@ -30,7 +30,7 @@ func (h *handler) UpsertDraft(c *gin.Context) {
 		return
 	}
 	u := auth.User(c)
-	d, err := h.draftSvc.Upsert(c.Request.Context(), draft.UpsertInput{
+	d, err := h.svc.UpsertDraft(c.Request.Context(), services.UpsertInput{
 		UserID: u.ID, TsCode: req.TsCode, TradeDate: req.TradeDate,
 		Open: req.Open, High: req.High, Low: req.Low, Close: req.Close,
 	})
@@ -44,7 +44,7 @@ func (h *handler) UpsertDraft(c *gin.Context) {
 func (h *handler) DeleteDraft(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	u := auth.User(c)
-	if err := h.draftSvc.Delete(c.Request.Context(), u.ID, uint(id)); err != nil {
+	if err := h.svc.DeleteDraft(c.Request.Context(), u.ID, uint(id)); err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}

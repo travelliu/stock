@@ -1,0 +1,7 @@
+.venv/
+.git/
+.idea/
+data/
+web/node_modules/
+stockctl
+*.db

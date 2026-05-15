@@ -16,7 +16,7 @@ const (
 
 func (h *handler) ListPortfolio(c *gin.Context) {
 	u := auth.User(c)
-	list, err := h.portfolioSvc.List(c.Request.Context(), u.ID)
+	list, err := h.svc.ListPortfolio(c.Request.Context(), u.ID)
 	if err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
@@ -31,7 +31,7 @@ func (h *handler) AddPortfolio(c *gin.Context) {
 		return
 	}
 	u := auth.User(c)
-	if err := h.portfolioSvc.Add(c.Request.Context(), u.ID, req.TsCode, req.Note); err != nil {
+	if err := h.svc.AddPortfolio(c.Request.Context(), u.ID, req.TsCode, req.Note); err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}
@@ -40,7 +40,7 @@ func (h *handler) AddPortfolio(c *gin.Context) {
 
 func (h *handler) RemovePortfolio(c *gin.Context) {
 	u := auth.User(c)
-	if err := h.portfolioSvc.Remove(c.Request.Context(), u.ID, c.Param(tsCodeValue)); err != nil {
+	if err := h.svc.RemovePortfolio(c.Request.Context(), u.ID, c.Param(tsCodeValue)); err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}
@@ -54,7 +54,7 @@ func (h *handler) UpdatePortfolioNote(c *gin.Context) {
 		return
 	}
 	u := auth.User(c)
-	if err := h.portfolioSvc.UpdateNote(c.Request.Context(), u.ID, c.Param(tsCodeValue), req.Note); err != nil {
+	if err := h.svc.UpdatePortfolioNote(c.Request.Context(), u.ID, c.Param(tsCodeValue), req.Note); err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}

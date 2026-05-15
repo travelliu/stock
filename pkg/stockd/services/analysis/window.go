@@ -1,7 +1,6 @@
 package analysis
 
 import (
-	"fmt"
 	"sort"
 	"stock/pkg/utils"
 
@@ -98,6 +97,25 @@ func Means(windows []*models.WindowData) {
 		w.Means.SpreadOC = Cloc(spreadOcList)
 		w.Means.SpreadHC = Cloc(spreadHcList)
 		w.Means.SpreadLC = Cloc(spreadLcList)
+
+		threshold := 30.0
+		if w.Info.Id == "All" {
+			threshold = 60.0
+		}
+		setRecommend(w.Means.SpreadOH, spreadOhList, threshold)
+		setRecommend(w.Means.SpreadOL, spreadOlList, threshold)
+	}
+}
+
+func setRecommend(m *models.MeansAvgData, vals []float64, threshold float64) {
+	if m == nil || len(vals) == 0 {
+		return
+	}
+	sorted := make([]float64, len(vals))
+	copy(sorted, vals)
+	sort.Float64s(sorted)
+	if lo, hi, pct, ok := RecommendRange(sorted, threshold); ok {
+		m.Recommend = &models.RecommendRangeResult{Low: lo, High: hi, CumPct: pct}
 	}
 }
 
@@ -105,13 +123,14 @@ func Cloc(list []float64) *models.MeansAvgData {
 	sorted := make([]float64, len(list))
 	copy(sorted, list)
 	sort.Float64s(sorted)
-	var v = &models.MeansAvgData{}
-	fmt.Println(sorted)
+	v := &models.MeansAvgData{Count: len(list)}
+
 	v.Avg, _ = stats.Mean(sorted)
 	v.Avg = utils.Round(v.Avg)
 	v.Median, _ = stats.Median(sorted)
 	v.Median = utils.Round(v.Median)
 	v.Mean, _ = stats.Mean([]float64{v.Avg, v.Median})
 	v.Mean = utils.Round(v.Mean)
+	v.Distribution = Distribution(sorted, 10)
 	return v
 }

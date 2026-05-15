@@ -36,15 +36,18 @@ func (s *Service) InitCron() error {
 			return err
 		}
 		for _, code := range codes {
-			if _, err := s.SyncDaily(ctx, s.cfg.Tushare.DefaultToken, code); err != nil {
+			s.logger.Infof("sync %s ", code)
+			if _, err := s.SyncDaily(ctx, s.cfg.Tushare.GetDefaultToken(""), code); err != nil {
 				s.logger.WithError(err).WithField("ts_code", code).Error("daily sync failed")
 			}
 		}
-		if res, err := s.Recalc(ctx, ""); err != nil {
-			s.logger.WithError(err).Error("prediction recalc failed")
-		} else {
-			s.logger.WithField("updated", res.Upserted).Info("prediction recalc done")
+		for _, code := range codes {
+			_, err := s.recalcStock(ctx, code)
+			if err != nil {
+				s.logger.WithError(err).WithField("ts_code", code).Error("recalcStock sync failed")
+			}
 		}
+
 		return nil
 	})
 	if err != nil {

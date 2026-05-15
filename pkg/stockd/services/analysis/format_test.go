@@ -1,11 +1,10 @@
 package analysis_test
 
 import (
+	"stock/pkg/stockd/services/analysis"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"stock/pkg/analysis"
 )
 
 func TestDisplayWidth(t *testing.T) {

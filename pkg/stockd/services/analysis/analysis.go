@@ -12,7 +12,6 @@ import (
 
 	"gorm.io/gorm"
 
-	pkganalysis "stock/pkg/analysis"
 	"stock/pkg/models"
 )
 
@@ -30,11 +29,11 @@ type Input struct {
 	WithDraft   bool
 }
 
-func (s *Service) Run(ctx context.Context, in Input) (models.AnalysisResult, error) {
-	var bars []models.DailyBar
+func (s *Service) Run(ctx context.Context, in Input) (*models.AnalysisResult, error) {
+	var bars []*models.DailyBar
 	err := s.db.WithContext(ctx).Where("ts_code = ?", in.TsCode).Order("trade_date ASC").Find(&bars).Error
 	if err != nil {
-		return models.AnalysisResult{}, err
+		return &models.AnalysisResult{}, err
 	}
 
 	if in.WithDraft {
@@ -57,17 +56,17 @@ func (s *Service) Run(ctx context.Context, in Input) (models.AnalysisResult, err
 				in.ActualClose = d.Close
 			}
 		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return models.AnalysisResult{}, err
+			return &models.AnalysisResult{}, err
 		}
 	}
 
 	var name string
 	var st models.Stock
-	if s.db.WithContext(ctx).First(&st, "ts_code = ?", in.TsCode).Error == nil {
+	if s.db.WithContext(ctx).First(&st, "ts_code = ? or code = ?", in.TsCode, in.TsCode).Error == nil {
 		name = st.Name
 	}
 
-	res := pkganalysis.Build(models.Input{
+	res := Build(models.Input{
 		TsCode: in.TsCode, StockName: name,
 		Rows:        bars,
 		OpenPrice:   in.OpenPrice,

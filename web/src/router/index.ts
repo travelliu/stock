@@ -12,12 +12,13 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/stocks/:tsCode',
+      path: '/stocks/:code',
       component: () => import('@/views/stock/StockDetailView.vue'),
       meta: { requiresAuth: true },
       children: [
-        { path: '', name: 'StockBasic', component: () => import('@/views/stock/BasicTab.vue') },
-        { path: 'statistics', name: 'StockStatistics', component: () => import('@/views/stock/StatisticsTab.vue') },
+        { path: '', name: 'StockPrediction', component: () => import('@/views/stock/PredictionTab.vue') },
+        { path: 'bars', name: 'StockBars', component: () => import('@/views/stock/DailyBarsTab.vue') },
+        { path: 'predictions', name: 'StockPredictions', component: () => import('@/views/stock/PredictionRecordsTab.vue') },
       ],
     },
     {

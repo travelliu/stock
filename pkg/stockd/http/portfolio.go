@@ -25,8 +25,8 @@ func (h *handler) ListPortfolio(c *gin.Context) {
 }
 
 func (h *handler) AddPortfolio(c *gin.Context) {
-	var req *models.PortfolioReq
-	if err := c.BindJSON(req); err != nil {
+	var req models.PortfolioReq
+	if err := c.BindJSON(&req); err != nil {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return
 	}
@@ -48,8 +48,8 @@ func (h *handler) RemovePortfolio(c *gin.Context) {
 }
 
 func (h *handler) UpdatePortfolioNote(c *gin.Context) {
-	var req *models.PortfolioReq
-	if err := c.BindJSON(req); err != nil {
+	var req models.PortfolioReq
+	if err := c.BindJSON(&req); err != nil {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return
 	}

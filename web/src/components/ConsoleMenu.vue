@@ -49,18 +49,19 @@ function switchLang() {
     </div>
 
     <div class="menu-bottom">
-      <div v-if="auth.user" class="menu-item" :class="{ active: activeIndex.startsWith('/profile') }" @click="router.push('/profile')">
-        <GIcon name="User" />
-        <span>{{ $t('menu.profile') }}</span>
-      </div>
-      <div class="menu-item" @click="switchLang">
-        <GIcon name="Globe" />
-        <span>{{ lang.lang === 'zh' ? '中' : 'EN' }}</span>
-      </div>
-      <div class="menu-item" @click="doLogout">
-        <GIcon name="SwitchButton" />
-        <span>{{ $t('menu.logout') }}</span>
-      </div>
+      <el-dropdown trigger="click" placement="right-end">
+        <div class="menu-item" :class="{ active: activeIndex.startsWith('/profile') }">
+          <GIcon name="User" />
+          <span>{{ auth.user?.username }}</span>
+        </div>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item @click="router.push('/profile')">{{ $t('menu.profile') }}</el-dropdown-item>
+            <el-dropdown-item @click="switchLang">{{ $t('menu.lang') }}: {{ lang.lang === 'zh' ? '中文' : 'English' }}</el-dropdown-item>
+            <el-dropdown-item divided @click="doLogout">{{ $t('menu.logout') }}</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
     </div>
   </div>
 </template>

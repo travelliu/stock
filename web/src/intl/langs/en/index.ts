@@ -1,6 +1,6 @@
 export default {
   common: {},
-  menu: {},
+  menu: { lang: 'Language' },
   login: {},
   stockList: {
     code: 'Code',

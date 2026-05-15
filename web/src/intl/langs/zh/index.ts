@@ -18,6 +18,7 @@ export default {
     admin: '管理',
     users: '用户管理',
     sync: '数据同步',
+    lang: '语言',
     logout: '退出登录',
   },
   login: {

@@ -4,12 +4,12 @@ import { useRouter } from 'vue-router'
 import { wMessage } from '@/utils/message'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { searchStocks } from '@/apis/stocks'
-import type { Stock } from '@/types/api'
+import type { Stock, Portfolio } from '@/types/api'
 
 const router = useRouter()
 const portfolioStore = usePortfolioStore()
 const showAdd = ref(false)
-const selectedStock = ref('')
+const selectedCode = ref('')
 const note = ref('')
 const stockOptions = ref<{ value: string; label: string }[]>([])
 const loadingAdd = ref(false)
@@ -26,8 +26,8 @@ async function searchStockOptions(query: string) {
   try {
     const list = await searchStocks(query, 20)
     stockOptions.value = list.map((s: Stock) => ({
-      value: s.tsCode,
-      label: `${s.tsCode} ${s.name}`,
+      value: s.code,
+      label: `${s.code} ${s.name}`,
     }))
   } catch {
     stockOptions.value = []
@@ -35,24 +35,28 @@ async function searchStockOptions(query: string) {
 }
 
 async function doAdd() {
-  if (!selectedStock.value) {
+  if (!selectedCode.value) {
     wMessage('warning', '请选择股票')
     return
   }
   loadingAdd.value = true
   try {
-    await portfolioStore.add(selectedStock.value, note.value)
+    await portfolioStore.add(selectedCode.value, note.value)
     wMessage('success', '添加成功')
     showAdd.value = false
-    selectedStock.value = ''
+    selectedCode.value = ''
     note.value = ''
   } finally {
     loadingAdd.value = false
   }
 }
 
-function goDetail(tsCode: string) {
-  router.push(`/stocks/${tsCode}`)
+function goDetail(row: Portfolio) {
+  router.push(`/stocks/${row.code}`)
+}
+
+function removeItem(row: Portfolio) {
+  portfolioStore.remove(row.code)
 }
 </script>
 
@@ -64,13 +68,13 @@ function goDetail(tsCode: string) {
     </div>
 
     <el-table :data="portfolioStore.items" style="margin-top: 16px">
-      <el-table-column prop="tsCode" :label="$t('stockList.code')" />
+      <el-table-column prop="code" :label="$t('stockList.code')" />
       <el-table-column prop="name" :label="$t('stockList.name')" />
       <el-table-column prop="note" :label="$t('stockList.note')" />
       <el-table-column :label="$t('stockList.action')" width="140">
         <template #default="{ row }">
-          <el-button link type="primary" @click="goDetail(row.tsCode)">{{ $t('stockList.detail') }}</el-button>
-          <el-button link type="danger" @click="portfolioStore.remove(row.tsCode)">{{ $t('common.delete') }}</el-button>
+          <el-button link type="primary" @click="goDetail(row)">{{ $t('stockList.detail') }}</el-button>
+          <el-button link type="danger" @click="removeItem(row)">{{ $t('common.delete') }}</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -79,7 +83,7 @@ function goDetail(tsCode: string) {
       <el-form @submit.prevent="doAdd">
         <el-form-item :label="$t('stockList.code')">
           <el-select-v2
-            v-model="selectedStock"
+            v-model="selectedCode"
             :options="stockOptions"
             :placeholder="$t('stockList.selectStock')"
             clearable

@@ -25,6 +25,10 @@ type Service struct {
 	jobs   map[string]JobFunc
 	sf     singleflight.Group
 	logger *logrus.Logger
+
+	stockCacheByCode   map[string]StockInfo
+	stockCacheByTsCode map[string]StockInfo
+	cacheMu            sync.RWMutex
 }
 
 func NewService(db *gorm.DB, ts *tushare.Client, cfg *config.Config,

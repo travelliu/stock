@@ -58,6 +58,9 @@ func main() {
 
 	tc := tushare.NewClient(tushare.WithBaseURL(cfg.Tushare.BaseURL))
 	svc := services.NewService(gdb, tc, cfg, logger)
+	if err := svc.LoadStockCache(context.Background()); err != nil {
+		logger.WithError(err).Warn("stock cache load failed")
+	}
 	if cfg.Scheduler.Enabled {
 		svc.InitCron()
 		svc.StartCron()

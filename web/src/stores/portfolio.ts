@@ -10,13 +10,13 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     items.value = await listPortfolio()
   }
 
-  async function add(tsCode: string, note: string) {
-    await addPortfolio({ tsCode, note })
+  async function add(code: string, note: string) {
+    await addPortfolio({ code, note })
     await fetch()
   }
 
-  async function remove(tsCode: string) {
-    await removePortfolio(tsCode)
+  async function remove(code: string) {
+    await removePortfolio(code)
     await fetch()
   }
 

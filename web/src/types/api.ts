@@ -1,6 +1,13 @@
 // keep in sync with pkg/models
 // @see pkg/models/foo.go::Foo
 
+export interface PageResult<T> {
+  items: T[]
+  total: number
+  page: number
+  limit: number
+}
+
 export interface User {
   id: number
   username: string
@@ -15,12 +22,14 @@ export interface Portfolio {
   id: number
   userId: number
   tsCode: string
+  code: string
+  name: string
   note: string
   addedAt: string
 }
 
 export interface PortfolioReq {
-  tsCode: string
+  code: string
   note?: string
 }
 

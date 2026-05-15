@@ -1,4 +1,4 @@
-import type { AnalysisResult, AnalysisPrediction } from '@/types/api'
+import type { AnalysisResult, AnalysisPrediction, PageResult } from '@/types/api'
 import { $http } from './axios'
 
 export interface AnalysisParams {
@@ -9,33 +9,38 @@ export interface AnalysisParams {
   withDraft?: boolean
 }
 
-export const getAnalysis = (tsCode: string, params?: AnalysisParams): Promise<AnalysisResult> => {
+export const getAnalysis = (code: string, params?: AnalysisParams): Promise<AnalysisResult> => {
   const qs = new URLSearchParams()
   if (params?.actualOpen !== undefined) qs.set('actual_open', String(params.actualOpen))
   if (params?.actualHigh !== undefined) qs.set('actual_high', String(params.actualHigh))
   if (params?.actualLow !== undefined) qs.set('actual_low', String(params.actualLow))
   if (params?.actualClose !== undefined) qs.set('actual_close', String(params.actualClose))
   qs.set('with_draft', String(params?.withDraft ?? true))
-  return $http.get(`/analysis/${tsCode}?${qs.toString()}`) as any
+  return $http.get(`/analysis/${code}?${qs.toString()}`) as any
 }
 
 export interface PredictionsParams {
   from?: string
   to?: string
+  page?: number
   limit?: number
 }
 
-export const getPredictions = (tsCode: string, params?: PredictionsParams): Promise<AnalysisPrediction[]> => {
+export const getPredictions = (
+  code: string,
+  params?: PredictionsParams,
+): Promise<PageResult<AnalysisPrediction>> => {
   const qs = new URLSearchParams()
   if (params?.from) qs.set('from', params.from)
   if (params?.to) qs.set('to', params.to)
-  qs.set('limit', String(params?.limit ?? 30))
-  return $http.get(`/analysis/predictions/${tsCode}?${qs.toString()}`) as any
+  qs.set('page', String(params?.page ?? 1))
+  qs.set('limit', String(params?.limit ?? 20))
+  return $http.get(`/analysis/predictions/${code}?${qs.toString()}`) as any
 }
 
-export const recalcPredictions = (tsCode?: string): Promise<{ updated: number }> => {
+export const recalcPredictions = (code?: string): Promise<{ updated: number }> => {
   const qs = new URLSearchParams()
-  if (tsCode) qs.set('ts_code', tsCode)
+  if (code) qs.set('code', code)
   const path = `/analysis/recalc${qs.toString() ? '?' + qs.toString() : ''}`
   return $http.post(path) as any
 }

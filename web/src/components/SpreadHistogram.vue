@@ -1,62 +1,89 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { DailyBar } from '@/types/api'
+import { ref } from 'vue'
+import type { AnalysisResult, DistBucket } from '@/types/api'
 
-const props = defineProps<{ bars: DailyBar[] }>()
+const props = defineProps<{ result: AnalysisResult | null }>()
 
-const labels = [
-  { key: 'oh' as const, name: '高-开' },
-  { key: 'ol' as const, name: '开-低' },
-  { key: 'hl' as const, name: '高-低' },
-  { key: 'oc' as const, name: '开-收' },
-  { key: 'hc' as const, name: '高-收' },
-  { key: 'lc' as const, name: '低-收' },
-]
+const activeWindow = ref('All')
 
-const stats = computed(() => {
-  if (!props.bars.length) return []
-  const max = Math.max(...labels.map(l => Math.max(...props.bars.map(b => b.spreads[l.key]))))
-  return labels.map(l => {
-    const avg = props.bars.reduce((s, b) => s + b.spreads[l.key], 0) / props.bars.length
-    const pct = max > 0 ? (avg / max) * 100 : 0
-    return { name: l.name, avg, pct }
-  })
-})
+function windowName(id: string): string {
+  const map: Record<string, string> = { All: '历史', last_90: '近3月', last_30: '近1月', last_15: '近2周' }
+  return map[id] || id
+}
+
+function fmtRange(b: DistBucket): string {
+  return `${(b.lower ?? 0).toFixed(2)}~${(b.upper ?? 0).toFixed(2)}`
+}
+
+function dist(windowId: string, key: 'spreadOH' | 'spreadOL'): DistBucket[] {
+  const w = props.result?.windows?.find(w => w.info.id === windowId)
+  return w?.means?.[key]?.distribution ?? []
+}
+
+function count(windowId: string, key: 'spreadOH' | 'spreadOL'): number {
+  const w = props.result?.windows?.find(w => w.info.id === windowId)
+  return w?.means?.[key]?.count ?? 0
+}
 </script>
 
 <template>
-  <el-card>
+  <el-card v-if="result?.windows?.length">
     <template #header>{{ $t('stockDetail.spreads') }}</template>
-    <div class="histogram">
-      <div v-for="s in stats" :key="s.name" class="bar-row">
-        <span class="label">{{ s.name }}</span>
-        <el-progress :percentage="Math.round(s.pct)" :stroke-width="16" :show-text="false" />
-        <span class="value">{{ s.avg.toFixed(2) }}</span>
-      </div>
-    </div>
+    <el-tabs v-model="activeWindow" size="small">
+      <el-tab-pane
+        v-for="w in result.windows"
+        :key="w.info.id"
+        :label="windowName(w.info.id)"
+        :name="w.info.id"
+      >
+        <div class="dist-grid">
+          <div class="dist-block">
+            <div class="dist-title">最高-开盘（{{ count(w.info.id, 'spreadOH') }} 条）</div>
+            <el-table :data="dist(w.info.id, 'spreadOH')" size="small" border>
+              <el-table-column label="区间" min-width="120">
+                <template #default="{ row }">{{ fmtRange(row) }}</template>
+              </el-table-column>
+              <el-table-column label="数量" align="right" width="60">
+                <template #default="{ row }">{{ row.count ?? 0 }}</template>
+              </el-table-column>
+              <el-table-column label="占比" align="right" width="65">
+                <template #default="{ row }">{{ (row.pct ?? 0).toFixed(1) }}%</template>
+              </el-table-column>
+            </el-table>
+          </div>
+          <div class="dist-block">
+            <div class="dist-title">开盘-最低（{{ count(w.info.id, 'spreadOL') }} 条）</div>
+            <el-table :data="dist(w.info.id, 'spreadOL')" size="small" border>
+              <el-table-column label="区间" min-width="120">
+                <template #default="{ row }">{{ fmtRange(row) }}</template>
+              </el-table-column>
+              <el-table-column label="数量" align="right" width="60">
+                <template #default="{ row }">{{ row.count ?? 0 }}</template>
+              </el-table-column>
+              <el-table-column label="占比" align="right" width="65">
+                <template #default="{ row }">{{ (row.pct ?? 0).toFixed(1) }}%</template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
+      </el-tab-pane>
+    </el-tabs>
   </el-card>
 </template>
 
 <style scoped lang="scss">
-.histogram {
+.dist-grid {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+  flex-wrap: wrap;
 }
-.bar-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.dist-block {
+  flex: 1;
+  min-width: 220px;
 }
-.label {
-  width: 60px;
-  font-size: 13px;
-  flex-shrink: 0;
-}
-.value {
-  width: 50px;
-  text-align: right;
-  font-size: 13px;
-  flex-shrink: 0;
+.dist-title {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-bottom: 6px;
 }
 </style>

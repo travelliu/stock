@@ -1,13 +1,13 @@
-// services stock provides catalog search and sync.
+// Package services provides catalog search and sync.
 package services
 
 import (
 	"context"
 	"errors"
 	"strings"
-
+	
 	"gorm.io/gorm"
-
+	
 	"stock/pkg/models"
 	"stock/pkg/tushare"
 )

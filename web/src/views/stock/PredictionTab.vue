@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { wMessage } from '@/utils/message'
 import { queryBars } from '@/apis/stocks'
-import { getAnalysis, getPredictions, recalcPredictions } from '@/apis/analysis'
+import { getAnalysis, getPredictions } from '@/apis/analysis'
+import type { AnalysisParams } from '@/apis/analysis'
 import type { AnalysisResult, AnalysisPrediction, DailyBar } from '@/types/api'
 import SpreadModelTable from '@/components/SpreadModelTable.vue'
 import TradePlanTable from '@/components/TradePlanTable.vue'
@@ -16,26 +17,40 @@ const code = route.params.code as string
 const analysis = ref<AnalysisResult | null>(null)
 const latestPred = ref<AnalysisPrediction | null>(null)
 const bars = ref<DailyBar[]>([])
-const latestBar = ref<DailyBar | null>(null)
 const openPrice = ref(0)
+const actualHigh = ref(0)
+const actualLow = ref(0)
+const actualClose = ref(0)
 const loading = ref(false)
 const recalcing = ref(false)
 
 async function load() {
   loading.value = true
   try {
-    const [analysisRes, predsPage, barsPage] = await Promise.all([
-      getAnalysis(code),
+    const [predsPage, barsPage] = await Promise.all([
       getPredictions(code, { limit: 1 }),
       queryBars(code, { limit: 30 }),
     ])
-    analysis.value = analysisRes
     latestPred.value = predsPage.items[0] ?? null
-    latestBar.value = barsPage.items[0] ?? null
     bars.value = barsPage.items
-    if (latestBar.value?.open) {
-      openPrice.value = latestBar.value.open
+
+    const bar = barsPage.items[0]
+    const initParams: AnalysisParams = {}
+    if (bar) {
+      openPrice.value = bar.open || 0
+      if (bar.open) initParams.actualOpen = bar.open
+      const now = new Date()
+      const today = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
+      if (bar.tradeDate === today) {
+        actualHigh.value = bar.high || 0
+        actualLow.value = bar.low || 0
+        actualClose.value = bar.close || 0
+        if (bar.high) initParams.actualHigh = bar.high
+        if (bar.low) initParams.actualLow = bar.low
+        if (bar.close) initParams.actualClose = bar.close
+      }
     }
+    analysis.value = await getAnalysis(code, initParams)
   } catch (e: unknown) {
     wMessage('error', e instanceof Error ? e.message : '加载失败')
   } finally {
@@ -46,15 +61,29 @@ async function load() {
 async function handleRecalc() {
   recalcing.value = true
   try {
-    const res = await recalcPredictions(code)
-    wMessage('success', `更新了 ${res.updated} 条记录`)
-    await load()
+    const params = {
+      actualOpen: openPrice.value || undefined,
+      actualHigh: actualHigh.value || undefined,
+      actualLow: actualLow.value || undefined,
+      actualClose: actualClose.value || undefined,
+    }
+    analysis.value = await getAnalysis(code, params)
   } catch (e: unknown) {
-    wMessage('error', e instanceof Error ? e.message : '重算失败')
+    wMessage('error', e instanceof Error ? e.message : '计算失败')
   } finally {
     recalcing.value = false
   }
 }
+
+const displayPredHigh = computed(() =>
+  analysis.value?.refTable?.high.mean || latestPred.value?.predictHigh || 0
+)
+const displayPredLow = computed(() =>
+  analysis.value?.refTable?.low.mean || latestPred.value?.predictLow || 0
+)
+const displayPredClose = computed(() =>
+  analysis.value?.refTable?.close.mean || latestPred.value?.predictClose || 0
+)
 
 function fmt(v: number): string {
   return v ? v.toFixed(2) : '-'
@@ -81,30 +110,20 @@ onMounted(load)
         <tbody>
           <tr>
             <td class="row-label">实际</td>
+            <td><el-input-number v-model="openPrice" :precision="2" :step="0.01" size="small" class="price-input" /></td>
+            <td><el-input-number v-model="actualHigh" :precision="2" :step="0.01" size="small" class="price-input" /></td>
+            <td><el-input-number v-model="actualLow" :precision="2" :step="0.01" size="small" class="price-input" /></td>
+            <td><el-input-number v-model="actualClose" :precision="2" :step="0.01" size="small" class="price-input" /></td>
             <td>
-              <el-input-number
-                v-model="openPrice"
-                :precision="2"
-                :step="0.01"
-                size="small"
-                style="width: 120px"
-              />
-            </td>
-            <td>{{ fmt(latestBar?.high ?? 0) }}</td>
-            <td>{{ fmt(latestBar?.low ?? 0) }}</td>
-            <td>{{ fmt(latestBar?.close ?? 0) }}</td>
-            <td>
-              <el-button type="primary" size="small" :loading="recalcing" @click="handleRecalc">
-                计算
-              </el-button>
+              <el-button type="primary" size="small" :loading="recalcing" @click="handleRecalc">计算</el-button>
             </td>
           </tr>
           <tr>
             <td class="row-label">预测</td>
             <td>{{ fmt(openPrice) }}</td>
-            <td>{{ fmt(latestPred?.predictHigh ?? 0) }}</td>
-            <td>{{ fmt(latestPred?.predictLow ?? 0) }}</td>
-            <td>{{ fmt(latestPred?.predictClose ?? 0) }}</td>
+            <td>{{ fmt(displayPredHigh) }}</td>
+            <td>{{ fmt(displayPredLow) }}</td>
+            <td>{{ fmt(displayPredClose) }}</td>
             <td></td>
           </tr>
         </tbody>
@@ -118,17 +137,22 @@ onMounted(load)
     <SpreadAnalysisTable :result="analysis" />
 
     <div style="margin-top: 16px">
-      <SpreadHistogram :bars="bars" />
+      <SpreadHistogram :result="analysis" />
     </div>
   </div>
 </template>
 
 <style scoped lang="scss">
+:deep(.el-card__header) {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
 .price-table {
   border-collapse: collapse;
   font-size: 13px;
   th, td {
-    padding: 6px 16px;
+    padding: 6px 12px;
     text-align: right;
     border-bottom: 1px solid var(--el-border-color-lighter);
     white-space: nowrap;
@@ -145,6 +169,12 @@ onMounted(load)
     font-weight: 500;
     color: var(--el-text-color-regular);
     width: 48px;
+  }
+}
+:deep(.price-input) {
+  width: 110px;
+  .el-input__inner {
+    text-align: right;
   }
 }
 </style>

@@ -37,6 +37,7 @@ func Open(cfg *config.Config, logger *logrus.Logger) (*gorm.DB, error) {
 		Logger:                 l,
 		SkipDefaultTransaction: true,
 	})
+	
 	if err != nil {
 		return nil, fmt.Errorf("open db: %w", err)
 	}
@@ -54,7 +55,6 @@ func AutoMigrate(gdb *gorm.DB) error {
 		&models.Stock{},
 		&models.DailyBar{},
 		&models.Portfolio{},
-		&models.IntradayDraft{},
 		&models.JobRun{},
 		&models.AnalysisPrediction{},
 	)

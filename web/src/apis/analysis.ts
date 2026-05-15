@@ -6,7 +6,6 @@ export interface AnalysisParams {
   actualHigh?: number
   actualLow?: number
   actualClose?: number
-  withDraft?: boolean
 }
 
 export const getAnalysis = (code: string, params?: AnalysisParams): Promise<AnalysisResult> => {
@@ -15,8 +14,8 @@ export const getAnalysis = (code: string, params?: AnalysisParams): Promise<Anal
   if (params?.actualHigh !== undefined) qs.set('actual_high', String(params.actualHigh))
   if (params?.actualLow !== undefined) qs.set('actual_low', String(params.actualLow))
   if (params?.actualClose !== undefined) qs.set('actual_close', String(params.actualClose))
-  qs.set('with_draft', String(params?.withDraft ?? true))
-  return $http.get(`/analysis/${code}?${qs.toString()}`) as any
+  const q = qs.toString()
+  return $http.get(`/analysis/${code}${q ? '?' + q : ''}`) as any
 }
 
 export interface PredictionsParams {

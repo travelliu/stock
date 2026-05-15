@@ -109,11 +109,26 @@ export interface WindowData {
   means: MeansData | null
 }
 
+export interface PredictRow {
+  windows: Record<string, number>
+  reverseLow: number
+  reverseHigh: number
+  mean: number
+  direction: string
+}
+
+export interface RefTable {
+  high: PredictRow
+  low: PredictRow
+  close: PredictRow
+}
+
 export interface AnalysisResult {
   tsCode: string
   stockName: string
   windows: WindowData[]
   compositeMeans: Record<string, number>
+  refTable?: RefTable
   openPrice?: number
   actualHigh?: number
   actualLow?: number
@@ -138,17 +153,6 @@ export interface AnalysisPrediction {
   updatedAt: string
 }
 
-export interface IntradayDraft {
-  id: number
-  userId: number
-  tsCode: string
-  tradeDate: string
-  open?: number
-  high?: number
-  low?: number
-  close?: number
-  updatedAt: string
-}
 
 export interface APIToken {
   id: number

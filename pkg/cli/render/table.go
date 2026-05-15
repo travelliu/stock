@@ -158,8 +158,7 @@ func AnalysisTable(r models.AnalysisResult) {
 	rows = append(rows, compRow)
 	fmt.Println(analysis.FormatTable(headers, rows))
 
-	// Reference table (only if open price available)
-	if r.OpenPrice != nil {
+	if r.RefTable != nil {
 		fmt.Println("── 预测收盘价(历史参考价) ──")
 		refTable(r)
 	}
@@ -189,10 +188,10 @@ func formatMeans(md *models.MeansData) []string {
 }
 
 func refTable(r models.AnalysisResult) {
-	openPrice := *r.OpenPrice
-
-	lastWin := r.Windows[len(r.Windows)-1]
-	lastMeans := lastWin.Means
+	if r.RefTable == nil {
+		return
+	}
+	ref := r.RefTable
 
 	headers := []string{""}
 	for _, win := range r.Windows {
@@ -200,80 +199,31 @@ func refTable(r models.AnalysisResult) {
 	}
 	headers = append(headers, t(KeyReverseLow), t(KeyReverseHigh), t(KeyMean), t(KeyDirection))
 
+	fv := func(v float64) string {
+		if v == 0 {
+			return "/"
+		}
+		return fmt.Sprintf("%.2f", v)
+	}
+
+	rowDefs := []struct {
+		label string
+		row   models.PredictRow
+	}{
+		{t(KeyPredictHigh), ref.High},
+		{t(KeyPredictLow), ref.Low},
+		{t(KeyPredictClose), ref.Close},
+	}
+
 	var rows [][]string
-
-	// High prediction
-	highRow := []string{t(KeyPredictHigh)}
-	var numCells []string
-	for _, win := range r.Windows {
-		if win.Means != nil && win.Means.SpreadOH != nil && win.Means.SpreadOH.Mean != 0 {
-			s := fmt.Sprintf("%.2f", openPrice+win.Means.SpreadOH.Mean)
-			highRow = append(highRow, s)
-			numCells = append(numCells, s)
-		} else {
-			highRow = append(highRow, "/")
+	for _, rd := range rowDefs {
+		row := []string{rd.label}
+		for _, win := range r.Windows {
+			row = append(row, fv(rd.row.Windows[win.Info.Id]))
 		}
+		row = append(row, fv(rd.row.ReverseLow), fv(rd.row.ReverseHigh), fv(rd.row.Mean), rd.row.Direction)
+		rows = append(rows, row)
 	}
-	if r.ActualLow != nil && lastMeans != nil && lastMeans.SpreadHL != nil && lastMeans.SpreadHL.Mean != 0 {
-		s := fmt.Sprintf("%.2f", *r.ActualLow+lastMeans.SpreadHL.Mean)
-		highRow = append(highRow, s)
-		numCells = append(numCells, s)
-	} else {
-		highRow = append(highRow, "/")
-	}
-	highRow = append(highRow, "/")
-	highRow = append(highRow, analysis.MeanOfNumericCells(numCells))
-	highRow = append(highRow, "+")
-	rows = append(rows, highRow)
-
-	// Low prediction
-	lowRow := []string{t(KeyPredictLow)}
-	numCells = nil
-	for _, win := range r.Windows {
-		if win.Means != nil && win.Means.SpreadOL != nil && win.Means.SpreadOL.Mean != 0 {
-			s := fmt.Sprintf("%.2f", openPrice-win.Means.SpreadOL.Mean)
-			lowRow = append(lowRow, s)
-			numCells = append(numCells, s)
-		} else {
-			lowRow = append(lowRow, "/")
-		}
-	}
-	lowRow = append(lowRow, "/")
-	if r.ActualHigh != nil && lastMeans != nil && lastMeans.SpreadHL != nil && lastMeans.SpreadHL.Mean != 0 {
-		s := fmt.Sprintf("%.2f", *r.ActualHigh-lastMeans.SpreadHL.Mean)
-		lowRow = append(lowRow, s)
-		numCells = append(numCells, s)
-	} else {
-		lowRow = append(lowRow, "/")
-	}
-	lowRow = append(lowRow, analysis.MeanOfNumericCells(numCells))
-	lowRow = append(lowRow, "-")
-	rows = append(rows, lowRow)
-
-	// Close prediction
-	closeRow := []string{t(KeyPredictClose)}
-	for range r.Windows {
-		closeRow = append(closeRow, "/")
-	}
-	numCells = nil
-	if r.ActualLow != nil && lastMeans != nil && lastMeans.SpreadLC != nil && lastMeans.SpreadLC.Mean != 0 {
-		s := fmt.Sprintf("%.2f", *r.ActualLow+lastMeans.SpreadLC.Mean)
-		closeRow = append(closeRow, s)
-		numCells = append(numCells, s)
-	} else {
-		closeRow = append(closeRow, "/")
-	}
-	if r.ActualHigh != nil && lastMeans != nil && lastMeans.SpreadHC != nil && lastMeans.SpreadHC.Mean != 0 {
-		s := fmt.Sprintf("%.2f", *r.ActualHigh-lastMeans.SpreadHC.Mean)
-		closeRow = append(closeRow, s)
-		numCells = append(numCells, s)
-	} else {
-		closeRow = append(closeRow, "/")
-	}
-	closeRow = append(closeRow, analysis.MeanOfNumericCells(numCells))
-	closeRow = append(closeRow, "-")
-	rows = append(rows, closeRow)
-
 	fmt.Println(analysis.FormatTable(headers, rows))
 }
 

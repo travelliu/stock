@@ -33,6 +33,19 @@ var stockSearchCmd = &cobra.Command{
 	},
 }
 
+var stockFetchCmd = &cobra.Command{
+	Use:   "fetch [ts_code]",
+	Short: "Search stocks by code or name",
+	// Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c := client.New(cfg.ServerURL, cfg.Token)
+		if err := c.POST("/api/admin/bars/sync", nil, nil); err != nil {
+			return err
+		}
+		return nil
+	},
+}
+
 var stockAnalysisCmd = &cobra.Command{
 	Use:   "analysis [ts_code]",
 	Short: "Run spread analysis",
@@ -54,9 +67,6 @@ var stockAnalysisCmd = &cobra.Command{
 		}
 		if v, _ := cmd.Flags().GetFloat64("actual-close"); v != 0 {
 			qs += fmt.Sprintf("&actual_close=%.2f", v)
-		}
-		if useDraft, _ := cmd.Flags().GetBool("use-draft"); useDraft {
-			qs += "&with_draft=true"
 		}
 		if qs != "" {
 			path += "?" + qs[1:]
@@ -101,13 +111,12 @@ var stockHistoryCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(stockCmd)
-	stockCmd.AddCommand(stockSearchCmd, stockAnalysisCmd, stockHistoryCmd, stockPredictionsCmd, stockRecalcCmd)
+	stockCmd.AddCommand(stockSearchCmd, stockAnalysisCmd, stockHistoryCmd, stockPredictionsCmd, stockRecalcCmd, stockFetchCmd)
 	stockAnalysisCmd.Flags().String("format", "table", "Output format: table|json")
 	stockAnalysisCmd.Flags().Float64("actual-open", 0, "Override open price")
 	stockAnalysisCmd.Flags().Float64("actual-high", 0, "Override high price")
 	stockAnalysisCmd.Flags().Float64("actual-low", 0, "Override low price")
 	stockAnalysisCmd.Flags().Float64("actual-close", 0, "Override close price")
-	stockAnalysisCmd.Flags().Bool("use-draft", false, "Use today's draft values")
 	stockHistoryCmd.Flags().String("from", "", "Start date YYYYMMDD")
 	stockHistoryCmd.Flags().String("to", "", "End date YYYYMMDD")
 	stockPredictionsCmd.Flags().String("from", "", "Start date YYYYMMDD")

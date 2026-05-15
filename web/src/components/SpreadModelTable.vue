@@ -25,10 +25,19 @@ function getMean(means: MeansData | null, key: string): string {
   return m && m.mean !== 0 ? m.mean.toFixed(2) : '-'
 }
 
+const camelToSnake: Record<string, string> = {
+  spreadOH: 'spread_oh',
+  spreadOL: 'spread_ol',
+  spreadHL: 'spread_hl',
+  spreadHC: 'spread_hc',
+  spreadLC: 'spread_lc',
+  spreadOC: 'spread_oc',
+}
+
 function compositeVal(key: string): string {
   const cm = props.result?.compositeMeans
   if (!cm) return '-'
-  const v = cm[key]
+  const v = cm[camelToSnake[key] ?? key]
   return v ? v.toFixed(2) : '-'
 }
 </script>

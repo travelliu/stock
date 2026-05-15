@@ -48,8 +48,14 @@ func (s *Service) recalcStock(ctx context.Context, tsCode string) (int, error) {
 		return 0, nil
 	}
 
+	const maxDays = 90
+	start := len(bars) - maxDays
+	if start < 15 {
+		start = 15
+	}
+
 	count := 0
-	for i := 15; i < len(bars); i++ {
+	for i := start; i < len(bars); i++ {
 		historical := bars[:i]
 		today := bars[i]
 		if today.Open == 0 {

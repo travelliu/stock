@@ -1,9 +1,7 @@
 package http
 
 import (
-	"net/http"
 	"stock/pkg/stockd/services"
-	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/gzip"
@@ -43,6 +41,16 @@ func NewRouter(svc *services.Service, logger *logrus.Logger) *gin.Engine {
 	h := NewHandler(svc, analysisSvc)
 
 	r := initGin(logger)
+	r.Use(static.Serve("/", root.EmbedFolder()))
+	r.NoRoute(
+		func(gin *gin.Context) {
+			// gin.File(c.StaticContents + "/index.html")
+			// gin.Writer,gin.Request,file
+			// gin.FileFromFS("index.html", mtkd.GetFileSystem())
+			fileHTTP := &root.EmbedFileHTTP{}
+			fileHTTP.ServeHTTP(gin.Writer, gin.Request)
+		},
+	)
 
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = []string{"*"}
@@ -97,26 +105,11 @@ func NewRouter(svc *services.Service, logger *logrus.Logger) *gin.Engine {
 	br.Use(AuthRequired())
 	br.GET("/"+codeUrl, h.QueryBars)
 
-	dr := api.Group("/drafts")
-	dr.Use(AuthRequired())
-	dr.GET("/today", h.GetDraftToday)
-	dr.PUT("", h.UpsertDraft)
-	dr.DELETE("/:id", h.DeleteDraft)
-
 	anr := api.Group("/analysis")
 	anr.Use(AuthRequired())
 	anr.GET("/"+codeUrl, h.GetAnalysis)
 	anr.POST("/recalc", h.RecalcPredictions)
 	anr.GET("/predictions/"+codeUrl, h.ListPredictions)
-
-	r.Use(static.Serve("/", root.EmbedFolder()))
-	r.NoRoute(func(c *gin.Context) {
-		if strings.HasPrefix(c.Request.URL.Path, "/api/") || strings.HasPrefix(c.Request.URL.Path, "/swagger/") {
-			c.JSON(404, utils.HTTPResponse{Code: 404, Message: "not found"})
-			return
-		}
-		c.FileFromFS("/web/dist/index.html", http.FS(root.StaticDir))
-	})
 
 	return r
 }

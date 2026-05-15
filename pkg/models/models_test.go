@@ -31,7 +31,6 @@ func TestModelsRoundTrip(t *testing.T) {
 		&models.Stock{TsCode: "600519.SH", Code: "600519", Name: "贵州茅台", Market: "主板", Exchange: "SSE", UpdatedAt: now},
 		&models.DailyBar{TsCode: "600519.SH", TradeDate: "20250513", Open: 1620, High: 1655, Low: 1601, Close: 1632, Vol: 3500, Amount: 5e5},
 		&models.Portfolio{UserID: 1, TsCode: "600519.SH", AddedAt: now},
-		&models.IntradayDraft{UserID: 1, TsCode: "600519.SH", TradeDate: "20260514", UpdatedAt: now},
 		&models.JobRun{JobName: "daily-fetch", StartedAt: now, Status: "running"},
 	}
 	for _, c := range cases {
@@ -96,12 +95,6 @@ func TestModelJSONFields(t *testing.T) {
 			name:    "APIToken",
 			val:     models.APIToken{ID: 1, UserID: 2, Name: "cli", TokenHash: "h", CreatedAt: now},
 			want:    []string{"id", "userId", "name", "tokenHash", "createdAt"},
-			notWant: []string{"userID"},
-		},
-		{
-			name:    "IntradayDraft",
-			val:     models.IntradayDraft{ID: 1, UserID: 2, TsCode: "x", TradeDate: "20250513", UpdatedAt: now},
-			want:    []string{"id", "userId", "tsCode", "tradeDate", "updatedAt"},
 			notWant: []string{"userID"},
 		},
 		{

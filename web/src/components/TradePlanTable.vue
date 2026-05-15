@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AnalysisResult, MeansData } from '@/types/api'
+import type { AnalysisResult } from '@/types/api'
 
 const props = defineProps<{ result?: AnalysisResult | null }>()
 
@@ -8,150 +8,88 @@ function windowName(id: string): string {
   return map[id] || id
 }
 
-function getSpreadMean(means: MeansData | null, key: string): number {
-  if (!means) return 0
-  const m = (means as unknown as Record<string, { mean: number } | null>)[key]
-  return m ? m.mean : 0
-}
 
 function fmt(v: number): string {
   return v ? v.toFixed(2) : '/'
 }
 
-interface PredictRow {
-  label: string
-  values: string[]
-  reverse: string
-  mean: string
-  direction: string
-}
-
-function buildRows(): PredictRow[] {
-  const r = props.result
-  if (!r || !r.openPrice) return []
-
-  const winMap = new Map<string, MeansData | null>()
-  for (const w of r.windows) winMap.set(w.info.id, w.means)
-
-  const lastWin = r.windows.length > 0 ? r.windows[r.windows.length - 1] : null
-  const lastMeans = lastWin?.means ?? null
-
-  const rows: PredictRow[] = []
-
-  // High prediction
-  const highVals: number[] = []
-  const highCells: string[] = []
-  for (const w of r.windows) {
-    const m = getSpreadMean(w.means, 'spreadOH')
-    if (m !== 0) {
-      const v = r.openPrice! + m
-      highCells.push(fmt(v))
-      highVals.push(v)
-    } else {
-      highCells.push('/')
-    }
-  }
-  let highReverse = '/'
-  if (r.actualLow && lastMeans) {
-    const hl = getSpreadMean(lastMeans, 'spreadHL')
-    if (hl !== 0) {
-      const v = r.actualLow + hl
-      highReverse = fmt(v)
-      highVals.push(v)
-    }
-  }
-  const highMean = highVals.length > 0 ? highVals.reduce((a, b) => a + b, 0) / highVals.length : 0
-  rows.push({
-    label: '最高价预测',
-    values: highCells,
-    reverse: highReverse,
-    mean: highMean ? fmt(highMean) : '/',
-    direction: '+',
-  })
-
-  // Low prediction
-  const lowVals: number[] = []
-  const lowCells: string[] = []
-  for (const w of r.windows) {
-    const m = getSpreadMean(w.means, 'spreadOL')
-    if (m !== 0) {
-      const v = r.openPrice! - m
-      lowCells.push(fmt(v))
-      lowVals.push(v)
-    } else {
-      lowCells.push('/')
-    }
-  }
-  let lowReverse = '/'
-  if (r.actualHigh && lastMeans) {
-    const hl = getSpreadMean(lastMeans, 'spreadHL')
-    if (hl !== 0) {
-      const v = r.actualHigh - hl
-      lowReverse = fmt(v)
-      lowVals.push(v)
-    }
-  }
-  const lowMean = lowVals.length > 0 ? lowVals.reduce((a, b) => a + b, 0) / lowVals.length : 0
-  rows.push({
-    label: '最低价预测',
-    values: lowCells,
-    reverse: lowReverse,
-    mean: lowMean ? fmt(lowMean) : '/',
-    direction: '-',
-  })
-
-  // Close prediction
-  const closeVals: number[] = []
-  let closeReverseLow = '/'
-  let closeReverseHigh = '/'
-  if (r.actualLow && lastMeans) {
-    const lc = getSpreadMean(lastMeans, 'spreadLC')
-    if (lc !== 0) {
-      const v = r.actualLow + lc
-      closeReverseLow = fmt(v)
-      closeVals.push(v)
-    }
-  }
-  if (r.actualHigh && lastMeans) {
-    const hc = getSpreadMean(lastMeans, 'spreadHC')
-    if (hc !== 0) {
-      const v = r.actualHigh - hc
-      closeReverseHigh = fmt(v)
-      closeVals.push(v)
-    }
-  }
-  const closeMean = closeVals.length > 0 ? closeVals.reduce((a, b) => a + b, 0) / closeVals.length : 0
-  rows.push({
-    label: '收盘价预测',
-    values: r.windows.map(() => '/'),
-    reverse: closeReverseLow,
-    mean: closeMean ? fmt(closeMean) : '/',
-    direction: '-',
-    _reverseHigh: closeReverseHigh,
-  } as PredictRow & { _reverseHigh: string })
-
-  return rows
+function buildRows() {
+  const t = props.result?.refTable
+  if (!t) return []
+  return [
+    { label: '最高价预测', row: t.high },
+    { label: '最低价预测', row: t.low },
+    { label: '收盘价预测', row: t.close },
+  ]
 }
 </script>
 
 <template>
-  <el-card v-if="result?.openPrice" style="margin-top: 16px">
-    <template #header>{{ $t('stockDetail.tradePlan') }}</template>
+  <el-card v-if="result?.refTable" style="margin-top: 16px">
+    <template #header>预测收盘价 (历史参考价)</template>
     <el-table :data="buildRows()" size="small" border>
-      <el-table-column :label="$t('stockDetail.timePeriod')" width="100" prop="label" />
-      <el-table-column v-for="(w, i) in result?.windows ?? []" :key="i" :label="windowName(w.info.id)" align="right">
-        <template #default="{ row }">
-          {{ row.values[i] }}
+      <el-table-column label="" width="100" prop="label" />
+      <el-table-column
+        v-for="w in result?.windows ?? []"
+        :key="w.info.id"
+        align="right"
+      >
+        <template #header>
+          <el-tooltip placement="top" effect="dark">
+            <template #content>
+              {{ windowName(w.info.id) }}数据均值预测<br />
+              最高价 = 开盘价 + {{ windowName(w.info.id) }}高开价差均值<br />
+              最低价 = 开盘价 − {{ windowName(w.info.id) }}开低价差均值
+            </template>
+            <span class="tip-header">{{ windowName(w.info.id) }}</span>
+          </el-tooltip>
         </template>
+        <template #default="{ row }">{{ fmt(row.row.windows[w.info.id] ?? 0) }}</template>
       </el-table-column>
-      <el-table-column label="最低价反推" align="right" prop="reverse" />
-      <el-table-column label="最高价反推" align="right">
-        <template #default="{ row }">
-          {{ (row as any)._reverseHigh ?? '/' }}
+      <el-table-column align="right">
+        <template #header>
+          <el-tooltip placement="top" effect="dark">
+            <template #content>
+              由当日最低价反推<br />
+              • 最高价预测：最低价 + 近2周高低价差均值<br />
+              • 收盘价预测：最低价 + 近2周低收价差均值
+            </template>
+            <span class="tip-header">最低价反推</span>
+          </el-tooltip>
         </template>
+        <template #default="{ row }">{{ fmt(row.row.reverseLow) }}</template>
       </el-table-column>
-      <el-table-column label="均值" align="right" prop="mean" />
-      <el-table-column label="正负算一" width="70" align="center" prop="direction" />
+      <el-table-column align="right">
+        <template #header>
+          <el-tooltip placement="top" effect="dark">
+            <template #content>
+              由当日最高价反推<br />
+              • 最低价预测：最高价 − 近2周高低价差均值<br />
+              • 收盘价预测：最高价 − 近2周高收价差均值
+            </template>
+            <span class="tip-header">最高价反推</span>
+          </el-tooltip>
+        </template>
+        <template #default="{ row }">{{ fmt(row.row.reverseHigh) }}</template>
+      </el-table-column>
+      <el-table-column align="right">
+        <template #header>
+          <el-tooltip content="本行所有有效数值的算术平均" placement="top" effect="dark">
+            <span class="tip-header">均值</span>
+          </el-tooltip>
+        </template>
+        <template #default="{ row }">{{ fmt(row.row.mean) }}</template>
+      </el-table-column>
+      <el-table-column label="正负算一" width="70" align="center">
+        <template #default="{ row }">{{ row.row.direction }}</template>
+      </el-table-column>
     </el-table>
   </el-card>
 </template>
+
+<style scoped>
+.tip-header {
+  cursor: help;
+  border-bottom: 1px dashed var(--el-text-color-secondary);
+}
+</style>

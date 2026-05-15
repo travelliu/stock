@@ -2,7 +2,10 @@ export default {
   common: {},
   menu: {},
   login: {},
-  stockList: {},
+  stockList: {
+    code: 'Code',
+    name: 'Name',
+  },
   stockDetail: {},
   profile: {},
   admin: {},

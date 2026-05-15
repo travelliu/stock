@@ -54,13 +54,30 @@ type Input struct {
 	ActualClose *float64    `json:"actualClose,omitempty"`
 }
 
+// PredictRow holds one row of the prediction reference table.
+// Float64 fields use 0 to indicate "no data".
+type PredictRow struct {
+	Windows     map[string]float64 `json:"windows"`
+	ReverseLow  float64            `json:"reverseLow"`
+	ReverseHigh float64            `json:"reverseHigh"`
+	Mean        float64            `json:"mean"`
+	Direction   string             `json:"direction"`
+}
+
+// RefTable is the pre-computed prediction reference table (最高/最低/收盘价预测).
+type RefTable struct {
+	High  PredictRow `json:"high"`
+	Low   PredictRow `json:"low"`
+	Close PredictRow `json:"close"`
+}
+
 // AnalysisResult is the canonical output with raw computed data.
-// Table rendering (CLI/Web) builds display tables from Windows + CompositeMeans.
 type AnalysisResult struct {
 	TsCode         string             `json:"tsCode"`
 	StockName      string             `json:"stockName"`
 	Windows        []*WindowData      `json:"windows"`
 	CompositeMeans map[string]float64 `json:"compositeMeans"`
+	RefTable       *RefTable          `json:"refTable,omitempty"`
 	OpenPrice      *float64           `json:"openPrice,omitempty"`
 	ActualHigh     *float64           `json:"actualHigh,omitempty"`
 	ActualLow      *float64           `json:"actualLow,omitempty"`

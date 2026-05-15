@@ -13,17 +13,108 @@ func Build(in models.Input) *models.AnalysisResult {
 	windows := Make(in.Rows)
 	Means(windows)
 	comp := Composite(windows)
+	ref := BuildRefTable(windows, in.OpenPrice, in.ActualHigh, in.ActualLow)
 
 	return &models.AnalysisResult{
 		TsCode:         in.TsCode,
 		StockName:      in.StockName,
 		Windows:        windows,
 		CompositeMeans: comp,
+		RefTable:       ref,
 		OpenPrice:      in.OpenPrice,
 		ActualHigh:     in.ActualHigh,
 		ActualLow:      in.ActualLow,
 		ActualClose:    in.ActualClose,
 	}
+}
+
+// BuildRefTable computes the prediction reference table from windows and optional actual prices.
+func BuildRefTable(windows []*models.WindowData, openPrice, actualHigh, actualLow *float64) *models.RefTable {
+	if len(windows) == 0 {
+		return nil
+	}
+	lastWin := windows[len(windows)-1]
+
+	// High: openPrice + spreadOH.mean per window; reverseLow = actualLow + spreadHL.mean
+	var highVals []float64
+	highWindows := make(map[string]float64)
+	if openPrice != nil {
+		for _, w := range windows {
+			if w.Means != nil && w.Means.SpreadOH != nil && w.Means.SpreadOH.Mean != 0 {
+				v := *openPrice + w.Means.SpreadOH.Mean
+				highWindows[w.Info.Id] = v
+				highVals = append(highVals, v)
+			}
+		}
+	}
+	var highReverseLow float64
+	if actualLow != nil && lastWin.Means != nil && lastWin.Means.SpreadHL != nil && lastWin.Means.SpreadHL.Mean != 0 {
+		highReverseLow = *actualLow + lastWin.Means.SpreadHL.Mean
+		highVals = append(highVals, highReverseLow)
+	}
+
+	// Low: openPrice - spreadOL.mean per window; reverseHigh = actualHigh - spreadHL.mean
+	var lowVals []float64
+	lowWindows := make(map[string]float64)
+	if openPrice != nil {
+		for _, w := range windows {
+			if w.Means != nil && w.Means.SpreadOL != nil && w.Means.SpreadOL.Mean != 0 {
+				v := *openPrice - w.Means.SpreadOL.Mean
+				lowWindows[w.Info.Id] = v
+				lowVals = append(lowVals, v)
+			}
+		}
+	}
+	var lowReverseHigh float64
+	if actualHigh != nil && lastWin.Means != nil && lastWin.Means.SpreadHL != nil && lastWin.Means.SpreadHL.Mean != 0 {
+		lowReverseHigh = *actualHigh - lastWin.Means.SpreadHL.Mean
+		lowVals = append(lowVals, lowReverseHigh)
+	}
+
+	// Close: reverseLow = actualLow + spreadLC.mean; reverseHigh = actualHigh - spreadHC.mean
+	var closeVals []float64
+	var closeReverseLow, closeReverseHigh float64
+	if actualLow != nil && lastWin.Means != nil && lastWin.Means.SpreadLC != nil && lastWin.Means.SpreadLC.Mean != 0 {
+		closeReverseLow = *actualLow + lastWin.Means.SpreadLC.Mean
+		closeVals = append(closeVals, closeReverseLow)
+	}
+	if actualHigh != nil && lastWin.Means != nil && lastWin.Means.SpreadHC != nil && lastWin.Means.SpreadHC.Mean != 0 {
+		closeReverseHigh = *actualHigh - lastWin.Means.SpreadHC.Mean
+		closeVals = append(closeVals, closeReverseHigh)
+	}
+
+	return &models.RefTable{
+		High: models.PredictRow{
+			Windows:    highWindows,
+			ReverseLow: highReverseLow,
+			Mean:       avgOf(highVals),
+			Direction:  "+",
+		},
+		Low: models.PredictRow{
+			Windows:     lowWindows,
+			ReverseHigh: lowReverseHigh,
+			Mean:        avgOf(lowVals),
+			Direction:   "-",
+		},
+		Close: models.PredictRow{
+			Windows:     make(map[string]float64),
+			ReverseLow:  closeReverseLow,
+			ReverseHigh: closeReverseHigh,
+			Mean:        avgOf(closeVals),
+			Direction:   "-",
+		},
+	}
+}
+
+func avgOf(vals []float64) float64 {
+	if len(vals) == 0 {
+		return 0
+	}
+	var sum float64
+	for _, v := range vals {
+		sum += v
+	}
+	return sum / float64(len(vals))
 }
 
 // Composite computes the arithmetic average across all time windows for each spread key.

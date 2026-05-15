@@ -30,8 +30,6 @@ func (h *handler) GetAnalysis(c *gin.Context) {
 		f, _ := strconv.ParseFloat(v, 64)
 		in.ActualClose = &f
 	}
-	in.WithDraft = c.DefaultQuery("with_draft", "true") == "true"
-
 	res, err := h.analysisSvc.Run(c.Request.Context(), in)
 	if err != nil {
 		utils.HTTPRequestFailedV5(c, err)

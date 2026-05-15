@@ -52,28 +52,28 @@ function buildRows(): Row[] {
         <el-table-column label="样本" align="right" width="55">
           <template #default="{ row }">{{ row.oh.count }}</template>
         </el-table-column>
-        <el-table-column label="均值" align="right" width="70">
-          <template #default="{ row }">{{ row.oh.mean }}</template>
+        <el-table-column label="平均值" align="right" width="70">
+          <template #default="{ row }">{{ row.oh.avg }}</template>
         </el-table-column>
         <el-table-column label="中位数" align="right" width="70">
           <template #default="{ row }">{{ row.oh.median }}</template>
         </el-table-column>
-        <el-table-column label="平均值" align="right" width="70">
-          <template #default="{ row }">{{ row.oh.avg }}</template>
+        <el-table-column label="均值" align="right" width="70">
+          <template #default="{ row }">{{ row.oh.mean }}</template>
         </el-table-column>
       </el-table-column>
       <el-table-column label="── 开盘-最低 ──">
         <el-table-column label="样本" align="right" width="55">
           <template #default="{ row }">{{ row.ol.count }}</template>
         </el-table-column>
-        <el-table-column label="均值" align="right" width="70">
-          <template #default="{ row }">{{ row.ol.mean }}</template>
+        <el-table-column label="平均值" align="right" width="70">
+          <template #default="{ row }">{{ row.ol.avg }}</template>
         </el-table-column>
         <el-table-column label="中位数" align="right" width="70">
           <template #default="{ row }">{{ row.ol.median }}</template>
         </el-table-column>
-        <el-table-column label="平均值" align="right" width="70">
-          <template #default="{ row }">{{ row.ol.avg }}</template>
+        <el-table-column label="均值" align="right" width="70">
+          <template #default="{ row }">{{ row.ol.mean }}</template>
         </el-table-column>
       </el-table-column>
       <el-table-column label="高抛推荐 (累计占比)" align="right">

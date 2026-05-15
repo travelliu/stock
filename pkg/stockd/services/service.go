@@ -77,16 +77,6 @@ func (s *Service) Remove(ctx context.Context, userID uint, tsCode string) error 
 	return s.RemovePortfolio(ctx, userID, tsCode)
 }
 
-// Upsert is a test-friendly alias for UpsertDraft.
-func (s *Service) Upsert(ctx context.Context, in UpsertInput) (*models.IntradayDraft, error) {
-	return s.UpsertDraft(ctx, in)
-}
-
-// GetByDate is a test-friendly alias for GetDraftByDate.
-func (s *Service) GetByDate(ctx context.Context, userID uint, tsCode, date string) (*models.IntradayDraft, error) {
-	return s.GetDraftByDate(ctx, userID, tsCode, date)
-}
-
 // Revoke is a test-friendly alias for RevokeToken.
 func (s *Service) Revoke(ctx context.Context, userID, id uint) error {
 	return s.RevokeToken(ctx, userID, id)

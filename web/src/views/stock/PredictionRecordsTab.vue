@@ -36,6 +36,13 @@ function fmt(v: number): string {
   return v ? v.toFixed(2) : '-'
 }
 
+function predColor(pred: number, actual: number): string {
+  if (!pred || !actual) return ''
+  if (pred > actual) return 'over'
+  if (pred < actual) return 'under'
+  return ''
+}
+
 onMounted(load)
 </script>
 
@@ -47,19 +54,25 @@ onMounted(load)
         <template #default="{ row }">{{ fmt(row.openPrice) }}</template>
       </el-table-column>
       <el-table-column label="预测高" align="right" width="80">
-        <template #default="{ row }">{{ fmt(row.predictHigh) }}</template>
+        <template #default="{ row }">
+          <span :class="predColor(row.predictHigh, row.actualHigh)">{{ fmt(row.predictHigh) }}</span>
+        </template>
       </el-table-column>
       <el-table-column label="实际高" align="right" width="80">
         <template #default="{ row }">{{ fmt(row.actualHigh) }}</template>
       </el-table-column>
       <el-table-column label="预测低" align="right" width="80">
-        <template #default="{ row }">{{ fmt(row.predictLow) }}</template>
+        <template #default="{ row }">
+          <span :class="predColor(row.predictLow, row.actualLow)">{{ fmt(row.predictLow) }}</span>
+        </template>
       </el-table-column>
       <el-table-column label="实际低" align="right" width="80">
         <template #default="{ row }">{{ fmt(row.actualLow) }}</template>
       </el-table-column>
       <el-table-column label="预测收" align="right" width="80">
-        <template #default="{ row }">{{ fmt(row.predictClose) }}</template>
+        <template #default="{ row }">
+          <span :class="predColor(row.predictClose, row.actualClose)">{{ fmt(row.predictClose) }}</span>
+        </template>
       </el-table-column>
       <el-table-column label="实际收" align="right" width="80">
         <template #default="{ row }">{{ fmt(row.actualClose) }}</template>
@@ -75,3 +88,8 @@ onMounted(load)
     />
   </div>
 </template>
+
+<style scoped>
+.over  { color: var(--el-color-danger);  }
+.under { color: var(--el-color-success); }
+</style>

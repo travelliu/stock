@@ -30,13 +30,8 @@ func (h *handler) AddPortfolio(c *gin.Context) {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return
 	}
-	tsCode, err := h.svc.ResolveTsCode(req.GetCode())
-	if err != nil {
-		utils.HTTPRequestFailedV4(c, nil, utils.ErrStockNotFound)
-		return
-	}
 	u := auth.User(c)
-	if err := h.svc.AddPortfolio(c.Request.Context(), u.ID, tsCode, req.Note); err != nil {
+	if err := h.svc.AddPortfolio(c.Request.Context(), u.ID, req.GetCode(), req.Note); err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}
@@ -44,13 +39,8 @@ func (h *handler) AddPortfolio(c *gin.Context) {
 }
 
 func (h *handler) RemovePortfolio(c *gin.Context) {
-	tsCode, err := h.svc.ResolveTsCode(c.Param(codeValue))
-	if err != nil {
-		utils.HTTPRequestFailedV4(c, nil, utils.ErrStockNotFound)
-		return
-	}
 	u := auth.User(c)
-	if err := h.svc.RemovePortfolio(c.Request.Context(), u.ID, tsCode); err != nil {
+	if err := h.svc.RemovePortfolio(c.Request.Context(), u.ID, c.Param(codeValue)); err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}
@@ -63,13 +53,8 @@ func (h *handler) UpdatePortfolioNote(c *gin.Context) {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return
 	}
-	tsCode, err := h.svc.ResolveTsCode(c.Param(codeValue))
-	if err != nil {
-		utils.HTTPRequestFailedV4(c, nil, utils.ErrStockNotFound)
-		return
-	}
 	u := auth.User(c)
-	if err := h.svc.UpdatePortfolioNote(c.Request.Context(), u.ID, tsCode, req.Note); err != nil {
+	if err := h.svc.UpdatePortfolioNote(c.Request.Context(), u.ID, c.Param(codeValue), req.Note); err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}

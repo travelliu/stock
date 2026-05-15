@@ -12,12 +12,7 @@ import (
 
 func (h *handler) GetAnalysis(c *gin.Context) {
 	u := auth.User(c)
-	tsCode, err := h.svc.ResolveTsCode(c.Param(codeValue))
-	if err != nil {
-		utils.HTTPRequestFailedV4(c, nil, utils.ErrStockNotFound)
-		return
-	}
-	in := analysis.Input{UserID: u.ID, TsCode: tsCode}
+	in := analysis.Input{UserID: u.ID, TsCode: c.Param(codeValue)}
 
 	if v := c.Query("actual_open"); v != "" {
 		f, _ := strconv.ParseFloat(v, 64)

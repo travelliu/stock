@@ -2,9 +2,7 @@ package services
 
 import (
 	"context"
-	"fmt"
-	"strings"
-	
+
 	"stock/pkg/models"
 )
 
@@ -24,17 +22,4 @@ func (s *Service) LoadStockCache(ctx context.Context) error {
 	s.stockCacheByTsCode = byTsCode
 	s.cacheMu.Unlock()
 	return nil
-}
-
-func (s *Service) ResolveTsCode(code string) (string, error) {
-	if strings.Contains(code, ".") {
-		return code, nil
-	}
-	s.cacheMu.RLock()
-	st, ok := s.stockCacheByCode[code]
-	s.cacheMu.RUnlock()
-	if !ok {
-		return "", fmt.Errorf("stock %q not found in cache", code)
-	}
-	return st.TsCode, nil
 }

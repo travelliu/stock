@@ -42,13 +42,15 @@ func (s *Service) ListPortfolio(ctx context.Context, userID uint) ([]*models.Por
 	}
 	s.cacheMu.RLock()
 	for _, r := range rows {
-		if info, ok := s.stockCacheByTsCode[r.TsCode]; ok {
-			r.Name = info.Name
-			r.Code = info.Code
-		}
-		if r.Code == "" {
-			if dot := strings.Index(r.TsCode, "."); dot != -1 {
-				r.Code = r.TsCode[:dot]
+		if strings.Contains(r.TsCode, ".") {
+			if info, ok := s.stockCacheByTsCode[r.TsCode]; ok {
+				r.Name = info.Name
+				r.Code = info.Code
+			}
+		} else {
+			if info, ok := s.stockCacheByCode[r.TsCode]; ok {
+				r.Name = info.Name
+				r.Code = info.Code
 			}
 		}
 	}

@@ -9,16 +9,17 @@ import (
 
 func (h *handler) SyncStocklist(c *gin.Context) {
 	token := auth.TushareTokenFor(c)
-	n, err := h.stockSvc.SyncFromTushare(c.Request.Context(), token)
+	n, err := h.svc.SyncFromTushare(c.Request.Context(), token)
 	if err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}
+	_ = h.svc.LoadStockCache(c.Request.Context())
 	utils.HTTPRequestSuccess(c, 200, gin.H{"synced": n})
 }
 
 func (h *handler) SyncBars(c *gin.Context) {
-	if err := h.schedulerSvc.Trigger(c.Request.Context(), "daily-fetch"); err != nil {
+	if err := h.svc.Trigger(c.Request.Context(), "daily-fetch"); err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}
@@ -32,11 +33,12 @@ func (h *handler) ImportCSV(c *gin.Context) {
 		return
 	}
 	defer file.Close()
-	n, err := h.stockSvc.ImportCSV(c.Request.Context(), file)
+	n, err := h.svc.ImportCSV(c.Request.Context(), file)
 	if err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}
+	_ = h.svc.LoadStockCache(c.Request.Context())
 	utils.HTTPRequestSuccess(c, 200, gin.H{"imported": n})
 }
 
@@ -46,7 +48,7 @@ func (h *handler) JobStatus(c *gin.Context) {
 		utils.HTTPRequestFailedV4(c, nil, utils.ErrInvalidParam)
 		return
 	}
-	jr, err := h.schedulerSvc.LastRun(c.Request.Context(), name)
+	jr, err := h.svc.LastRun(c.Request.Context(), name)
 	if err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return

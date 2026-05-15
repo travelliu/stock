@@ -3,7 +3,7 @@ package models
 import "time"
 
 type JobRun struct {
-	ID         uint       `gorm:"primaryKey" json:"id,omitempty"`
+	ID         uint       `gorm:"primaryKey" json:"id"`
 	JobName    string     `gorm:"size:64;index;not null" json:"jobName,omitempty"`
 	StartedAt  time.Time  `gorm:"not null" json:"startedAt"`
 	FinishedAt *time.Time `json:"finishedAt,omitempty"`

@@ -1,0 +1,36 @@
+:root {
+  --color-up: #f56c6c;
+  --color-down: #67c23a;
+  --color-flat: #909399;
+  --sider-bg: #20242b;
+  --sider-bg-hover: #313741;
+  --sider-text: #acb3bf;
+  --sider-active: #ffd04b;
+  --content-bg: #f5f7fa;
+  --card-radius: 4px;
+}
+
+body {
+  margin: 0;
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+  background: var(--content-bg);
+  color: #303133;
+}
+
+.g-up {
+  color: var(--color-up);
+}
+
+.g-down {
+  color: var(--color-down);
+}
+
+.g-flat {
+  color: var(--color-flat);
+}
+
+.g-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

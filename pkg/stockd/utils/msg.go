@@ -18,7 +18,6 @@ const (
 	ErrInvalidPassword = 40005
 	ErrUserDisabled    = 40006
 	ErrStockNotFound   = 40007
-	ErrDraftInvalid    = 40008
 	ErrTokenInvalid    = 40009
 	ErrTokenExpired    = 40010
 	ErrDuplicateUser   = 40011
@@ -38,7 +37,6 @@ var (
 		ErrInvalidPassword: "密码错误",
 		ErrUserDisabled:    "账户已禁用",
 		ErrStockNotFound:   "股票不存在",
-		ErrDraftInvalid:    "草稿数据无效",
 		ErrTokenInvalid:    "Token无效",
 		ErrTokenExpired:    "Token已过期",
 		ErrDuplicateUser:   "用户名已存在",
@@ -56,7 +54,6 @@ var (
 		ErrInvalidPassword: "Invalid password",
 		ErrUserDisabled:    "Account disabled",
 		ErrStockNotFound:   "Stock not found",
-		ErrDraftInvalid:    "Invalid draft data",
 		ErrTokenInvalid:    "Invalid token",
 		ErrTokenExpired:    "Token expired",
 		ErrDuplicateUser:   "Username already exists",

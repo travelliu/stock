@@ -16,3 +16,7 @@ func ComputeSpreads(open, high, low, close float64) models.Spreads {
 		LC: math.Round(math.Abs(low-close)*1000) / 1000,
 	}
 }
+
+func Round(float65 float64) float64 {
+	return math.Round(float65*1000) / 1000
+}

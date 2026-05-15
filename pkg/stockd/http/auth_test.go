@@ -1,10 +1,12 @@
 package http_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	http2 "stock/pkg/stockd/http"
+	"stock/pkg/stockd/services"
 	"strings"
 	"testing"
 
@@ -19,15 +21,7 @@ import (
 	"stock/pkg/stockd/auth"
 	"stock/pkg/stockd/db"
 	"stock/pkg/stockd/services/analysis"
-	"stock/pkg/stockd/services/bars"
-	"stock/pkg/stockd/services/draft"
-	"stock/pkg/stockd/services/portfolio"
-	"stock/pkg/stockd/services/scheduler"
-	"stock/pkg/stockd/services/stock"
-	"stock/pkg/stockd/services/token"
-	"stock/pkg/stockd/services/user"
 	"stock/pkg/stockd/utils"
-	"stock/pkg/tushare"
 )
 
 func setupAuthRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
@@ -43,15 +37,9 @@ func setupAuthRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
 	r.Use(sessions.Sessions(auth.SessionName, store))
 	r.Use(auth.ResolveUser(gdb, ""))
 
-	userSvc := user.New(gdb)
-	tokenSvc := token.New(gdb)
-	stockSvc := stock.New(gdb)
-	portfolioSvc := portfolio.New(gdb)
-	draftSvc := draft.New(gdb)
-	barsSvc := bars.New(gdb, tushare.NewClient())
-	analysisSvc := analysis.New(gdb)
-	schedulerSvc := scheduler.New(gdb)
-	h := http2.NewHandler(userSvc, tokenSvc, stockSvc, portfolioSvc, draftSvc, barsSvc, analysisSvc, schedulerSvc)
+	svc := services.New(gdb)
+	analysisSvc := analysis.New(gdb, nil)
+	h := http2.NewHandler(svc, analysisSvc)
 	r.POST("/api/auth/login", h.Login)
 	r.POST("/api/auth/logout", h.Logout)
 	r.GET("/api/auth/me", http2.AuthRequired(), h.Me)
@@ -63,12 +51,15 @@ func TestLogin(t *testing.T) {
 	pw, _ := auth.HashPassword("secret")
 	require.NoError(t, gdb.Create(&models.User{Username: "alice", PasswordHash: pw, Role: "user"}).Error)
 
+	body, _ := json.Marshal(models.LoginReq{Username: "alice", Password: "secret"})
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/auth/login", strings.NewReader(`{"username":"alice","password":"secret"}`))
+	req, _ := http.NewRequest("POST", "/api/auth/login", strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), `"code":200`)
+	assert.Contains(t, w.Body.String(), `"username":"alice"`)
+	assert.NotContains(t, w.Body.String(), `"userName"`)
 }
 
 func TestLogin_BadPassword(t *testing.T) {
@@ -76,8 +67,9 @@ func TestLogin_BadPassword(t *testing.T) {
 	pw, _ := auth.HashPassword("secret")
 	require.NoError(t, gdb.Create(&models.User{Username: "alice", PasswordHash: pw, Role: "user"}).Error)
 
+	body, _ := json.Marshal(models.LoginReq{Username: "alice", Password: "wrong"})
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/auth/login", strings.NewReader(`{"username":"alice","password":"wrong"}`))
+	req, _ := http.NewRequest("POST", "/api/auth/login", strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)

@@ -33,6 +33,19 @@ var stockSearchCmd = &cobra.Command{
 	},
 }
 
+var stockFetchCmd = &cobra.Command{
+	Use:   "fetch [ts_code]",
+	Short: "Search stocks by code or name",
+	// Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c := client.New(cfg.ServerURL, cfg.Token)
+		if err := c.POST("/api/admin/bars/sync", nil, nil); err != nil {
+			return err
+		}
+		return nil
+	},
+}
+
 var stockAnalysisCmd = &cobra.Command{
 	Use:   "analysis [ts_code]",
 	Short: "Run spread analysis",
@@ -55,9 +68,6 @@ var stockAnalysisCmd = &cobra.Command{
 		if v, _ := cmd.Flags().GetFloat64("actual-close"); v != 0 {
 			qs += fmt.Sprintf("&actual_close=%.2f", v)
 		}
-		if useDraft, _ := cmd.Flags().GetBool("use-draft"); useDraft {
-			qs += "&with_draft=true"
-		}
 		if qs != "" {
 			path += "?" + qs[1:]
 		}
@@ -67,7 +77,6 @@ var stockAnalysisCmd = &cobra.Command{
 			if err := c.GET(path, &raw); err != nil {
 				return err
 			}
-			fmt.Println(string(raw))
 			return nil
 		}
 
@@ -102,13 +111,62 @@ var stockHistoryCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(stockCmd)
-	stockCmd.AddCommand(stockSearchCmd, stockAnalysisCmd, stockHistoryCmd)
+	stockCmd.AddCommand(stockSearchCmd, stockAnalysisCmd, stockHistoryCmd, stockPredictionsCmd, stockRecalcCmd, stockFetchCmd)
 	stockAnalysisCmd.Flags().String("format", "table", "Output format: table|json")
 	stockAnalysisCmd.Flags().Float64("actual-open", 0, "Override open price")
 	stockAnalysisCmd.Flags().Float64("actual-high", 0, "Override high price")
 	stockAnalysisCmd.Flags().Float64("actual-low", 0, "Override low price")
 	stockAnalysisCmd.Flags().Float64("actual-close", 0, "Override close price")
-	stockAnalysisCmd.Flags().Bool("use-draft", false, "Use today's draft values")
 	stockHistoryCmd.Flags().String("from", "", "Start date YYYYMMDD")
 	stockHistoryCmd.Flags().String("to", "", "End date YYYYMMDD")
+	stockPredictionsCmd.Flags().String("from", "", "Start date YYYYMMDD")
+	stockPredictionsCmd.Flags().String("to", "", "End date YYYYMMDD")
+	stockPredictionsCmd.Flags().Int("limit", 30, "Max records")
+	stockRecalcCmd.Flags().String("ts-code", "", "Recalc specific stock only")
+}
+
+var stockPredictionsCmd = &cobra.Command{
+	Use:   "predictions [ts_code]",
+	Short: "Show prediction history",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c := client.New(cfg.ServerURL, cfg.Token)
+		from, _ := cmd.Flags().GetString("from")
+		to, _ := cmd.Flags().GetString("to")
+		limit, _ := cmd.Flags().GetInt("limit")
+		path := fmt.Sprintf("/api/analysis/predictions/%s?limit=%d", args[0], limit)
+		if from != "" {
+			path += "&from=" + from
+		}
+		if to != "" {
+			path += "&to=" + to
+		}
+		var preds []models.AnalysisPrediction
+		if err := c.GET(path, &preds); err != nil {
+			return err
+		}
+		render.PredictionsTable(args[0], "", preds)
+		return nil
+	},
+}
+
+var stockRecalcCmd = &cobra.Command{
+	Use:   "recalc",
+	Short: "Recalculate predictions for portfolio stocks",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c := client.New(cfg.ServerURL, cfg.Token)
+		tsCode, _ := cmd.Flags().GetString("ts-code")
+		path := "/api/analysis/recalc"
+		if tsCode != "" {
+			path += "?ts_code=" + tsCode
+		}
+		var res struct {
+			Updated int `json:"updated"`
+		}
+		if err := c.POST(path, nil, &res); err != nil {
+			return err
+		}
+		fmt.Printf("Updated %d predictions\n", res.Updated)
+		return nil
+	},
 }

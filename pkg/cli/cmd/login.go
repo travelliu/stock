@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"stock/pkg/cli/client"
+	"stock/pkg/models"
 )
 
 var loginCmd = &cobra.Command{
@@ -23,9 +24,7 @@ var loginCmd = &cobra.Command{
 			return fmt.Errorf("token required")
 		}
 		c := client.New(cfg.ServerURL, tok)
-		var me struct {
-			Username string `json:"username"`
-		}
+		var me models.User
 		if err := c.GET("/api/auth/me", &me); err != nil {
 			return fmt.Errorf("token validation failed: %w", err)
 		}

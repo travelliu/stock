@@ -11,7 +11,7 @@ import (
 func (h *handler) SearchStocks(c *gin.Context) {
 	q := c.Query("q")
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	list, err := h.stockSvc.Search(c.Request.Context(), q, limit)
+	list, err := h.svc.SearchStock(c.Request.Context(), q, limit)
 	if err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return
@@ -20,8 +20,7 @@ func (h *handler) SearchStocks(c *gin.Context) {
 }
 
 func (h *handler) GetStock(c *gin.Context) {
-	tsCode := c.Param(tsCodeValue)
-	s, err := h.stockSvc.Get(c.Request.Context(), tsCode)
+	s, err := h.svc.GetStock(c.Request.Context(), c.Param(codeValue))
 	if err != nil {
 		utils.HTTPRequestFailedV4(c, nil, utils.ErrStockNotFound)
 		return

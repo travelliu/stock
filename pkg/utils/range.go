@@ -36,6 +36,6 @@ func RecommendedRange(values []float64, threshold float64) *Range {
 			bestHigh = sorted[i+needed-1]
 		}
 	}
-	cum := roundTo(float64(needed)/float64(n)*100.0, 1)
+	cum := RoundTo(float64(needed)/float64(n)*100.0, 1)
 	return &Range{Low: bestLow, High: bestHigh, CumPct: cum}
 }

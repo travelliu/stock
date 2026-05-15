@@ -1,6 +1,8 @@
 package models_test
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -29,7 +31,6 @@ func TestModelsRoundTrip(t *testing.T) {
 		&models.Stock{TsCode: "600519.SH", Code: "600519", Name: "贵州茅台", Market: "主板", Exchange: "SSE", UpdatedAt: now},
 		&models.DailyBar{TsCode: "600519.SH", TradeDate: "20250513", Open: 1620, High: 1655, Low: 1601, Close: 1632, Vol: 3500, Amount: 5e5},
 		&models.Portfolio{UserID: 1, TsCode: "600519.SH", AddedAt: now},
-		&models.IntradayDraft{UserID: 1, TsCode: "600519.SH", TradeDate: "20260514", UpdatedAt: now},
 		&models.JobRun{JobName: "daily-fetch", StartedAt: now, Status: "running"},
 	}
 	for _, c := range cases {
@@ -54,4 +55,81 @@ func TestDailyBarHasSpreadColumns(t *testing.T) {
 	var got models.DailyBar
 	require.NoError(t, gdb.First(&got, "ts_code = ? AND trade_date = ?", bar.TsCode, bar.TradeDate).Error)
 	assert.Equal(t, bar.Spreads, got.Spreads)
+}
+
+func TestModelJSONFields(t *testing.T) {
+	now := time.Now()
+	cases := []struct {
+		name    string
+		val     any
+		want    []string
+		notWant []string
+	}{
+		{
+			name: "User",
+			val: models.User{
+				ID: 1, Username: "alice", PasswordHash: "h", Role: "user",
+				TushareToken: "tk", Disabled: false, CreatedAt: now, UpdatedAt: now,
+			},
+			want:    []string{"id", "username", "role", "tushareToken", "createdAt", "updatedAt"},
+			notWant: []string{"userName", "userID"},
+		},
+		{
+			name:    "Stock",
+			val:     models.Stock{TsCode: "600519.SH", Code: "600519", Name: "贵州茅台", Market: "主板", Exchange: "SSE", ListDate: "20010827"},
+			want:    []string{"tsCode", "code", "name", "market", "exchange", "listDate"},
+			notWant: []string{"createdAt"},
+		},
+		{
+			name:    "Portfolio",
+			val:     models.Portfolio{ID: 1, UserID: 2, TsCode: "600519.SH", Note: "n", AddedAt: now},
+			want:    []string{"id", "userId", "tsCode", "note", "addedAt"},
+			notWant: []string{"userID"},
+		},
+		{
+			name: "PortfolioReq",
+			val:  models.PortfolioReq{Code: "600519", Note: "test"},
+			want: []string{"code", "note"},
+		},
+		{
+			name:    "APIToken",
+			val:     models.APIToken{ID: 1, UserID: 2, Name: "cli", TokenHash: "h", CreatedAt: now},
+			want:    []string{"id", "userId", "name", "tokenHash", "createdAt"},
+			notWant: []string{"userID"},
+		},
+		{
+			name: "DailyBar",
+			val:  models.DailyBar{TsCode: "x", TradeDate: "20250513", Open: 10, High: 11, Low: 9, Close: 10, Spreads: models.Spreads{OH: 1, HL: 2}},
+			want: []string{"tsCode", "tradeDate", "open", "high", "low", "close", "spreads"},
+		},
+		{
+			name:    "JobRun",
+			val:     models.JobRun{ID: 1, JobName: "daily-fetch", StartedAt: now, Status: "success"},
+			want:    []string{"id", "jobName", "startedAt", "status"},
+			notWant: []string{"createdAt"},
+		},
+		{
+			name: "LoginReq",
+			val:  models.LoginReq{Username: "alice", Password: "secret"},
+			want: []string{"username", "password"},
+		},
+		{
+			name: "IssueTokenResp",
+			val:  models.IssueTokenResp{Token: "tk", Metadata: &models.APIToken{ID: 1, Name: "x"}},
+			want: []string{"token", "metadata"},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			b, err := json.Marshal(c.val)
+			require.NoError(t, err)
+			s := string(b)
+			for _, w := range c.want {
+				assert.Contains(t, s, fmt.Sprintf(`"%s"`, w))
+			}
+			for _, nw := range c.notWant {
+				assert.NotContains(t, s, fmt.Sprintf(`"%s"`, nw))
+			}
+		})
+	}
 }

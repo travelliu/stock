@@ -13,11 +13,11 @@ type RecommendRangeResult struct {
 }
 
 type MeansAvgData struct {
-	Count        int                  `json:"count"`
-	Avg          float64              `json:"avg"`
-	Median       float64              `json:"median"`
-	Mean         float64              `json:"mean"`
-	Distribution []*DistBucket        `json:"distribution"`
+	Count        int                   `json:"count"`
+	Avg          float64               `json:"avg"`
+	Median       float64               `json:"median"`
+	Mean         float64               `json:"mean"`
+	Distribution []*DistBucket         `json:"distribution"`
 	Recommend    *RecommendRangeResult `json:"recommend,omitempty"`
 }
 

@@ -37,7 +37,7 @@ func Open(cfg *config.Config, logger *logrus.Logger) (*gorm.DB, error) {
 		Logger:                 l,
 		SkipDefaultTransaction: true,
 	})
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("open db: %w", err)
 	}

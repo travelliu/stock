@@ -7,7 +7,7 @@ import (
 	"io/fs"
 	"net/http"
 	"path"
-	
+
 	"github.com/gin-contrib/static"
 )
 
@@ -42,7 +42,7 @@ type EmbedFileHTTP struct {
 
 func (f *EmbedFileHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fPath := path.Join("web/dist", "index.html")
-	
+
 	embedFs, err := StaticDir.Open(fPath)
 	if err != nil {
 		fmt.Println(err)

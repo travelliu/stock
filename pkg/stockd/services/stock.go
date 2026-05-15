@@ -5,9 +5,9 @@ import (
 	"context"
 	"errors"
 	"strings"
-	
+
 	"gorm.io/gorm"
-	
+
 	"stock/pkg/models"
 	"stock/pkg/tushare"
 )

@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
-
+	
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
+	
 	"stock/pkg/models"
-	"stock/pkg/stockd/services"
 )
 
 func TestListPredictionsPage(t *testing.T) {
@@ -26,7 +25,7 @@ func TestListPredictionsPage(t *testing.T) {
 		}
 		require.NoError(t, gdb.Create(&p).Error)
 	}
-	svc := services.New(gdb)
+	svc := newService(t)
 	page, err := svc.ListPredictionsPage(context.Background(), "X.SH", "", "", 1, 20)
 	require.NoError(t, err)
 	assert.Equal(t, int64(25), page.Total)

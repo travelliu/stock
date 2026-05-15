@@ -11,14 +11,14 @@ import (
 )
 
 func TestIssueListRevoke(t *testing.T) {
-	svc := services.New(openDB(t))
+	svc := newService(t)
 	ctx := context.Background()
 	plain, tok, err := svc.Issue(ctx, services.IssueInput{UserID: 1, Name: "cli"})
 	require.NoError(t, err)
 	assert.NotEmpty(t, plain)
 	assert.Equal(t, "cli", tok.Name)
 	assert.Empty(t, tok.PlainOnce, "Issue returns plain via the first return; DTO must omit it after the call")
-	
+
 	got, err := svc.ListTokens(ctx, 1)
 	require.NoError(t, err)
 	assert.Len(t, got, 1)
@@ -29,7 +29,7 @@ func TestIssueListRevoke(t *testing.T) {
 }
 
 func TestIssueWithExpiry(t *testing.T) {
-	svc := services.New(openDB(t))
+	svc := newService(t)
 	exp := time.Now().Add(24 * time.Hour)
 	_, tok, err := svc.Issue(context.Background(), services.IssueInput{UserID: 1, Name: "tmp", ExpiresAt: &exp})
 	require.NoError(t, err)

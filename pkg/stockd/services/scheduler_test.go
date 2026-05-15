@@ -2,21 +2,19 @@ package services_test
 
 import (
 	"context"
-	"stock/pkg/stockd/services"
 	"sync/atomic"
 	"testing"
 	"time"
-
+	
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
+	
 	"stock/pkg/models"
 )
 
-
 func TestTrigger_RecordsJobRun(t *testing.T) {
 	gdb := openDB(t)
-	s := services.New(gdb)
+	s := newService(t)
 	var calls int32
 	s.RegisterFunc("test", func(ctx context.Context) error { atomic.AddInt32(&calls, 1); return nil })
 
@@ -31,8 +29,7 @@ func TestTrigger_RecordsJobRun(t *testing.T) {
 }
 
 func TestTrigger_DeDupesConcurrent(t *testing.T) {
-	gdb := openDB(t)
-	s := services.New(gdb)
+	s := newService(t)
 	started := make(chan struct{})
 	release := make(chan struct{})
 	var calls int32

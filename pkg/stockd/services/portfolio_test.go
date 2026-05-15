@@ -3,6 +3,7 @@ package services_test
 import (
 	"context"
 	"fmt"
+	"stock/pkg/logs"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,47 +23,56 @@ func openDB(t *testing.T) *gorm.DB {
 	return gdb
 }
 
+func newService(t *testing.T) *services.Service {
+	logger, err := logs.NewLogRusDir("", "", "INFO")
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc := services.NewService(openDB(t), nil, nil, logger)
+	return svc
+}
+
 func TestAddListRemove(t *testing.T) {
-	svc := services.New(openDB(t))
+	svc := newService(t)
 	ctx := context.Background()
-	require.NoError(t, svc.Add(ctx, 1, "600519.SH", "茅台仓"))
-	require.NoError(t, svc.Add(ctx, 1, "000001.SZ", ""))
-	list, err := svc.List(ctx, 1)
+	require.NoError(t, svc.AddPortfolio(ctx, 1, "600519.SH", "茅台仓"))
+	require.NoError(t, svc.AddPortfolio(ctx, 1, "000001.SZ", ""))
+	list, err := svc.ListPortfolio(ctx, 1)
 	require.NoError(t, err)
 	assert.Len(t, list, 2)
-	
-	require.NoError(t, svc.Remove(ctx, 1, "600519.SH"))
-	list, _ = svc.List(ctx, 1)
+
+	require.NoError(t, svc.RemovePortfolio(ctx, 1, "600519.SH"))
+	list, _ = svc.ListPortfolio(ctx, 1)
 	assert.Len(t, list, 1)
 }
 
 func TestAddDuplicateIsIdempotent(t *testing.T) {
-	svc := services.New(openDB(t))
+	svc := newService(t)
 	ctx := context.Background()
-	require.NoError(t, svc.Add(ctx, 1, "600519.SH", "v1"))
-	require.NoError(t, svc.Add(ctx, 1, "600519.SH", "v2"), "duplicate add overwrites note")
-	list, _ := svc.List(ctx, 1)
+	require.NoError(t, svc.AddPortfolio(ctx, 1, "600519.SH", "v1"))
+	require.NoError(t, svc.AddPortfolio(ctx, 1, "600519.SH", "v2"), "duplicate add overwrites note")
+	list, _ := svc.ListPortfolio(ctx, 1)
 	require.Len(t, list, 1)
 	assert.Equal(t, "v2", list[0].Note)
 }
 
 func TestRemoveOnlyAffectsOwner(t *testing.T) {
-	svc := services.New(openDB(t))
+	svc := newService(t)
 	ctx := context.Background()
-	require.NoError(t, svc.Add(ctx, 1, "600519.SH", ""))
-	require.NoError(t, svc.Add(ctx, 2, "600519.SH", ""))
-	require.NoError(t, svc.Remove(ctx, 1, "600519.SH"))
-	list2, _ := svc.List(ctx, 2)
+	require.NoError(t, svc.AddPortfolio(ctx, 1, "600519.SH", ""))
+	require.NoError(t, svc.AddPortfolio(ctx, 2, "600519.SH", ""))
+	require.NoError(t, svc.RemovePortfolio(ctx, 1, "600519.SH"))
+	list2, _ := svc.ListPortfolio(ctx, 2)
 	assert.Len(t, list2, 1)
 }
 
 func TestListPortfolioEnrichesName(t *testing.T) {
 	gdb := openDB(t)
 	require.NoError(t, gdb.Create(&models.Stock{TsCode: "600519.SH", Code: "600519", Name: "贵州茅台"}).Error)
-	svc := services.New(gdb)
+	svc := newService(t)
 	require.NoError(t, svc.LoadStockCache(context.Background()))
-	require.NoError(t, svc.Add(context.Background(), 1, "600519.SH", ""))
-	list, err := svc.List(context.Background(), 1)
+	require.NoError(t, svc.AddPortfolio(context.Background(), 1, "600519.SH", ""))
+	list, err := svc.ListPortfolio(context.Background(), 1)
 	require.NoError(t, err)
 	require.Len(t, list, 1)
 	assert.Equal(t, "贵州茅台", list[0].Name)

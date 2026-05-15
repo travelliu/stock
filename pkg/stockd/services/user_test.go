@@ -2,24 +2,12 @@ package services_test
 
 import (
 	"context"
-	"fmt"
 	"stock/pkg/stockd/services"
 	"testing"
-	
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	
-	"stock/pkg/stockd/db"
 )
-
-func openDB(t *testing.T) *gorm.DB {
-	gdb, err := gorm.Open(sqlite.Open(fmt.Sprintf("file:%s?mode=memory&cache=shared", t.Name())), &gorm.Config{})
-	require.NoError(t, err)
-	require.NoError(t, db.AutoMigrate(gdb))
-	return gdb
-}
 
 func TestCreateAndAuthenticate(t *testing.T) {
 	svc := services.New(openDB(t))

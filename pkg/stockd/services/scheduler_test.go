@@ -2,7 +2,6 @@ package services_test
 
 import (
 	"context"
-	"fmt"
 	"stock/pkg/stockd/services"
 	"sync/atomic"
 	"testing"
@@ -10,11 +9,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 
 	"stock/pkg/models"
-	"stock/pkg/stockd/db"
 )
 
 

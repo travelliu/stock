@@ -8,12 +8,13 @@ import (
 	"stock/pkg/stockd/config"
 	"stock/pkg/stockd/services"
 	"testing"
-	
+
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	
+
 	"stock/pkg/models"
-	
+
 	"stock/pkg/tushare"
 )
 
@@ -21,7 +22,7 @@ func TestQueryRange(t *testing.T) {
 	gdb := openDB(t)
 	require.NoError(t, gdb.Create(&models.DailyBar{TsCode: "X.SH", TradeDate: "20250101", Open: 1, High: 2, Low: 0.5, Close: 1.5}).Error)
 	require.NoError(t, gdb.Create(&models.DailyBar{TsCode: "X.SH", TradeDate: "20250110", Open: 2, High: 3, Low: 1.5, Close: 2.5}).Error)
-	svc := services.NewService(gdb, tushare.NewClient(), &config.Config{})
+	svc := services.NewService(gdb, tushare.NewClient(), &config.Config{}, logrus.New())
 	out, err := svc.QueryStockDailyBar(context.Background(), "X.SH", "20250101", "20250110")
 	require.NoError(t, err)
 	assert.Len(t, out, 2)
@@ -37,7 +38,7 @@ func TestSync_FromTushare(t *testing.T) {
 	}))
 	defer srv.Close()
 	gdb := openDB(t)
-	svc := services.NewService(gdb, tushare.NewClient(tushare.WithBaseURL(srv.URL)), &config.Config{})
+	svc := services.NewService(gdb, tushare.NewClient(tushare.WithBaseURL(srv.URL)), &config.Config{}, logrus.New())
 	n, err := svc.SyncDaily(context.Background(), "tok", "X.SH")
 	require.NoError(t, err)
 	assert.Equal(t, 1, n)

@@ -2,25 +2,13 @@ package services_test
 
 import (
 	"context"
-	"fmt"
 	"stock/pkg/stockd/services"
 	"testing"
 	"time"
-	
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	
-	"stock/pkg/stockd/db"
 )
-
-func openDB(t *testing.T) *gorm.DB {
-	gdb, err := gorm.Open(sqlite.Open(fmt.Sprintf("file:%s?mode=memory&cache=shared", t.Name())), &gorm.Config{})
-	require.NoError(t, err)
-	require.NoError(t, db.AutoMigrate(gdb))
-	return gdb
-}
 
 func TestIssueListRevoke(t *testing.T) {
 	svc := services.New(openDB(t))
@@ -31,12 +19,12 @@ func TestIssueListRevoke(t *testing.T) {
 	assert.Equal(t, "cli", tok.Name)
 	assert.Empty(t, tok.PlainOnce, "Issue returns plain via the first return; DTO must omit it after the call")
 	
-	got, err := svc.List(ctx, 1)
+	got, err := svc.ListTokens(ctx, 1)
 	require.NoError(t, err)
 	assert.Len(t, got, 1)
-	
-	require.NoError(t, svc.Revoke(ctx, 1, tok.ID))
-	got, _ = svc.List(ctx, 1)
+
+	require.NoError(t, svc.RevokeToken(ctx, 1, tok.ID))
+	got, _ = svc.ListTokens(ctx, 1)
 	assert.Len(t, got, 0)
 }
 

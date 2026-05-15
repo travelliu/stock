@@ -67,37 +67,48 @@ onMounted(load)
   <div v-loading="loading">
     <el-card style="margin-bottom: 16px">
       <template #header>实时价格与预测</template>
-      <div class="price-grid">
-        <div class="price-row">
-          <span class="price-label">今日开盘</span>
-          <el-input-number
-            v-model="openPrice"
-            :precision="2"
-            :step="0.01"
-            size="small"
-            style="width: 140px"
-          />
-          <el-button type="primary" size="small" :loading="recalcing" @click="handleRecalc">
-            计算预测
-          </el-button>
-        </div>
-        <div class="price-row">
-          <span class="price-label">实际 H / L / C</span>
-          <span>
-            {{ fmt(latestBar?.high ?? 0) }} /
-            {{ fmt(latestBar?.low ?? 0) }} /
-            {{ fmt(latestBar?.close ?? 0) }}
-          </span>
-        </div>
-        <div class="price-row">
-          <span class="price-label">预测 H / L / C</span>
-          <span>
-            {{ fmt(latestPred?.predictHigh ?? 0) }} /
-            {{ fmt(latestPred?.predictLow ?? 0) }} /
-            {{ fmt(latestPred?.predictClose ?? 0) }}
-          </span>
-        </div>
-      </div>
+      <table class="price-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>开盘价</th>
+            <th>最高价</th>
+            <th>最低价</th>
+            <th>收盘价</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="row-label">实际</td>
+            <td>
+              <el-input-number
+                v-model="openPrice"
+                :precision="2"
+                :step="0.01"
+                size="small"
+                style="width: 120px"
+              />
+            </td>
+            <td>{{ fmt(latestBar?.high ?? 0) }}</td>
+            <td>{{ fmt(latestBar?.low ?? 0) }}</td>
+            <td>{{ fmt(latestBar?.close ?? 0) }}</td>
+            <td>
+              <el-button type="primary" size="small" :loading="recalcing" @click="handleRecalc">
+                计算
+              </el-button>
+            </td>
+          </tr>
+          <tr>
+            <td class="row-label">预测</td>
+            <td>{{ fmt(openPrice) }}</td>
+            <td>{{ fmt(latestPred?.predictHigh ?? 0) }}</td>
+            <td>{{ fmt(latestPred?.predictLow ?? 0) }}</td>
+            <td>{{ fmt(latestPred?.predictClose ?? 0) }}</td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
     </el-card>
 
     <SpreadModelTable :result="analysis" />
@@ -113,20 +124,27 @@ onMounted(load)
 </template>
 
 <style scoped lang="scss">
-.price-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.price-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.price-label {
-  width: 120px;
+.price-table {
+  border-collapse: collapse;
   font-size: 13px;
-  color: #606266;
-  flex-shrink: 0;
+  th, td {
+    padding: 6px 16px;
+    text-align: right;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    white-space: nowrap;
+  }
+  th {
+    color: var(--el-text-color-secondary);
+    font-weight: 500;
+    border-bottom: 1px solid var(--el-border-color);
+  }
+  td:first-child, th:first-child {
+    text-align: left;
+  }
+  .row-label {
+    font-weight: 500;
+    color: var(--el-text-color-regular);
+    width: 48px;
+  }
 }
 </style>

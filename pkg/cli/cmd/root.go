@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/subosito/gotenv"
 
 	"stock/pkg/cli/config"
 )
@@ -43,6 +44,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
+	gotenv.Load()
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

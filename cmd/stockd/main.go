@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/subosito/gotenv"
 	"stock/pkg/stockd/bootstrap"
 	"stock/pkg/stockd/config"
 	"stock/pkg/stockd/db"
@@ -30,6 +31,8 @@ func main() {
 		return
 	}
 	fmt.Println(os.Getwd())
+
+	gotenv.Load()
 
 	cfgPath := os.Getenv("STOCKD_CONFIG")
 	if cfgPath == "" {

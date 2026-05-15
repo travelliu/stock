@@ -2,10 +2,10 @@ package http
 
 import (
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
+	"stock/pkg/models"
 	"stock/pkg/stockd/auth"
 	"stock/pkg/stockd/services/token"
 	"stock/pkg/stockd/utils"
@@ -22,10 +22,7 @@ func (h *handler) ListTokens(c *gin.Context) {
 }
 
 func (h *handler) IssueToken(c *gin.Context) {
-	var req struct {
-		Name      string     `json:"name"`
-		ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-	}
+	var req models.IssueTokenReq
 	if err := c.BindJSON(&req); err != nil {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return
@@ -38,7 +35,13 @@ func (h *handler) IssueToken(c *gin.Context) {
 		utils.HTTPRequestFailedV5(c, err)
 		return
 	}
-	utils.HTTPRequestSuccess(c, 200, gin.H{"token": plain, "metadata": tok})
+	utils.HTTPRequestSuccess(c, 200, models.IssueTokenResp{
+		Token: plain,
+		Metadata: &models.APIToken{
+			ID: tok.ID, UserID: tok.UserID, Name: tok.Name,
+			LastUsedAt: tok.LastUsedAt, ExpiresAt: tok.ExpiresAt, CreatedAt: tok.CreatedAt,
+		},
+	})
 }
 
 func (h *handler) RevokeToken(c *gin.Context) {
@@ -52,9 +55,7 @@ func (h *handler) RevokeToken(c *gin.Context) {
 }
 
 func (h *handler) SetTushareToken(c *gin.Context) {
-	var req struct {
-		Token string `json:"token"`
-	}
+	var req models.SetTushareTokenReq
 	if err := c.BindJSON(&req); err != nil {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return
@@ -68,10 +69,7 @@ func (h *handler) SetTushareToken(c *gin.Context) {
 }
 
 func (h *handler) ChangePassword(c *gin.Context) {
-	var req struct {
-		Old string `json:"old"`
-		New string `json:"new"`
-	}
+	var req models.ChangePasswordReq
 	if err := c.BindJSON(&req); err != nil {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return

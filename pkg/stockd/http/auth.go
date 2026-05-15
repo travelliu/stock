@@ -6,17 +6,13 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 
+	"stock/pkg/models"
 	"stock/pkg/stockd/auth"
 	"stock/pkg/stockd/utils"
 )
 
-type loginReq struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
 func (h *handler) Login(c *gin.Context) {
-	var req loginReq
+	var req models.LoginReq
 	if err := c.BindJSON(&req); err != nil {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return

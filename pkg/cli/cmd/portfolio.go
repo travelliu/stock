@@ -19,7 +19,7 @@ var portfolioListCmd = &cobra.Command{
 	Short: "List tracked stocks",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := client.New(cfg.ServerURL, cfg.Token)
-		var res []*models.PortfolioReq
+		var res []*models.Portfolio
 		if err := c.GET("/api/portfolio", &res); err != nil {
 			return err
 		}

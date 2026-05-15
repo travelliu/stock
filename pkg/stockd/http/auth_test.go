@@ -1,6 +1,7 @@
 package http_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -63,12 +64,15 @@ func TestLogin(t *testing.T) {
 	pw, _ := auth.HashPassword("secret")
 	require.NoError(t, gdb.Create(&models.User{Username: "alice", PasswordHash: pw, Role: "user"}).Error)
 
+	body, _ := json.Marshal(models.LoginReq{Username: "alice", Password: "secret"})
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/auth/login", strings.NewReader(`{"username":"alice","password":"secret"}`))
+	req, _ := http.NewRequest("POST", "/api/auth/login", strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), `"code":200`)
+	assert.Contains(t, w.Body.String(), `"username":"alice"`)
+	assert.NotContains(t, w.Body.String(), `"userName"`)
 }
 
 func TestLogin_BadPassword(t *testing.T) {
@@ -76,8 +80,9 @@ func TestLogin_BadPassword(t *testing.T) {
 	pw, _ := auth.HashPassword("secret")
 	require.NoError(t, gdb.Create(&models.User{Username: "alice", PasswordHash: pw, Role: "user"}).Error)
 
+	body, _ := json.Marshal(models.LoginReq{Username: "alice", Password: "wrong"})
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/api/auth/login", strings.NewReader(`{"username":"alice","password":"wrong"}`))
+	req, _ := http.NewRequest("POST", "/api/auth/login", strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)

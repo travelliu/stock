@@ -6,17 +6,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"stock/pkg/models"
 	"stock/pkg/stockd/services/user"
 	"stock/pkg/stockd/utils"
 )
 
 func (h *handler) CreateUser(c *gin.Context) {
-	var req struct {
-		Username     string `json:"username"`
-		Password     string `json:"password"`
-		Role         string `json:"role"`
-		TushareToken string `json:"tushare_token,omitempty"`
-	}
+	var req models.CreateUserReq
 	if err := c.BindJSON(&req); err != nil {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return
@@ -42,11 +38,7 @@ func (h *handler) ListUsers(c *gin.Context) {
 
 func (h *handler) PatchUser(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	var req struct {
-		Role         *string `json:"role,omitempty"`
-		Disabled     *bool   `json:"disabled,omitempty"`
-		TushareToken *string `json:"tushare_token,omitempty"`
-	}
+	var req models.PatchUserReq
 	if err := c.BindJSON(&req); err != nil {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return

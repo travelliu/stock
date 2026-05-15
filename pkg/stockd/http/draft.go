@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"stock/pkg/models"
 	"stock/pkg/stockd/auth"
 	"stock/pkg/stockd/services/draft"
 	"stock/pkg/stockd/utils"
@@ -23,14 +24,7 @@ func (h *handler) GetDraftToday(c *gin.Context) {
 }
 
 func (h *handler) UpsertDraft(c *gin.Context) {
-	var req struct {
-		TsCode    string   `json:"ts_code"`
-		TradeDate string   `json:"trade_date"`
-		Open      *float64 `json:"open,omitempty"`
-		High      *float64 `json:"high,omitempty"`
-		Low       *float64 `json:"low,omitempty"`
-		Close     *float64 `json:"close,omitempty"`
-	}
+	var req models.UpsertDraftReq
 	if err := c.BindJSON(&req); err != nil {
 		utils.HTTPRequestFailedV4(c, err, 600)
 		return

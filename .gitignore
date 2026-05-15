@@ -1,8 +1,17 @@
 # Go
 /bin/
+/stockd
+/stockctl
 *.test
 coverage.out
 coverage.html
+
+# IDE
+.idea/
+
+# Runtime
+/data/
+/logs/
 
 # Frontend
 /web/node_modules/

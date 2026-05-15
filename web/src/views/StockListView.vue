@@ -68,7 +68,11 @@ function removeItem(row: Portfolio) {
     </div>
 
     <el-table :data="portfolioStore.items" style="margin-top: 16px">
-      <el-table-column prop="code" :label="$t('stockList.code')" />
+      <el-table-column prop="code" :label="$t('stockList.code')">
+        <template #default="{ row }">
+          <el-button link type="primary" @click="goDetail(row)">{{ row.code }}</el-button>
+        </template>
+      </el-table-column>
       <el-table-column prop="name" :label="$t('stockList.name')" />
       <el-table-column prop="note" :label="$t('stockList.note')" />
       <el-table-column :label="$t('stockList.action')" width="140">

@@ -8,7 +8,7 @@ const spreadKeys = ['oh', 'ol', 'hl', 'oc', 'hc', 'lc'] as const
 </script>
 
 <template>
-  <el-table :data="bars" height="500" size="small">
+  <el-table :data="bars" style="width: 100%" size="small">
     <el-table-column prop="tradeDate" :label="$t('stockDetail.date')" width="100" />
     <el-table-column prop="open" :label="$t('stockDetail.open')" width="80">
       <template #default="{ row }">

@@ -3,6 +3,7 @@ package services
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"stock/pkg/models"
@@ -45,9 +46,10 @@ func (s *Service) ListPortfolio(ctx context.Context, userID uint) ([]*models.Por
 			r.Name = info.Name
 			r.Code = info.Code
 		}
-		if info, ok := s.stockCacheByCode[r.TsCode]; ok {
-			r.Name = info.Name
-			r.Code = info.Code
+		if r.Code == "" {
+			if dot := strings.Index(r.TsCode, "."); dot != -1 {
+				r.Code = r.TsCode[:dot]
+			}
 		}
 	}
 	s.cacheMu.RUnlock()

@@ -1,0 +1,46 @@
+# Production: MySQL + stockd built from source.
+# Web assets are compiled on the host (make web-build) and embedded in the Go binary.
+#
+# Usage:
+#   cp .env.example .env   # fill in secrets
+#   make prod-build        # build web then docker image
+#   make prod-up           # start all services
+
+name: stock
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-stockd}
+      MYSQL_USER: ${MYSQL_USER:-stockd}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - data/mysql/:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 10
+
+  stockd:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
+        COMMIT: ${COMMIT:-unknown}
+    ports:
+      - "${STOCKD_PORT:-8443}:8443"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      STOCKD_DATABASE_DRIVER: mysql
+      STOCKD_DATABASE_DSN: "${MYSQL_USER:-stockd}:${MYSQL_PASSWORD}@tcp(mysql:3306)/${MYSQL_DATABASE:-stockd}?charset=utf8mb4&parseTime=true&loc=Local"
+      STOCKD_SERVER_SESSION_SECRET: ${STOCKD_SERVER_SESSION_SECRET}
+      STOCKD_TUSHARE_DEFAULT_TOKEN: ${STOCKD_TUSHARE_DEFAULT_TOKEN:-}
+    restart: unless-stopped

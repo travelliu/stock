@@ -3,6 +3,7 @@
 GO         ?= go
 PNPM       ?= pnpm
 BIN        := $(CURDIR)/bin
+COMPOSE    := docker compose
 
 V  = 0
 Q  = $(if $(filter 1,$V),,@)
@@ -31,8 +32,13 @@ LDFLAGS := -s -w \
 
 GOLDFLAGS = -ldflags '$(LDFLAGS)'
 
+.DEFAULT_GOAL := help
+
 .PHONY: all build test lint fmt vet clean info help web-build \
-        docker-build docker-up docker-down docker-logs docker-restart
+        dev-up dev-down dev-logs \
+        prod-build prod-up prod-down prod-logs prod-restart
+
+##@ Build
 
 all: build ## Build all binaries (default)
 
@@ -40,6 +46,15 @@ build: fmt bin/stockd bin/stockctl ## Build stockd and stockctl
 
 bin/%: cmd/%/main.go ; $(info $(M) running build $*) @
 	$(GO) build -trimpath $(GOLDFLAGS) -o $@ $<
+
+web-build: ; $(info $(M) building web) @ ## Build frontend into web/dist
+	@if [ -f web/package.json ]; then \
+		cd web && $(PNPM) install --frozen-lockfile && $(PNPM) build; \
+	else \
+		echo "web/package.json not found — skipping frontend build"; \
+	fi
+
+##@ Quality
 
 test: ; $(info $(M) running tests) @ ## Run Go tests with race detector
 	$(GO) test -race -cover ./...
@@ -54,12 +69,35 @@ fmt: ; $(info $(M) running gofmt) @ ## Run go fmt on all source files
 vet: ; $(info $(M) running go vet) @ ## Run go vet
 	$(GO) vet ./...
 
-web-build: ; $(info $(M) running web build) @ ## Build frontend (skips if no package.json)
-	@if [ -f web/package.json ]; then \
-		cd web && $(PNPM) install --frozen-lockfile && $(PNPM) build; \
-	else \
-		echo "web/package.json not found — skipping frontend build"; \
-	fi
+##@ Dev (local)
+
+dev-up: ; $(info $(M) starting dev MySQL) @ ## Start local MySQL for development
+	$(COMPOSE) up -d
+
+dev-down: ; $(info $(M) stopping dev MySQL) @ ## Stop local MySQL
+	$(COMPOSE) down
+
+dev-logs: ; $(info $(M) tailing dev logs) @ ## Tail MySQL logs
+	$(COMPOSE) logs -f mysql
+
+##@ Production
+
+prod-build: web-build ; $(info $(M) building production image) @ ## Build web then production Docker image
+	VERSION=$(BINARY_VERSION)$(GIT_DIRTY) COMMIT=$(GIT_COMMIT) \
+		$(COMPOSE) -f docker-compose.prod.yml build
+
+prod-up: ; $(info $(M) starting production) @ ## Start production stack (detached)
+	$(COMPOSE) -f docker-compose.prod.yml up -d
+
+prod-down: ; $(info $(M) stopping production) @ ## Stop production stack
+	$(COMPOSE) -f docker-compose.prod.yml down
+
+prod-logs: ; $(info $(M) tailing production logs) @ ## Tail stockd production logs
+	$(COMPOSE) -f docker-compose.prod.yml logs -f stockd
+
+prod-restart: prod-down prod-up ## Rebuild image and restart production stack
+
+##@ Info
 
 info: ; $(info) @ ## Print build info
 	@echo "Base Version:   \"$(BASE_VERSION)\""
@@ -68,23 +106,14 @@ info: ; $(info) @ ## Print build info
 	@echo "Git Tag:        \"$(GIT_TAG)\""
 	@echo "Build Time:     \"$(BUILD_TIME)\""
 
-help: ; $(info) @ ## Print this help
-	@grep -E '^[a-zA-Z1-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
-
-docker-build: web-build ; $(info $(M) building docker image) @ ## Build web then docker image
-	docker compose build
-
-docker-up: ; $(info $(M) starting services) @ ## Start all services (detached)
-	docker compose up -d
-
-docker-down: ; $(info $(M) stopping services) @ ## Stop and remove containers
-	docker compose down
-
-docker-logs: ; $(info $(M) tailing logs) @ ## Tail stockd logs
-	docker compose logs -f stockd
-
-docker-restart: docker-down docker-up ## Rebuild image and restart all services
+##@ Cleanup
 
 clean: ; $(info $(M) cleaning) @ ## Remove build artifacts
 	rm -rf $(BIN) coverage.out coverage.html
+
+##@ Help
+
+help: ## Show available make targets
+	@awk 'BEGIN {FS = ":.*## "; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} \
+		/^##@/ {printf "\n\033[1m%s\033[0m\n", substr($$0, 5); next} \
+		/^[a-zA-Z0-9_.-]+:.*## / {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)

@@ -63,6 +63,8 @@ func NewRouter(svc *services.Service, logger *logrus.Logger) *gin.Engine {
 
 	r.Use(auth.ResolveUser(svc.GetDB(), svc.GetConfig().Tushare.DefaultToken))
 
+	r.GET("/health", func(c *gin.Context) { c.JSON(200, gin.H{"status": "ok"}) })
+
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	api := r.Group("/api")

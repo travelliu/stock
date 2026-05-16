@@ -3,8 +3,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { wMessage } from '@/utils/message'
 import { usePortfolioStore } from '@/stores/portfolio'
-import { searchStocks, queryBars } from '@/apis/stocks'
-import type { Stock, Portfolio, DailyBar } from '@/types/api'
+import { searchStocks, queryBars, getQuote } from '@/apis/stocks'
+import type { Stock, Portfolio, DailyBar, RealtimeQuote } from '@/types/api'
 
 const router = useRouter()
 const portfolioStore = usePortfolioStore()
@@ -19,6 +19,7 @@ interface BarInfo {
   pctChg: number
 }
 const barMap = ref<Record<string, BarInfo>>({})
+const quoteMap = ref<Record<string, RealtimeQuote>>({})
 const loadingBars = ref(false)
 
 async function loadBars(items: Portfolio[]) {
@@ -37,15 +38,26 @@ async function loadBars(items: Portfolio[]) {
     })
     barMap.value = map
   } catch {
-    // silently ignore price fetch errors
+    // silently ignore
   } finally {
     loadingBars.value = false
   }
 }
 
+async function loadQuotes(items: Portfolio[]) {
+  if (!items.length) return
+  const results = await Promise.allSettled(items.map(p => getQuote(p.tsCode)))
+  const map: Record<string, RealtimeQuote> = { ...quoteMap.value }
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled') map[items[i].code] = r.value
+  })
+  quoteMap.value = map
+}
+
 onMounted(async () => {
   await portfolioStore.fetch()
   loadBars(portfolioStore.items)
+  loadQuotes(portfolioStore.items)
 })
 
 async function searchStockOptions(query: string) {
@@ -68,6 +80,7 @@ async function doAdd() {
     selectedCode.value = ''
     note.value = ''
     loadBars(portfolioStore.items)
+    loadQuotes(portfolioStore.items)
   } finally {
     loadingAdd.value = false
   }
@@ -118,29 +131,29 @@ function fmtPct(v: number): string {
       <el-table-column prop="name" :label="$t('stockList.name')" width="120" />
       <el-table-column label="日期" width="60" align="center">
         <template #default="{ row }">
-          <span class="secondary">{{ fmtDate(barMap[row.code]?.bar.tradeDate ?? '') }}</span>
+          <span class="secondary">{{ quoteMap[row.code]?.quoteTime?.slice(0, 5) || fmtDate(barMap[row.code]?.bar.tradeDate ?? '') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="开盘" align="right" width="80">
-        <template #default="{ row }">{{ fmtPrice(barMap[row.code]?.bar.open ?? 0) }}</template>
+        <template #default="{ row }">{{ fmtPrice(quoteMap[row.code]?.open ?? barMap[row.code]?.bar.open ?? 0) }}</template>
       </el-table-column>
       <el-table-column label="最高" align="right" width="80">
-        <template #default="{ row }">{{ fmtPrice(barMap[row.code]?.bar.high ?? 0) }}</template>
+        <template #default="{ row }">{{ fmtPrice(quoteMap[row.code]?.high ?? barMap[row.code]?.bar.high ?? 0) }}</template>
       </el-table-column>
       <el-table-column label="最低" align="right" width="80">
-        <template #default="{ row }">{{ fmtPrice(barMap[row.code]?.bar.low ?? 0) }}</template>
+        <template #default="{ row }">{{ fmtPrice(quoteMap[row.code]?.low ?? barMap[row.code]?.bar.low ?? 0) }}</template>
       </el-table-column>
-      <el-table-column label="收盘" align="right" width="80">
+      <el-table-column label="最新" align="right" width="80">
         <template #default="{ row }">
-          <span :class="pctClass(barMap[row.code]?.pctChg ?? 0)">
-            {{ fmtPrice(barMap[row.code]?.bar.close ?? 0) }}
+          <span :class="pctClass(quoteMap[row.code]?.changePct ?? barMap[row.code]?.pctChg ?? 0)">
+            {{ fmtPrice(quoteMap[row.code]?.price ?? barMap[row.code]?.bar.close ?? 0) }}
           </span>
         </template>
       </el-table-column>
       <el-table-column label="涨跌幅" align="right" width="90">
         <template #default="{ row }">
-          <span :class="pctClass(barMap[row.code]?.pctChg ?? 0)">
-            {{ fmtPct(barMap[row.code]?.pctChg ?? 0) }}
+          <span :class="pctClass(quoteMap[row.code]?.changePct ?? barMap[row.code]?.pctChg ?? 0)">
+            {{ quoteMap[row.code] ? fmtPct(quoteMap[row.code].changePct) : fmtPct(barMap[row.code]?.pctChg ?? 0) }}
           </span>
         </template>
       </el-table-column>

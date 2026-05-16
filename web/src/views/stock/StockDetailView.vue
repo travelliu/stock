@@ -2,8 +2,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { wMessage } from '@/utils/message'
-import { getStock, queryBars } from '@/apis/stocks'
-import type { Stock, DailyBar } from '@/types/api'
+import { getStock, queryBars, getQuote } from '@/apis/stocks'
+import type { Stock, DailyBar, RealtimeQuote } from '@/types/api'
 import StockBasicCard from '@/components/StockBasicCard.vue'
 
 const route = useRoute()
@@ -13,6 +13,7 @@ const code = route.params.code as string
 const stock = ref<Stock | null>(null)
 const lastBar = ref<DailyBar | undefined>(undefined)
 const prevClose = ref(0)
+const quote = ref<RealtimeQuote | undefined>(undefined)
 const loading = ref(false)
 
 const activeTab = computed(() => {
@@ -37,6 +38,7 @@ onMounted(async () => {
     stock.value = s
     lastBar.value = barsPage.items[0]
     prevClose.value = barsPage.items[1]?.close ?? 0
+    getQuote(code).then(q => { quote.value = q }).catch(() => {})
   } catch (e: unknown) {
     wMessage('error', e instanceof Error ? e.message : '加载失败')
   } finally {
@@ -47,15 +49,12 @@ onMounted(async () => {
 
 <template>
   <div v-loading="loading">
-    <div class="detail-header">
-      <el-button link @click="router.push('/stocks')">← 返回列表</el-button>
-    </div>
-    <div v-if="stock" style="margin-top: 8px">
-      <StockBasicCard :stock="stock" :last-bar="lastBar" :prev-close="prevClose" />
+    <div v-if="stock">
+      <StockBasicCard :stock="stock" :last-bar="lastBar" :prev-close="prevClose" :quote="quote" @back="router.push('/stocks')" />
     </div>
     <el-tabs
       :model-value="activeTab"
-      style="margin-top: 16px"
+      style="margin-top: 8px"
       @tab-click="(tab: any) => onTabClick(tab.paneName)"
     >
       <el-tab-pane label="预测" name="prediction" />

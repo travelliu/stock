@@ -20,8 +20,8 @@ import (
 
 func TestQueryRange(t *testing.T) {
 	gdb := openDB(t)
-	require.NoError(t, gdb.Create(&models.DailyBar{TsCode: "X.SH", TradeDate: "20250101", Open: 1, High: 2, Low: 0.5, Close: 1.5}).Error)
-	require.NoError(t, gdb.Create(&models.DailyBar{TsCode: "X.SH", TradeDate: "20250110", Open: 2, High: 3, Low: 1.5, Close: 2.5}).Error)
+	require.NoError(t, gdb.Create(&models.StockDailyBar{TsCode: "X.SH", TradeDate: "20250101", Open: 1, High: 2, Low: 0.5, Close: 1.5}).Error)
+	require.NoError(t, gdb.Create(&models.StockDailyBar{TsCode: "X.SH", TradeDate: "20250110", Open: 2, High: 3, Low: 1.5, Close: 2.5}).Error)
 	svc := services.NewService(gdb, tushare.NewClient(), nil, &config.Config{}, logrus.New())
 	out, err := svc.QueryStockDailyBar(context.Background(), "X.SH", "20250101", "20250110")
 	require.NoError(t, err)
@@ -32,7 +32,7 @@ func TestQueryBarsPage(t *testing.T) {
 	gdb := openDB(t)
 	for i := 1; i <= 25; i++ {
 		date := fmt.Sprintf("202501%02d", i)
-		require.NoError(t, gdb.Create(&models.DailyBar{
+		require.NoError(t, gdb.Create(&models.StockDailyBar{
 			TsCode: "X.SH", TradeDate: date, Open: 1, High: 2, Low: 0.5, Close: 1.5,
 		}).Error)
 	}
@@ -61,7 +61,7 @@ func TestSync_FromTushare(t *testing.T) {
 	n, err := svc.SyncDaily(context.Background(), "tok", "X.SH")
 	require.NoError(t, err)
 	assert.Equal(t, 1, n)
-	var bar models.DailyBar
+	var bar models.StockDailyBar
 	require.NoError(t, gdb.First(&bar).Error)
 	assert.InDelta(t, 1.0, bar.Spreads.OH, 1e-9)
 }

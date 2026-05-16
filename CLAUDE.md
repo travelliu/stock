@@ -6,24 +6,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Chinese A-share intraday swing trading analysis platform. Go backend (stockd) + Vue 3 frontend, with a CLI client (stockctl). Pulls OHLCV data from Tushare Pro API, calculates price spread statistics (高-开, 开-低, 高-低, 开-收, 高-收, 低-收), and generates trading range predictions based on historical spread means.
 
+- 股票代码 后台表存储全部为标准股票代码. 不带.SZ/SH. 只有在和其他外部系统对接时会增加
+
 ## Build Commands
 
 ```bash
 make build          # Build both stockd and stockctl into bin/
 make web-build      # Build Vue frontend into web/dist/
-make test           # Run Go tests with race detector
-make lint           # Run go vet + staticcheck
-make fmt            # Run gofmt
+make test           # RunStockAnalysis Go tests with race detector
+make lint           # RunStockAnalysis go vet + staticcheck
+make fmt            # RunStockAnalysis gofmt
 make info           # Print version/build info
 make clean          # Remove bin/ and coverage files
 
-# Run a single test
+# RunStockAnalysis a single test
 go test -race -run TestFunctionName ./pkg/stockd/services/
 
-# Run backend locally (requires config.yaml or STOCKD_ env vars)
+# RunStockAnalysis backend locally (requires config.yaml or STOCKD_ env vars)
 go run ./cmd/stockd
 
-# Run CLI client
+# RunStockAnalysis CLI client
 go run ./cmd/stockctl --server http://localhost:8443 stocks list
 ```
 
@@ -78,4 +80,4 @@ Build-time metadata injected via ldflags in Makefile: `pkg/version.version`, `gi
 
 ## Testing
 
-31 test files across the Go codebase. Run with `make test` (enables race detector). Tests use testify assertions. Key test areas: services, stock cache, analysis predictions, portfolio, auth, bootstrap.
+31 test files across the Go codebase. RunStockAnalysis with `make test` (enables race detector). Tests use testify assertions. Key test areas: services, stock cache, analysis predictions, portfolio, auth, bootstrap.

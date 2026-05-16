@@ -13,8 +13,8 @@ import (
 
 func TestSearchByCodeAndName(t *testing.T) {
 	svc := newService(t)
-	require.NoError(t, svc.GetDB().Create(&models.Stock{TsCode: "600519.SH", Code: "600519", Name: "贵州茅台"}).Error)
-	require.NoError(t, svc.GetDB().Create(&models.Stock{TsCode: "603778.SH", Code: "603778", Name: "千金药业"}).Error)
+	require.NoError(t, svc.GetDB().Create(&models.StockBasicInfo{TsCode: "600519.SH", Code: "600519", Name: "贵州茅台"}).Error)
+	require.NoError(t, svc.GetDB().Create(&models.StockBasicInfo{TsCode: "603778.SH", Code: "603778", Name: "千金药业"}).Error)
 
 	got, _ := svc.SearchStock(context.Background(), "茅", 10)
 	assert.Len(t, got, 1)

@@ -25,11 +25,11 @@ type Service struct {
 	sf     singleflight.Group
 	logger *logrus.Logger
 
-	stockCacheByCode   map[string]*models.Stock
-	stockCacheByTsCode map[string]*models.Stock
+	stockCacheByCode   map[string]*models.StockBasicInfo
+	stockCacheByTsCode map[string]*models.StockBasicInfo
 	cacheMu            sync.RWMutex
 
-	realtimeCache map[string]*models.RealtimeQuote
+	realtimeCache map[string]*models.StockRealtimeAndAnalysis
 	realtimeMu    sync.RWMutex
 }
 
@@ -43,10 +43,10 @@ func NewService(db *gorm.DB, ts *tushare.Client, tc *tencent.Client, cfg *config
 		cron:          cron.New(cron.WithLocation(time.Local)),
 		jobs:          map[string]JobFunc{},
 		logger:        logger,
-		realtimeCache: make(map[string]*models.RealtimeQuote),
+		realtimeCache: make(map[string]*models.StockRealtimeAndAnalysis),
 	}
 }
 
-func (s *Service) GetDB() *gorm.DB          { return s.db }
-func (s *Service) GetTS() *tushare.Client   { return s.ts }
+func (s *Service) GetDB() *gorm.DB           { return s.db }
+func (s *Service) GetTS() *tushare.Client    { return s.ts }
 func (s *Service) GetConfig() *config.Config { return s.cfg }

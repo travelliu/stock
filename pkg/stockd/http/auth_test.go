@@ -20,7 +20,6 @@ import (
 	"stock/pkg/models"
 	"stock/pkg/stockd/auth"
 	"stock/pkg/stockd/db"
-	"stock/pkg/stockd/services/analysis"
 	"stock/pkg/stockd/utils"
 )
 
@@ -38,8 +37,7 @@ func setupAuthRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
 	r.Use(auth.ResolveUser(gdb, ""))
 
 	svc := services.NewService(gdb, nil, nil, nil, nil)
-	analysisSvc := analysis.New(gdb, nil)
-	h := http2.NewHandler(svc, analysisSvc)
+	h := http2.NewHandler(svc)
 	r.POST("/api/auth/login", h.Login)
 	r.POST("/api/auth/logout", h.Logout)
 	r.GET("/api/auth/me", http2.AuthRequired(), h.Me)

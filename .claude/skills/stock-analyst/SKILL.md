@@ -32,7 +32,7 @@ If `stockctl` is not on PATH, instruct the user to build it (`make build`) and r
 
 ### Step 1 — Fetch data
 
-Run the CLI to make sure data is fresh:
+RunStockAnalysis the CLI to make sure data is fresh:
 
 ```bash
 stockctl stock analysis <CODE> --format json --use-draft 2>/dev/null || stockctl stock analysis <CODE> --format json

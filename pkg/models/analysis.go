@@ -2,7 +2,7 @@
 //
 // Data flow:
 //
-//	DailyBar rows → WindowData (sliced by time window) → MeansData (spread statistics)
+//	StockDailyBar rows → WindowData (sliced by time window) → MeansData (spread statistics)
 //	→ WindowPredict (price predictions per window) → RefTable (cross-window summary)
 //
 // Six price spreads are tracked for each bar:
@@ -14,6 +14,11 @@
 //	HC = High − Close  (高收差)
 //	LC = Close − Low   (低收差)
 package models
+
+import (
+	"encoding/json"
+	"time"
+)
 
 // WindowInfo describes a time window slice (e.g. last 30 trading days).
 type WindowInfo struct {
@@ -96,10 +101,10 @@ type WindowPredict struct {
 // WindowData is one time-slice of history together with its computed statistics.
 // Rows is excluded from JSON because it can be very large; consumers use Means/Predict instead.
 type WindowData struct {
-	Info    *WindowInfo    `json:"info"`
-	Rows    []*DailyBar    `json:"-"`
-	Means   *MeansData     `json:"means"`
-	Predict *WindowPredict `json:"predict,omitempty"`
+	Info    *WindowInfo      `json:"info"`
+	Rows    []*StockDailyBar `json:"-"`
+	Means   *MeansData       `json:"means"`
+	Predict *WindowPredict   `json:"predict,omitempty"`
 }
 
 // DistBucket is one histogram bin in a spread value distribution.
@@ -114,13 +119,13 @@ type DistBucket struct {
 // OpenPrice is known at session open; ActualHigh/Low/Close are only available
 // post-session and are optional — reverse-lookup predictions are skipped when nil.
 type Input struct {
-	TsCode      string      `json:"tsCode,omitempty"`
-	StockName   string      `json:"stockName,omitempty"`
-	Rows        []*DailyBar `json:"rows,omitempty"`
-	OpenPrice   *float64    `json:"openPrice,omitempty"`
-	ActualHigh  *float64    `json:"actualHigh,omitempty"`
-	ActualLow   *float64    `json:"actualLow,omitempty"`
-	ActualClose *float64    `json:"actualClose,omitempty"`
+	TsCode      string           `json:"tsCode,omitempty"`
+	StockName   string           `json:"stockName,omitempty"`
+	Rows        []*StockDailyBar `json:"rows,omitempty"`
+	OpenPrice   *float64         `json:"openPrice,omitempty"`
+	ActualHigh  *float64         `json:"actualHigh,omitempty"`
+	ActualLow   *float64         `json:"actualLow,omitempty"`
+	ActualClose *float64         `json:"actualClose,omitempty"`
 }
 
 // PredictRow holds the cross-window average of per-window Mean values for one price target.
@@ -137,10 +142,10 @@ type RefTable struct {
 	Close PredictRow `json:"close"`
 }
 
-// AnalysisResult is the canonical output of Build.
+// StockAnalysisResult is the canonical output of Build.
 // Windows are ordered oldest-to-newest (All → last_90 → last_30 → last_15).
 // CompositeMeans is the spread-level cross-window average used for the summary model table.
-type AnalysisResult struct {
+type StockAnalysisResult struct {
 	TsCode         string             `json:"tsCode"`
 	StockName      string             `json:"stockName"`
 	Windows        []*WindowData      `json:"windows"`
@@ -150,4 +155,66 @@ type AnalysisResult struct {
 	ActualHigh     *float64           `json:"actualHigh,omitempty"`
 	ActualLow      *float64           `json:"actualLow,omitempty"`
 	ActualClose    *float64           `json:"actualClose,omitempty"`
+}
+
+type StockAnalysisPrediction struct {
+	ID             uint            `gorm:"primaryKey" json:"id"`
+	TsCode         string          `gorm:"uniqueIndex:idx_pred_code_date;size:16;not null" json:"tsCode"`
+	TradeDate      string          `gorm:"uniqueIndex:idx_pred_code_date;size:8;not null" json:"tradeDate"`
+	SampleCounts   json.RawMessage `gorm:"type:json" json:"sampleCounts"`
+	WindowMeans    json.RawMessage `gorm:"type:json" json:"windowMeans"`
+	CompositeMeans json.RawMessage `gorm:"type:json" json:"compositeMeans"`
+	OpenPrice      float64         `json:"openPrice"`
+	PredictHigh    float64         `json:"predictHigh"`
+	PredictLow     float64         `json:"predictLow"`
+	PredictClose   float64         `json:"predictClose"`
+	ActualHigh     float64         `json:"actualHigh"`
+	ActualLow      float64         `json:"actualLow"`
+	ActualClose    float64         `json:"actualClose"`
+	CreatedAt      time.Time       `json:"createdAt"`
+	UpdatedAt      time.Time       `json:"updatedAt"`
+}
+
+type AnalysisInput struct {
+	UserID      uint
+	TsCode      string
+	OpenPrice   *float64
+	ActualHigh  *float64
+	ActualLow   *float64
+	ActualClose *float64
+}
+
+// StockRealtime 股票最新价格信息
+type StockRealtime struct {
+	TsCode         string    `json:"tsCode"`
+	Name           string    `json:"name"`
+	Price          float64   `json:"price"`          // [3]  当前价格
+	PrevClose      float64   `json:"prevClose"`      // [4]  昨收
+	Open           float64   `json:"open"`           // [5]  今开
+	Vol            float64   `json:"vol"`            // [6]  成交量（手）
+	OuterVol       float64   `json:"outerVol"`       // [7]  外盘
+	InnerVol       float64   `json:"innerVol"`       // [8]  内盘
+	High           float64   `json:"high"`           // [33] 最高
+	Low            float64   `json:"low"`            // [34] 最低
+	TotalVol       float64   `json:"totalVol"`       // [36] 成交量（手）
+	Amount         float64   `json:"amount"`         // [37] 成交额（万元）
+	TurnoverRate   float64   `json:"turnoverRate"`   // [38] 换手率
+	PE             float64   `json:"pe"`             // [39] 市盈率
+	High52w        float64   `json:"high52w"`        // [41] 52周最高
+	Low52w         float64   `json:"low52w"`         // [42] 52周最低
+	Amplitude      float64   `json:"amplitude"`      // [43] 振幅
+	CircMarketCap  float64   `json:"circMarketCap"`  // [44] 流通市值
+	TotalMarketCap float64   `json:"totalMarketCap"` // [45] 总市值
+	PB             float64   `json:"pb"`             // [46] 市净率
+	Change         float64   `json:"change"`         // [31] 涨跌
+	ChangePct      float64   `json:"changePct"`      // [32] 涨跌%
+	LimitUp        float64   `json:"limitUp"`        // [47] 涨停价
+	LimitDown      float64   `json:"limitDown"`      // [48] 跌停价
+	QuoteTime      string    `json:"quoteTime"`      // [30] 行情时间
+	UpdatedAt      time.Time `json:"updatedAt"`
+}
+
+type StockRealtimeAndAnalysis struct {
+	StockRealtime       *StockRealtime       `json:"stockRealtime"`
+	StockAnalysisResult *StockAnalysisResult `json:"stockAnalysisResult"`
 }

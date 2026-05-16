@@ -115,7 +115,7 @@ func windowKeyName(id string) string {
 	return id
 }
 
-func AnalysisTable(r models.AnalysisResult) {
+func AnalysisTable(r models.StockAnalysisResult) {
 
 	fmt.Printf("\n=== %s (%s) 交易计划 ===\n\n", r.StockName, r.TsCode)
 
@@ -196,7 +196,7 @@ func formatMeans(md *models.MeansData) []string {
 	return row
 }
 
-func refTable(r models.AnalysisResult) {
+func refTable(r models.StockAnalysisResult) {
 	if r.RefTable == nil || len(r.Windows) == 0 {
 		return
 	}
@@ -291,7 +291,7 @@ func refTable(r models.AnalysisResult) {
 	fmt.Println(FormatTable(crossHeaders, crossRows))
 }
 
-func analysisTable(r models.AnalysisResult) {
+func analysisTable(r models.StockAnalysisResult) {
 	uHeaders := []string{
 		t(KeyTimePeriod), t(KeySampleCount), t(KeyAvg), t(KeyMedian), t(KeyMean), t(KeyEWMA), "",
 		t(KeySampleCount), t(KeyAvg), t(KeyMedian), t(KeyMean), t(KeyEWMA), "",
@@ -379,7 +379,7 @@ func formatRecommend(means *models.MeansData, get func(*models.MeansData) *model
 	return fmt.Sprintf("%.2f~%.2f (%.1f%%)", m.Recommend.Low, m.Recommend.High, m.Recommend.CumPct)
 }
 
-func distributionTables(r models.AnalysisResult) {
+func distributionTables(r models.StockAnalysisResult) {
 	keys := []struct {
 		label string
 		get   func(*models.MeansData) *models.MeansAvgData
@@ -464,7 +464,7 @@ func joinSideBySide(tables []string, gap int) string {
 	return strings.Join(lines, "\n")
 }
 
-func PortfolioTable(items []*models.Portfolio) {
+func PortfolioTable(items []*models.StockPortfolio) {
 	headers := []string{"代码", "名称", "时间", "开盘", "最高", "最低", "最新", "涨跌幅", "备注"}
 	var rows [][]string
 	for _, p := range items {
@@ -500,7 +500,7 @@ func fmtQuoteTime(t string) string {
 	return t
 }
 
-func BarsTable(items []*models.DailyBar) {
+func BarsTable(items []*models.StockDailyBar) {
 	headers := []string{"日期", "开盘", "最高", "最低", "收盘", "成交量"}
 	var rows [][]string
 	for _, b := range items {
@@ -517,7 +517,7 @@ func BarsTable(items []*models.DailyBar) {
 }
 
 // PredictionsTable renders prediction records.
-func PredictionsTable(tsCode, stockName string, preds []models.AnalysisPrediction) {
+func PredictionsTable(tsCode, stockName string, preds []models.StockAnalysisPrediction) {
 	fmt.Printf("\n%s (%s) 预测记录\n\n", stockName, tsCode)
 
 	headers := []string{

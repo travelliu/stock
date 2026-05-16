@@ -52,11 +52,11 @@ func AutoMigrate(gdb *gorm.DB) error {
 	return gdb.AutoMigrate(
 		&models.User{},
 		&models.APIToken{},
-		&models.Stock{},
-		&models.DailyBar{},
-		&models.Portfolio{},
+		&models.StockBasicInfo{},
+		&models.StockDailyBar{},
+		&models.StockPortfolio{},
 		&models.JobRun{},
-		&models.AnalysisPrediction{},
+		&models.StockAnalysisPrediction{},
 	)
 }
 

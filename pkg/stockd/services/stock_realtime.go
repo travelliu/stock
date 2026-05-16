@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"stock/pkg/models"
@@ -22,28 +21,21 @@ func isTradingHours(t time.Time) bool {
 }
 
 // GetRealtimeQuote returns the cached quote for tsCode, or fetches it on-demand on a cache miss.
-func (s *Service) GetRealtimeQuote(ctx context.Context, tsCode string) (*models.RealtimeQuote, error) {
+func (s *Service) GetRealtimeQuote(ctx context.Context, tsCode string) (*models.StockRealtimeAndAnalysis, error) {
 	s.realtimeMu.RLock()
 	q, ok := s.realtimeCache[tsCode]
 	s.realtimeMu.RUnlock()
 	if ok {
 		return q, nil
 	}
-
-	quotes, err := s.tc.FetchQuotes(ctx, []string{tsCode})
-	if err != nil {
-		return nil, fmt.Errorf("fetch quote %s: %w", tsCode, err)
+	s.refreshRealtimeStocks(ctx, []string{tsCode})
+	s.realtimeMu.RLock()
+	q, ok = s.realtimeCache[tsCode]
+	s.realtimeMu.RUnlock()
+	if ok {
+		return q, nil
 	}
-	if len(quotes) == 0 {
-		return nil, fmt.Errorf("no quote data for %s", tsCode)
-	}
-	s.fillNames(quotes)
-	s.realtimeMu.Lock()
-	for _, q := range quotes {
-		s.realtimeCache[q.TsCode] = q
-	}
-	s.realtimeMu.Unlock()
-	return quotes[0], nil
+	return nil, nil
 }
 
 // refreshRealtimeQuotes batch-fetches all portfolio stocks and updates the cache.
@@ -56,6 +48,11 @@ func (s *Service) refreshRealtimeQuotes(ctx context.Context) {
 	if len(codes) == 0 {
 		return
 	}
+
+	s.refreshRealtimeStocks(ctx, codes)
+}
+
+func (s *Service) refreshRealtimeStocks(ctx context.Context, codes []string) {
 	quotes, err := s.tc.FetchQuotes(ctx, codes)
 	if err != nil {
 		s.logger.WithError(err).Error("realtime: fetch quotes failed")
@@ -64,13 +61,31 @@ func (s *Service) refreshRealtimeQuotes(ctx context.Context) {
 	s.fillNames(quotes)
 	s.realtimeMu.Lock()
 	for _, q := range quotes {
-		s.realtimeCache[q.TsCode] = q
+		a := &models.StockRealtimeAndAnalysis{
+			StockRealtime: q,
+		}
+		in := models.AnalysisInput{
+			UserID:      0,
+			TsCode:      q.TsCode,
+			OpenPrice:   &q.Open,
+			ActualHigh:  &q.High,
+			ActualLow:   &q.Low,
+			ActualClose: nil,
+		}
+		if !isTradingHours(time.Now()) {
+			in.ActualClose = &q.Price
+		}
+		analysisResult, err := s.RunStockAnalysis(ctx, in)
+		if err == nil {
+			a.StockAnalysisResult = analysisResult
+		}
+		s.realtimeCache[q.TsCode] = a
 	}
 	s.realtimeMu.Unlock()
 }
 
 // fillNames populates Name from the in-memory stock cache (avoids encoding issues with Tencent response).
-func (s *Service) fillNames(quotes []*models.RealtimeQuote) {
+func (s *Service) fillNames(quotes []*models.StockRealtime) {
 	s.cacheMu.RLock()
 	defer s.cacheMu.RUnlock()
 	for _, q := range quotes {

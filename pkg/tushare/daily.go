@@ -15,10 +15,10 @@ type DailyRequest struct {
 	EndDate   string // YYYYMMDD
 }
 
-// Daily fetches OHLCV rows and returns models.DailyBar with spreads pre-computed.
+// Daily fetches OHLCV rows and returns models.StockDailyBar with spreads pre-computed.
 // Rows are returned in the order Tushare provides them (newest first); callers
 // re-sort as needed.
-func Daily(ctx context.Context, c *Client, token string, req DailyRequest) ([]models.DailyBar, error) {
+func Daily(ctx context.Context, c *Client, token string, req DailyRequest) ([]models.StockDailyBar, error) {
 	params := map[string]any{
 		"ts_code":    utils.ToTushareCode(req.TsCode),
 		"start_date": req.StartDate,
@@ -34,7 +34,7 @@ func Daily(ctx context.Context, c *Client, token string, req DailyRequest) ([]mo
 	if err != nil {
 		return nil, err
 	}
-	bars := make([]models.DailyBar, 0, len(resp.Items))
+	bars := make([]models.StockDailyBar, 0, len(resp.Items))
 	for _, row := range resp.Items {
 		tsCode, _ := row[idx["ts_code"]].(string)
 		tradeDate, _ := row[idx["trade_date"]].(string)
@@ -44,7 +44,7 @@ func Daily(ctx context.Context, c *Client, token string, req DailyRequest) ([]mo
 		close, _ := toFloat(row[idx["close"]])
 		vol, _ := toFloat(row[idx["vol"]])
 		amount, _ := toFloat(row[idx["amount"]])
-		bar := models.DailyBar{
+		bar := models.StockDailyBar{
 			TsCode:    tsCode,
 			TradeDate: tradeDate,
 			Open:      open,

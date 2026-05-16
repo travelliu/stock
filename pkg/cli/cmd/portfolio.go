@@ -19,7 +19,7 @@ var portfolioListCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := client.New(cfg.ServerURL, cfg.Token)
 
-		var portfolio []*models.Portfolio
+		var portfolio []*models.StockPortfolio
 		if err := c.GET("/api/portfolio", &portfolio); err != nil {
 			return err
 		}
@@ -37,7 +37,7 @@ var portfolioAddCmd = &cobra.Command{
 		c := client.New(cfg.ServerURL, cfg.Token)
 		note, _ := cmd.Flags().GetString("note")
 		return c.POST("/api/portfolio",
-			&models.PortfolioReq{Note: note, Code: args[0]}, nil)
+			&models.StockPortfolioReq{Note: note, Code: args[0]}, nil)
 	},
 }
 

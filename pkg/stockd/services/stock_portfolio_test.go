@@ -68,7 +68,7 @@ func TestRemoveOnlyAffectsOwner(t *testing.T) {
 
 func TestListPortfolioEnrichesName(t *testing.T) {
 	gdb := openDB(t)
-	require.NoError(t, gdb.Create(&models.Stock{TsCode: "600519.SH", Code: "600519", Name: "贵州茅台"}).Error)
+	require.NoError(t, gdb.Create(&models.StockBasicInfo{TsCode: "600519.SH", Code: "600519", Name: "贵州茅台"}).Error)
 	svc := newService(t)
 	require.NoError(t, svc.LoadStockCache(context.Background()))
 	require.NoError(t, svc.AddPortfolio(context.Background(), 1, "600519.SH", ""))

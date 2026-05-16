@@ -12,8 +12,8 @@ import (
 	"stock/pkg/tushare"
 )
 
-func (s *Service) GetStock(ctx context.Context, tsCode string) (*models.Stock, error) {
-	var row models.Stock
+func (s *Service) GetStock(ctx context.Context, tsCode string) (*models.StockBasicInfo, error) {
+	var row models.StockBasicInfo
 	if err := s.db.WithContext(ctx).First(&row, "ts_code = ? or code = ?", tsCode, tsCode).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -24,12 +24,12 @@ func (s *Service) GetStock(ctx context.Context, tsCode string) (*models.Stock, e
 }
 
 // SearchStock matches by ts_code prefix, code prefix, or name substring.
-func (s *Service) SearchStock(ctx context.Context, q string, limit int) ([]models.Stock, error) {
+func (s *Service) SearchStock(ctx context.Context, q string, limit int) ([]models.StockBasicInfo, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 20
 	}
 	q = strings.TrimSpace(q)
-	var out []models.Stock
+	var out []models.StockBasicInfo
 	tx := s.db.WithContext(ctx).Limit(limit)
 	if q == "" {
 		return out, tx.Order("ts_code ASC").Find(&out).Error
@@ -52,7 +52,7 @@ func (s *Service) SyncFromTushare(ctx context.Context, token string) (int, error
 func (s *Service) upsertRows(ctx context.Context, rows []tushare.StockBasicRow) (int, error) {
 	n := 0
 	for _, r := range rows {
-		row := &models.Stock{
+		row := &models.StockBasicInfo{
 			TsCode: r.TsCode, Code: r.Symbol, Name: r.Name,
 			Area: r.Area, Industry: r.Industry,
 			Market: r.Market, Exchange: r.Exchange, ListDate: r.ListDate,

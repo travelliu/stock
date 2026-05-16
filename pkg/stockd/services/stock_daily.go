@@ -13,8 +13,8 @@ import (
 	"stock/pkg/tushare"
 )
 
-func (s *Service) QueryStockDailyBar(ctx context.Context, tsCode, from, to string) ([]models.DailyBar, error) {
-	var out []models.DailyBar
+func (s *Service) QueryStockDailyBar(ctx context.Context, tsCode, from, to string) ([]models.StockDailyBar, error) {
+	var out []models.StockDailyBar
 	tx := s.db.WithContext(ctx).Where("ts_code = ?", tsCode).Order("trade_date ASC")
 	if from != "" {
 		tx = tx.Where("trade_date >= ?", from)
@@ -33,7 +33,7 @@ func (s *Service) QueryStockDailyBarsPage(ctx context.Context, tsCode, from, to 
 	if limit <= 0 || limit > 200 {
 		limit = 20
 	}
-	tx := s.db.WithContext(ctx).Model(&models.DailyBar{}).Where("ts_code = ?", tsCode)
+	tx := s.db.WithContext(ctx).Model(&models.StockDailyBar{}).Where("ts_code = ?", tsCode)
 	if from != "" {
 		tx = tx.Where("trade_date >= ?", from)
 	}
@@ -44,7 +44,7 @@ func (s *Service) QueryStockDailyBarsPage(ctx context.Context, tsCode, from, to 
 	if err := tx.Count(&total).Error; err != nil {
 		return nil, err
 	}
-	var items []*models.DailyBar
+	var items []*models.StockDailyBar
 	err := tx.Order("trade_date DESC").
 		Offset((page - 1) * limit).Limit(limit).
 		Find(&items).Error
@@ -55,7 +55,7 @@ func (s *Service) QueryStockDailyBarsPage(ctx context.Context, tsCode, from, to 
 }
 
 func (s *Service) MaxDate(ctx context.Context, tsCode string) (string, error) {
-	var row models.DailyBar
+	var row models.StockDailyBar
 	err := s.db.WithContext(ctx).Select("trade_date").
 		Where("ts_code = ?", tsCode).
 		Order("trade_date DESC").Limit(1).First(&row).Error
@@ -91,7 +91,7 @@ func (s *Service) SyncDaily(ctx context.Context, token, tsCode string) (int, err
 	}
 	n := 0
 	for _, r := range rows {
-		row := &models.DailyBar{
+		row := &models.StockDailyBar{
 			TsCode: utils.TrimTsCode(r.TsCode), TradeDate: r.TradeDate,
 			Open: r.Open, High: r.High, Low: r.Low, Close: r.Close,
 			Vol: r.Vol, Amount: r.Amount,

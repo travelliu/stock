@@ -28,9 +28,9 @@ func TestModelsRoundTrip(t *testing.T) {
 	cases := []any{
 		&models.User{Username: "alice", PasswordHash: "x", Role: "user", CreatedAt: now, UpdatedAt: now},
 		&models.APIToken{UserID: 1, Name: "cli", TokenHash: "deadbeef", CreatedAt: now},
-		&models.Stock{TsCode: "600519.SH", Code: "600519", Name: "贵州茅台", Market: "主板", Exchange: "SSE", UpdatedAt: now},
-		&models.DailyBar{TsCode: "600519.SH", TradeDate: "20250513", Open: 1620, High: 1655, Low: 1601, Close: 1632, Vol: 3500, Amount: 5e5},
-		&models.Portfolio{UserID: 1, TsCode: "600519.SH", AddedAt: now},
+		&models.StockBasicInfo{TsCode: "600519.SH", Code: "600519", Name: "贵州茅台", Market: "主板", Exchange: "SSE", UpdatedAt: now},
+		&models.StockDailyBar{TsCode: "600519.SH", TradeDate: "20250513", Open: 1620, High: 1655, Low: 1601, Close: 1632, Vol: 3500, Amount: 5e5},
+		&models.StockPortfolio{UserID: 1, TsCode: "600519.SH", AddedAt: now},
 		&models.JobRun{JobName: "daily-fetch", StartedAt: now, Status: "running"},
 	}
 	for _, c := range cases {
@@ -42,17 +42,17 @@ func TestDailyBarHasSpreadColumns(t *testing.T) {
 	gdb := openTestDB(t)
 	cols := []string{"spread_oh", "spread_ol", "spread_hl", "spread_oc", "spread_hc", "spread_lc"}
 	for _, col := range cols {
-		assert.True(t, gdb.Migrator().HasColumn(&models.DailyBar{}, col), "column %s should exist", col)
+		assert.True(t, gdb.Migrator().HasColumn(&models.StockDailyBar{}, col), "column %s should exist", col)
 	}
 
-	bar := models.DailyBar{
+	bar := models.StockDailyBar{
 		TsCode: "000001.SZ", TradeDate: "20250513",
 		Open: 10, High: 11, Low: 9, Close: 10.5, Vol: 1000, Amount: 1e4,
 		Spreads: models.Spreads{OH: 1, OL: 1, HL: 2, OC: 0.5, HC: 0.5, LC: 1.5},
 	}
 	require.NoError(t, gdb.Create(&bar).Error)
 
-	var got models.DailyBar
+	var got models.StockDailyBar
 	require.NoError(t, gdb.First(&got, "ts_code = ? AND trade_date = ?", bar.TsCode, bar.TradeDate).Error)
 	assert.Equal(t, bar.Spreads, got.Spreads)
 }
@@ -75,20 +75,20 @@ func TestModelJSONFields(t *testing.T) {
 			notWant: []string{"userName", "userID"},
 		},
 		{
-			name:    "Stock",
-			val:     models.Stock{TsCode: "600519.SH", Code: "600519", Name: "贵州茅台", Market: "主板", Exchange: "SSE", ListDate: "20010827"},
+			name:    "StockBasicInfo",
+			val:     models.StockBasicInfo{TsCode: "600519.SH", Code: "600519", Name: "贵州茅台", Market: "主板", Exchange: "SSE", ListDate: "20010827"},
 			want:    []string{"tsCode", "code", "name", "market", "exchange", "listDate"},
 			notWant: []string{"createdAt"},
 		},
 		{
-			name:    "Portfolio",
-			val:     models.Portfolio{ID: 1, UserID: 2, TsCode: "600519.SH", Note: "n", AddedAt: now},
+			name:    "StockPortfolio",
+			val:     models.StockPortfolio{ID: 1, UserID: 2, TsCode: "600519.SH", Note: "n", AddedAt: now},
 			want:    []string{"id", "userId", "tsCode", "note", "addedAt"},
 			notWant: []string{"userID"},
 		},
 		{
-			name: "PortfolioReq",
-			val:  models.PortfolioReq{Code: "600519", Note: "test"},
+			name: "StockPortfolioReq",
+			val:  models.StockPortfolioReq{Code: "600519", Note: "test"},
 			want: []string{"code", "note"},
 		},
 		{
@@ -98,8 +98,8 @@ func TestModelJSONFields(t *testing.T) {
 			notWant: []string{"userID"},
 		},
 		{
-			name: "DailyBar",
-			val:  models.DailyBar{TsCode: "x", TradeDate: "20250513", Open: 10, High: 11, Low: 9, Close: 10, Spreads: models.Spreads{OH: 1, HL: 2}},
+			name: "StockDailyBar",
+			val:  models.StockDailyBar{TsCode: "x", TradeDate: "20250513", Open: 10, High: 11, Low: 9, Close: 10, Spreads: models.Spreads{OH: 1, HL: 2}},
 			want: []string{"tsCode", "tradeDate", "open", "high", "low", "close", "spreads"},
 		},
 		{

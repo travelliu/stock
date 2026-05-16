@@ -10,12 +10,12 @@ import (
 )
 
 func (s *Service) AddPortfolio(ctx context.Context, userID uint, tsCode, note string) error {
-	row := &models.Portfolio{
+	row := &models.StockPortfolio{
 		UserID: userID, TsCode: tsCode, Note: note, AddedAt: time.Now(),
 	}
 	// Upsert via ON CONFLICT (sqlite + pg + mysql all supported by GORM clause).
 	return s.db.WithContext(ctx).
-		Where(&models.Portfolio{UserID: userID, TsCode: tsCode}).
+		Where(&models.StockPortfolio{UserID: userID, TsCode: tsCode}).
 		Assign(map[string]any{"note": note}).
 		FirstOrCreate(row).Error
 }
@@ -23,17 +23,17 @@ func (s *Service) AddPortfolio(ctx context.Context, userID uint, tsCode, note st
 func (s *Service) RemovePortfolio(ctx context.Context, userID uint, tsCode string) error {
 	return s.db.WithContext(ctx).
 		Where("user_id = ? AND ts_code = ?", userID, tsCode).
-		Delete(&models.Portfolio{}).Error
+		Delete(&models.StockPortfolio{}).Error
 }
 
 func (s *Service) UpdatePortfolioNote(ctx context.Context, userID uint, tsCode, note string) error {
-	return s.db.WithContext(ctx).Model(&models.Portfolio{}).
+	return s.db.WithContext(ctx).Model(&models.StockPortfolio{}).
 		Where("user_id = ? AND ts_code = ?", userID, tsCode).
 		Update("note", note).Error
 }
 
-func (s *Service) ListPortfolio(ctx context.Context, userID uint) ([]*models.Portfolio, error) {
-	var rows []*models.Portfolio
+func (s *Service) ListPortfolio(ctx context.Context, userID uint) ([]*models.StockPortfolio, error) {
+	var rows []*models.StockPortfolio
 	err := s.db.WithContext(ctx).
 		Where("user_id = ?", userID).
 		Order("added_at DESC").Find(&rows).Error
@@ -59,7 +59,8 @@ func (s *Service) ListPortfolio(ctx context.Context, userID uint) ([]*models.Por
 	s.realtimeMu.RLock()
 	for _, r := range rows {
 		if q, ok := s.realtimeCache[r.Code]; ok {
-			r.Quote = q
+			r.Quote = q.StockRealtime
+			r.AnalysisResult = q.StockAnalysisResult
 		}
 	}
 	s.realtimeMu.RUnlock()
@@ -71,7 +72,7 @@ func (s *Service) ListPortfolio(ctx context.Context, userID uint) ([]*models.Por
 // the daily-fetch scheduler).
 func (s *Service) DistinctTsCodes(ctx context.Context) ([]string, error) {
 	var out []string
-	err := s.db.WithContext(ctx).Model(&models.Portfolio{}).
+	err := s.db.WithContext(ctx).Model(&models.StockPortfolio{}).
 		Distinct("ts_code").Order("ts_code ASC").Pluck("ts_code", &out).Error
 	return out, err
 }

@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm/clause"
 
 	"stock/pkg/models"
-	"stock/pkg/stockd/services/analysis"
 )
 
 type RecalcResult struct {
@@ -16,7 +15,7 @@ type RecalcResult struct {
 }
 
 func (s *Service) Recalc(ctx context.Context, tsCode string) (*RecalcResult, error) {
-	var portfolios []models.Portfolio
+	var portfolios []models.StockPortfolio
 	q := s.db.WithContext(ctx)
 	if tsCode != "" {
 		q = q.Where("ts_code = ?", tsCode)
@@ -37,7 +36,7 @@ func (s *Service) Recalc(ctx context.Context, tsCode string) (*RecalcResult, err
 }
 
 func (s *Service) recalcStock(ctx context.Context, tsCode string) (int, error) {
-	var bars []*models.DailyBar
+	var bars []*models.StockDailyBar
 	if err := s.db.WithContext(ctx).
 		Where("ts_code = ?", tsCode).
 		Order("trade_date ASC").
@@ -63,7 +62,7 @@ func (s *Service) recalcStock(ctx context.Context, tsCode string) (int, error) {
 		}
 
 		open := today.Open
-		res := analysis.Build(models.Input{
+		res := Build(models.Input{
 			TsCode:    tsCode,
 			Rows:      historical,
 			OpenPrice: &open,
@@ -92,7 +91,7 @@ func (s *Service) recalcStock(ctx context.Context, tsCode string) (int, error) {
 		wmJSON, _ := json.Marshal(res.Windows)
 		compJSON, _ := json.Marshal(res.CompositeMeans)
 
-		p := models.AnalysisPrediction{
+		p := models.StockAnalysisPrediction{
 			TsCode:         tsCode,
 			TradeDate:      today.TradeDate,
 			SampleCounts:   sampleJSON,
@@ -124,10 +123,10 @@ func (s *Service) recalcStock(ctx context.Context, tsCode string) (int, error) {
 
 // PredictionsPage is the paginated response from ListPredictionsPage.
 type PredictionsPage struct {
-	Items []models.AnalysisPrediction `json:"items"`
-	Total int64                       `json:"total"`
-	Page  int                         `json:"page"`
-	Limit int                         `json:"limit"`
+	Items []models.StockAnalysisPrediction `json:"items"`
+	Total int64                            `json:"total"`
+	Page  int                              `json:"page"`
+	Limit int                              `json:"limit"`
 }
 
 // ListPredictionsPage returns paginated predictions ordered newest-first.
@@ -138,7 +137,7 @@ func (s *Service) ListPredictionsPage(ctx context.Context, tsCode, from, to stri
 	if limit <= 0 || limit > 200 {
 		limit = 20
 	}
-	q := s.db.WithContext(ctx).Model(&models.AnalysisPrediction{}).Where("ts_code = ?", tsCode)
+	q := s.db.WithContext(ctx).Model(&models.StockAnalysisPrediction{}).Where("ts_code = ?", tsCode)
 	if from != "" {
 		q = q.Where("trade_date >= ?", from)
 	}
@@ -149,7 +148,7 @@ func (s *Service) ListPredictionsPage(ctx context.Context, tsCode, from, to stri
 	if err := q.Count(&total).Error; err != nil {
 		return nil, err
 	}
-	var items []models.AnalysisPrediction
+	var items []models.StockAnalysisPrediction
 	err := q.Order("trade_date DESC").
 		Offset((page - 1) * limit).Limit(limit).
 		Find(&items).Error
@@ -168,7 +167,7 @@ func firstNonZero(vals ...float64) float64 {
 	return 0
 }
 
-func (s *Service) ListAnalysisPrediction(ctx context.Context, tsCode, from, to string, limit int) ([]models.AnalysisPrediction, error) {
+func (s *Service) ListAnalysisPrediction(ctx context.Context, tsCode, from, to string, limit int) ([]models.StockAnalysisPrediction, error) {
 	if limit <= 0 {
 		limit = 30
 	}
@@ -179,7 +178,7 @@ func (s *Service) ListAnalysisPrediction(ctx context.Context, tsCode, from, to s
 	if to != "" {
 		q = q.Where("trade_date <= ?", to)
 	}
-	var preds []models.AnalysisPrediction
+	var preds []models.StockAnalysisPrediction
 	if err := q.Limit(limit).Find(&preds).Error; err != nil {
 		return nil, err
 	}

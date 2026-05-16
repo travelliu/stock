@@ -14,7 +14,7 @@ import (
 
 var stockCmd = &cobra.Command{
 	Use:   "stock",
-	Short: "Stock search and analysis",
+	Short: "StockBasicInfo search and analysis",
 }
 
 var stockSearchCmd = &cobra.Command{
@@ -23,7 +23,7 @@ var stockSearchCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := client.New(cfg.ServerURL, cfg.Token)
-		var res []*models.Stock
+		var res []*models.StockBasicInfo
 		if err := c.GET("/api/stocks?q="+args[0], &res); err != nil {
 			return err
 		}
@@ -49,7 +49,7 @@ var stockFetchCmd = &cobra.Command{
 
 var stockAnalysisCmd = &cobra.Command{
 	Use:   "analysis [ts_code]",
-	Short: "Run spread analysis",
+	Short: "RunStockAnalysis spread analysis",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := client.New(cfg.ServerURL, cfg.Token)
@@ -62,7 +62,7 @@ var stockAnalysisCmd = &cobra.Command{
 		}
 
 		// Fetch realtime quote to mirror web behavior (prices used as defaults).
-		var quote models.RealtimeQuote
+		var quote models.StockRealtime
 		hasQuote := c.GET("/api/quotes/"+plainCode, &quote) == nil
 
 		path := "/api/analysis/" + tsCode
@@ -98,7 +98,7 @@ var stockAnalysisCmd = &cobra.Command{
 			return nil
 		}
 
-		var result models.AnalysisResult
+		var result models.StockAnalysisResult
 		if err := c.GET(path, &result); err != nil {
 			return err
 		}
@@ -157,7 +157,7 @@ var stockPredictionsCmd = &cobra.Command{
 		if to != "" {
 			path += "&to=" + to
 		}
-		var preds []models.AnalysisPrediction
+		var preds []models.StockAnalysisPrediction
 		if err := c.GET(path, &preds); err != nil {
 			return err
 		}

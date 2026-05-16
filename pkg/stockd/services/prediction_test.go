@@ -15,7 +15,7 @@ import (
 func TestListPredictionsPage(t *testing.T) {
 	gdb := openDB(t)
 	for i := 1; i <= 25; i++ {
-		p := models.AnalysisPrediction{
+		p := models.StockAnalysisPrediction{
 			TsCode:         "X.SH",
 			TradeDate:      fmt.Sprintf("2025%04d", i),
 			OpenPrice:      float64(i),

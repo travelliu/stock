@@ -15,7 +15,6 @@ import (
 	root "stock"
 	"stock/pkg/stockd/auth"
 
-	"stock/pkg/stockd/services/analysis"
 	"stock/pkg/stockd/utils"
 )
 
@@ -35,10 +34,7 @@ func initGin(logger *logrus.Logger) *gin.Engine {
 }
 
 func NewRouter(svc *services.Service, logger *logrus.Logger) *gin.Engine {
-
-	analysisSvc := analysis.New(svc.GetDB(), nil)
-
-	h := NewHandler(svc, analysisSvc)
+	h := NewHandler(svc)
 
 	r := initGin(logger)
 	r.Use(static.Serve("/", root.EmbedFolder()))

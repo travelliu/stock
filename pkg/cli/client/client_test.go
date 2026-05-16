@@ -54,7 +54,7 @@ func TestGET_PortfolioFields(t *testing.T) {
 		defer srv.Close()
 
 		c := client.New(srv.URL, "stk_test")
-		var out []*models.Portfolio
+		var out []*models.StockPortfolio
 		require.NoError(t, c.GET("/portfolio", &out))
 		require.Len(t, out, 1)
 		assert.Equal(t, uint(1), out[0].ID)

@@ -1,22 +1,18 @@
-// Package handler implements HTTP handlers for the stockd API.
+// Package http implements HTTP handlers for the stockd API.
 package http
 
 import (
 	"stock/pkg/stockd/services"
-	"stock/pkg/stockd/services/analysis"
 )
 
 type handler struct {
-	svc         *services.Service
-	analysisSvc *analysis.Service
+	svc *services.Service
 }
 
 func NewHandler(
 	svc *services.Service,
-	analysisSvc *analysis.Service,
 ) *handler {
 	return &handler{
-		svc:         svc,
-		analysisSvc: analysisSvc,
+		svc: svc,
 	}
 }

@@ -2,7 +2,8 @@ package models
 
 import "time"
 
-type RealtimeQuote struct {
+// StockRealtime 股票最新价格信息
+type StockRealtime struct {
 	TsCode         string    `json:"tsCode"`
 	Name           string    `json:"name"`
 	Price          float64   `json:"price"`          // [3]  当前价格
@@ -29,4 +30,9 @@ type RealtimeQuote struct {
 	LimitDown      float64   `json:"limitDown"`      // [48] 跌停价
 	QuoteTime      string    `json:"quoteTime"`      // [30] 行情时间
 	UpdatedAt      time.Time `json:"updatedAt"`
+}
+
+type StockRealtimeAndAnalysis struct {
+	StockRealtime       *StockRealtime
+	StockAnalysisResult *StockAnalysisResult
 }

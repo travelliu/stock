@@ -1,6 +1,6 @@
 package models
 
-type DailyBar struct {
+type StockDailyBar struct {
 	TsCode    string  `gorm:"primaryKey;size:16" json:"tsCode,omitempty"`
 	TradeDate string  `gorm:"primaryKey;size:8" json:"tradeDate,omitempty"`
 	Open      float64 `json:"open,omitempty"`
@@ -14,8 +14,8 @@ type DailyBar struct {
 
 // BarsPage is the paginated response from QueryStockDailyBarsPage.
 type BarsPage struct {
-	Items []*DailyBar `json:"items"`
-	Total int64       `json:"total"`
-	Page  int         `json:"page"`
-	Limit int         `json:"limit"`
+	Items []*StockDailyBar `json:"items"`
+	Total int64            `json:"total"`
+	Page  int              `json:"page"`
+	Limit int              `json:"limit"`
 }

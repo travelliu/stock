@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type Stock struct {
+type StockBasicInfo struct {
 	TsCode    string    `gorm:"primaryKey;size:16" json:"tsCode,omitempty"`
 	Code      string    `gorm:"index;size:8;not null" json:"code,omitempty"`
 	Name      string    `gorm:"size:32;not null" json:"name,omitempty"`

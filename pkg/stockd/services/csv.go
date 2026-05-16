@@ -38,7 +38,7 @@ func (s *Service) ImportCSV(ctx context.Context, r io.Reader) (int, error) {
 			return n, err
 		}
 		ts := row[idx["ts_code"]]
-		st := &models.Stock{
+		st := &models.StockBasicInfo{
 			TsCode:   ts,
 			Code:     row[idx["symbol"]],
 			Name:     row[idx["name"]],

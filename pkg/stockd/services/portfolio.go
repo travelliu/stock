@@ -55,6 +55,15 @@ func (s *Service) ListPortfolio(ctx context.Context, userID uint) ([]*models.Por
 		}
 	}
 	s.cacheMu.RUnlock()
+
+	s.realtimeMu.RLock()
+	for _, r := range rows {
+		if q, ok := s.realtimeCache[r.Code]; ok {
+			r.Quote = q
+		}
+	}
+	s.realtimeMu.RUnlock()
+
 	return rows, nil
 }
 

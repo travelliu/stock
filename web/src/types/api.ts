@@ -26,6 +26,7 @@ export interface Portfolio {
   name: string
   note: string
   addedAt: string
+  quote?: RealtimeQuote
 }
 
 export interface PortfolioReq {

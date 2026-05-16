@@ -3,8 +3,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { wMessage } from '@/utils/message'
 import { usePortfolioStore } from '@/stores/portfolio'
-import { searchStocks, queryBars, getQuote } from '@/apis/stocks'
-import type { Stock, Portfolio, DailyBar, RealtimeQuote } from '@/types/api'
+import { searchStocks } from '@/apis/stocks'
+import type { Stock, Portfolio } from '@/types/api'
 
 const router = useRouter()
 const portfolioStore = usePortfolioStore()
@@ -14,51 +14,7 @@ const note = ref('')
 const stockOptions = ref<{ value: string; label: string }[]>([])
 const loadingAdd = ref(false)
 
-interface BarInfo {
-  bar: DailyBar
-  pctChg: number
-}
-const barMap = ref<Record<string, BarInfo>>({})
-const quoteMap = ref<Record<string, RealtimeQuote>>({})
-const loadingBars = ref(false)
-
-async function loadBars(items: Portfolio[]) {
-  if (!items.length) return
-  loadingBars.value = true
-  try {
-    const results = await Promise.all(items.map(p => queryBars(p.code, { limit: 2 })))
-    const map: Record<string, BarInfo> = {}
-    results.forEach((res, i) => {
-      const bars = res.items
-      if (!bars.length) return
-      const bar = bars[0]
-      const prevClose = bars[1]?.close
-      const pctChg = prevClose ? (bar.close - prevClose) / prevClose * 100 : 0
-      map[items[i].code] = { bar, pctChg }
-    })
-    barMap.value = map
-  } catch {
-    // silently ignore
-  } finally {
-    loadingBars.value = false
-  }
-}
-
-async function loadQuotes(items: Portfolio[]) {
-  if (!items.length) return
-  const results = await Promise.allSettled(items.map(p => getQuote(p.tsCode)))
-  const map: Record<string, RealtimeQuote> = { ...quoteMap.value }
-  results.forEach((r, i) => {
-    if (r.status === 'fulfilled') map[items[i].code] = r.value
-  })
-  quoteMap.value = map
-}
-
-onMounted(async () => {
-  await portfolioStore.fetch()
-  loadBars(portfolioStore.items)
-  loadQuotes(portfolioStore.items)
-})
+onMounted(() => portfolioStore.fetch())
 
 async function searchStockOptions(query: string) {
   if (!query) { stockOptions.value = []; return }
@@ -79,8 +35,6 @@ async function doAdd() {
     showAdd.value = false
     selectedCode.value = ''
     note.value = ''
-    loadBars(portfolioStore.items)
-    loadQuotes(portfolioStore.items)
   } finally {
     loadingAdd.value = false
   }
@@ -94,12 +48,7 @@ function removeItem(row: Portfolio) {
   portfolioStore.remove(row.code)
 }
 
-function fmtDate(d: string): string {
-  if (!d || d.length !== 8) return d
-  return `${d.slice(4, 6)}/${d.slice(6, 8)}`
-}
-
-function fmtPrice(v: number): string {
+function fmtPrice(v: number | undefined): string {
   return v ? v.toFixed(2) : '-'
 }
 
@@ -109,8 +58,8 @@ function pctClass(v: number): string {
   return ''
 }
 
-function fmtPct(v: number): string {
-  if (!v) return '-'
+function fmtPct(v: number | undefined): string {
+  if (v == null) return '-'
   return (v > 0 ? '+' : '') + v.toFixed(2) + '%'
 }
 </script>
@@ -122,38 +71,38 @@ function fmtPct(v: number): string {
       <el-button type="primary" @click="showAdd = true">{{ $t('stockList.addStock') }}</el-button>
     </div>
 
-    <el-table :data="portfolioStore.items" v-loading="loadingBars" style="margin-top: 16px">
+    <el-table :data="portfolioStore.items" style="margin-top: 16px">
       <el-table-column prop="code" :label="$t('stockList.code')" width="100">
         <template #default="{ row }">
           <el-button link type="primary" @click="goDetail(row)">{{ row.code }}</el-button>
         </template>
       </el-table-column>
       <el-table-column prop="name" :label="$t('stockList.name')" width="120" />
-      <el-table-column label="日期" width="60" align="center">
+      <el-table-column label="时间" width="60" align="center">
         <template #default="{ row }">
-          <span class="secondary">{{ quoteMap[row.code]?.quoteTime?.slice(0, 5) || fmtDate(barMap[row.code]?.bar.tradeDate ?? '') }}</span>
+          <span class="secondary">{{ row.quote?.quoteTime?.slice(0, 5) ?? '' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="开盘" align="right" width="80">
-        <template #default="{ row }">{{ fmtPrice(quoteMap[row.code]?.open ?? barMap[row.code]?.bar.open ?? 0) }}</template>
+        <template #default="{ row }">{{ fmtPrice(row.quote?.open) }}</template>
       </el-table-column>
       <el-table-column label="最高" align="right" width="80">
-        <template #default="{ row }">{{ fmtPrice(quoteMap[row.code]?.high ?? barMap[row.code]?.bar.high ?? 0) }}</template>
+        <template #default="{ row }">{{ fmtPrice(row.quote?.high) }}</template>
       </el-table-column>
       <el-table-column label="最低" align="right" width="80">
-        <template #default="{ row }">{{ fmtPrice(quoteMap[row.code]?.low ?? barMap[row.code]?.bar.low ?? 0) }}</template>
+        <template #default="{ row }">{{ fmtPrice(row.quote?.low) }}</template>
       </el-table-column>
       <el-table-column label="最新" align="right" width="80">
         <template #default="{ row }">
-          <span :class="pctClass(quoteMap[row.code]?.changePct ?? barMap[row.code]?.pctChg ?? 0)">
-            {{ fmtPrice(quoteMap[row.code]?.price ?? barMap[row.code]?.bar.close ?? 0) }}
+          <span :class="pctClass(row.quote?.changePct ?? 0)">
+            {{ fmtPrice(row.quote?.price) }}
           </span>
         </template>
       </el-table-column>
       <el-table-column label="涨跌幅" align="right" width="90">
         <template #default="{ row }">
-          <span :class="pctClass(quoteMap[row.code]?.changePct ?? barMap[row.code]?.pctChg ?? 0)">
-            {{ quoteMap[row.code] ? fmtPct(quoteMap[row.code].changePct) : fmtPct(barMap[row.code]?.pctChg ?? 0) }}
+          <span :class="pctClass(row.quote?.changePct ?? 0)">
+            {{ fmtPct(row.quote?.changePct) }}
           </span>
         </template>
       </el-table-column>

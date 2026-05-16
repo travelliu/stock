@@ -33,11 +33,11 @@ func setupAuthRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
 	r := gin.New()
 	r.Use(utils.RequestID())
 	r.Use(utils.Language())
-	store := auth.NewSessionStore([]byte("12345678901234567890123456789012"))
+	store := auth.NewSessionStore([]byte("12345678901234567890123456789012"), false)
 	r.Use(sessions.Sessions(auth.SessionName, store))
 	r.Use(auth.ResolveUser(gdb, ""))
 
-	svc := services.New(gdb)
+	svc := services.NewService(gdb, nil, nil, nil, nil)
 	analysisSvc := analysis.New(gdb, nil)
 	h := http2.NewHandler(svc, analysisSvc)
 	r.POST("/api/auth/login", h.Login)

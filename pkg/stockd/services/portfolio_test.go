@@ -28,7 +28,7 @@ func newService(t *testing.T) *services.Service {
 	if err != nil {
 		t.Fatal(err)
 	}
-	svc := services.NewService(openDB(t), nil, nil, logger)
+	svc := services.NewService(openDB(t), nil, nil, nil, logger)
 	return svc
 }
 

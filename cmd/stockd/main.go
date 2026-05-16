@@ -17,6 +17,7 @@ import (
 	"stock/pkg/stockd/config"
 	"stock/pkg/stockd/db"
 	httpkg "stock/pkg/stockd/http"
+	"stock/pkg/tencent"
 	"stock/pkg/tushare"
 )
 
@@ -60,7 +61,8 @@ func main() {
 	}
 
 	tc := tushare.NewClient(tushare.WithBaseURL(cfg.Tushare.BaseURL))
-	svc := services.NewService(gdb, tc, cfg, logger)
+	tencentClient := tencent.NewClient()
+	svc := services.NewService(gdb, tc, tencentClient, cfg, logger)
 	if err := svc.LoadStockCache(context.Background()); err != nil {
 		logger.WithError(err).Warn("stock cache load failed")
 	}

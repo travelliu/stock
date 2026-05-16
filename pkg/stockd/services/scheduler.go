@@ -60,6 +60,16 @@ func (s *Service) InitCron() error {
 	if err != nil {
 		return err
 	}
+	if _, err := s.cron.AddFunc("@every 30s", func() {
+		if !isTradingHours(time.Now()) {
+			return
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+		defer cancel()
+		s.refreshRealtimeQuotes(ctx)
+	}); err != nil {
+		return err
+	}
 	return nil
 }
 

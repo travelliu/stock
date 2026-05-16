@@ -196,10 +196,21 @@ export interface RealtimeQuote {
   price: number
   prevClose: number
   open: number
-  vol: number
+  vol: number           // [6]  成交量（手）
+  outerVol: number      // [7]  外盘
+  innerVol: number      // [8]  内盘
   high: number
   low: number
-  amount: number
+  totalVol: number      // [36] 成交量（手）
+  amount: number        // [37] 成交额（万元）
+  turnoverRate: number  // [38] 换手率
+  pe: number            // [39] 市盈率
+  high52w: number       // [41] 52周最高
+  low52w: number        // [42] 52周最低
+  amplitude: number     // [43] 振幅
+  circMarketCap: number // [44] 流通市值
+  totalMarketCap: number // [45] 总市值
+  pb: number            // [46] 市净率
   change: number
   changePct: number
   limitUp: number

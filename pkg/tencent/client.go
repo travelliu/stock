@@ -17,20 +17,31 @@ import (
 const (
 	defaultBaseURL = "https://qt.gtimg.cn/q="
 
-	idxName      = 1
-	idxPrice     = 3
-	idxPrevClose = 4
-	idxOpen      = 5
-	idxVol       = 6
-	idxQuoteTime = 30
-	idxChange    = 31
-	idxChangePct = 32
-	idxHigh      = 33
-	idxLow       = 34
-	idxAmount    = 37
-	idxLimitUp   = 47
-	idxLimitDown = 48
-	idxMinFields = 49
+	idxName         = 1
+	idxPrice        = 3
+	idxPrevClose    = 4
+	idxOpen         = 5
+	idxVol          = 6
+	idxOuterVol     = 7
+	idxInnerVol     = 8
+	idxQuoteTime    = 30
+	idxChange       = 31
+	idxChangePct    = 32
+	idxHigh         = 33
+	idxLow          = 34
+	idxTotalVol     = 36
+	idxAmount       = 37
+	idxTurnoverRate = 38
+	idxPE           = 39
+	idxHigh52w      = 41
+	idxLow52w       = 42
+	idxAmplitude    = 43
+	idxCircMktCap   = 44
+	idxTotalMktCap  = 45
+	idxPB           = 46
+	idxLimitUp      = 47
+	idxLimitDown    = 48
+	idxMinFields    = 49
 )
 
 // Client fetches realtime quotes from Tencent Finance.
@@ -109,20 +120,32 @@ func parseQuotes(body []byte) []*models.RealtimeQuote {
 			continue
 		}
 		out = append(out, &models.RealtimeQuote{
-			TsCode:    tencentToTs(tencentCode),
-			Price:     parseFloat(fields[idxPrice]),
-			PrevClose: parseFloat(fields[idxPrevClose]),
-			Open:      parseFloat(fields[idxOpen]),
-			Vol:       parseFloat(fields[idxVol]),
-			High:      parseFloat(fields[idxHigh]),
-			Low:       parseFloat(fields[idxLow]),
-			Amount:    parseFloat(fields[idxAmount]),
-			Change:    parseFloat(fields[idxChange]),
-			ChangePct: parseFloat(fields[idxChangePct]),
-			LimitUp:   parseFloat(fields[idxLimitUp]),
-			LimitDown: parseFloat(fields[idxLimitDown]),
-			QuoteTime: fields[idxQuoteTime],
-			UpdatedAt: now,
+			TsCode:         tencentToTs(tencentCode),
+			Name:           fields[idxName],
+			Price:          parseFloat(fields[idxPrice]),
+			PrevClose:      parseFloat(fields[idxPrevClose]),
+			Open:           parseFloat(fields[idxOpen]),
+			Vol:            parseFloat(fields[idxVol]),
+			OuterVol:       parseFloat(fields[idxOuterVol]),
+			InnerVol:       parseFloat(fields[idxInnerVol]),
+			High:           parseFloat(fields[idxHigh]),
+			Low:            parseFloat(fields[idxLow]),
+			TotalVol:       parseFloat(fields[idxTotalVol]),
+			Amount:         parseFloat(fields[idxAmount]),
+			TurnoverRate:   parseFloat(fields[idxTurnoverRate]),
+			PE:             parseFloat(fields[idxPE]),
+			High52w:        parseFloat(fields[idxHigh52w]),
+			Low52w:         parseFloat(fields[idxLow52w]),
+			Amplitude:      parseFloat(fields[idxAmplitude]),
+			CircMarketCap:  parseFloat(fields[idxCircMktCap]),
+			TotalMarketCap: parseFloat(fields[idxTotalMktCap]),
+			PB:             parseFloat(fields[idxPB]),
+			Change:         parseFloat(fields[idxChange]),
+			ChangePct:      parseFloat(fields[idxChangePct]),
+			LimitUp:        parseFloat(fields[idxLimitUp]),
+			LimitDown:      parseFloat(fields[idxLimitDown]),
+			QuoteTime:      fields[idxQuoteTime],
+			UpdatedAt:      now,
 		})
 	}
 	return out

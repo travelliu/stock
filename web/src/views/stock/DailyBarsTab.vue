@@ -40,7 +40,7 @@ onMounted(load)
   <div v-loading="loading">
     <DailyBarTable :bars="bars" />
     <el-pagination
-      style="margin-top: 16px; display: flex; justify-content: flex-end"
+      style="margin-top: 10px; display: flex; justify-content: flex-end"
       :current-page="page"
       :page-size="pageSize"
       :total="total"

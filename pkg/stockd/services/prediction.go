@@ -62,32 +62,35 @@ func (s *Service) recalcStock(ctx context.Context, tsCode string) (int, error) {
 			continue
 		}
 
-		windows := analysis.Make(historical)
-		analysis.Means(windows)
+		open := today.Open
+		res := analysis.Build(models.Input{
+			TsCode:    tsCode,
+			Rows:      historical,
+			OpenPrice: &open,
+		})
 
-		var ohMean, olMean float64
-		for _, w := range windows {
-			if w.Info.Id == "last_15" && w.Means != nil {
-				if w.Means.SpreadOH != nil {
-					ohMean = w.Means.SpreadOH.Mean
-				}
-				if w.Means.SpreadOL != nil {
-					olMean = w.Means.SpreadOL.Mean
-				}
+		var predictHigh, predictLow float64
+		for _, w := range res.Windows {
+			if w.Info.Id == "last_15" && w.Predict != nil {
+				predictHigh = firstNonZero(w.Predict.High.ByEWMA, w.Predict.High.ByMedian, w.Predict.High.ByMean)
+				predictLow = firstNonZero(w.Predict.Low.ByEWMA, w.Predict.Low.ByMedian, w.Predict.Low.ByMean)
 			}
 		}
-		if ohMean == 0 {
+		if predictHigh == 0 && res.RefTable != nil {
+			predictHigh = res.RefTable.High.Mean
+			predictLow = res.RefTable.Low.Mean
+		}
+		if predictHigh == 0 {
 			continue
 		}
 
 		sampleCounts := make(map[string]int)
-		for _, w := range windows {
+		for _, w := range res.Windows {
 			sampleCounts[w.Info.Id] = len(w.Rows)
 		}
 		sampleJSON, _ := json.Marshal(sampleCounts)
-		wmJSON, _ := json.Marshal(windows)
-		comp := analysis.Composite(windows)
-		compJSON, _ := json.Marshal(comp)
+		wmJSON, _ := json.Marshal(res.Windows)
+		compJSON, _ := json.Marshal(res.CompositeMeans)
 
 		p := models.AnalysisPrediction{
 			TsCode:         tsCode,
@@ -96,8 +99,8 @@ func (s *Service) recalcStock(ctx context.Context, tsCode string) (int, error) {
 			WindowMeans:    wmJSON,
 			CompositeMeans: compJSON,
 			OpenPrice:      today.Open,
-			PredictHigh:    today.Open + ohMean,
-			PredictLow:     today.Open - olMean,
+			PredictHigh:    predictHigh,
+			PredictLow:     predictLow,
 			ActualHigh:     today.High,
 			ActualLow:      today.Low,
 			ActualClose:    today.Close,
@@ -154,6 +157,15 @@ func (s *Service) ListPredictionsPage(ctx context.Context, tsCode, from, to stri
 		return nil, err
 	}
 	return &PredictionsPage{Items: items, Total: total, Page: page, Limit: limit}, nil
+}
+
+func firstNonZero(vals ...float64) float64 {
+	for _, v := range vals {
+		if v != 0 {
+			return v
+		}
+	}
+	return 0
 }
 
 func (s *Service) ListAnalysisPrediction(ctx context.Context, tsCode, from, to string, limit int) ([]models.AnalysisPrediction, error) {

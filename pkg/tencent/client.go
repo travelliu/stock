@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"stock/pkg/utils"
 	"strconv"
 	"strings"
 	"time"
@@ -131,11 +132,7 @@ func parseQuotes(body []byte) []*models.RealtimeQuote {
 func tsToCodes(tsCodes []string) []string {
 	out := make([]string, 0, len(tsCodes))
 	for _, ts := range tsCodes {
-		parts := strings.SplitN(ts, ".", 2)
-		if len(parts) != 2 {
-			continue
-		}
-		out = append(out, strings.ToLower(parts[1])+parts[0])
+		out = append(out, utils.ToTencentCode(ts))
 	}
 	return out
 }
@@ -145,9 +142,8 @@ func tencentToTs(code string) string {
 	if len(code) < 3 {
 		return code
 	}
-	prefix := strings.ToUpper(code[:2])
 	num := code[2:]
-	return num + "." + prefix
+	return num
 }
 
 func parseFloat(s string) float64 {

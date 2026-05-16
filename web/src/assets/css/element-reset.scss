@@ -1,5 +1,15 @@
 .el-card {
   border-radius: var(--card-radius);
+
+  .el-card__header {
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .el-card__body {
+    padding: 12px 14px;
+  }
 }
 
 .el-button {

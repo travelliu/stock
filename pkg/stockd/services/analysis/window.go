@@ -1,14 +1,13 @@
 package analysis
 
 import (
+	"math"
 	"sort"
 	"stock/pkg/utils"
 
 	"github.com/montanaflynn/stats"
 
 	"stock/pkg/models"
-	// "gonum.org/v1/gonum/stat"
-	// "gonum.org/v1/gonum/stat"
 )
 
 var Windows = []*models.WindowInfo{
@@ -32,17 +31,6 @@ var Windows = []*models.WindowInfo{
 		Name: "近2周",
 		Day:  15,
 	},
-}
-
-var Names = []string{"历史", "近3月", "近1月", "近2周"}
-
-var Days = []*int{nil, ptr(90), ptr(30), ptr(15)}
-
-func ptr(v int) *int { return &v }
-
-var SpreadKeys = []string{
-	"spread_oh", "spread_ol", "spread_hl",
-	"spread_hc", "spread_lc", "spread_oc",
 }
 
 func Make(rows []*models.DailyBar) []*models.WindowData {
@@ -81,6 +69,7 @@ func Means(windows []*models.WindowData) {
 			spreadOcList []float64
 			spreadHcList []float64
 			spreadLcList []float64
+			openList     []float64 // newest-first, mirrors spreadOhList/spreadOlList order
 		)
 
 		for _, row := range w.Rows {
@@ -90,6 +79,7 @@ func Means(windows []*models.WindowData) {
 			spreadOcList = append(spreadOcList, row.Spreads.OC)
 			spreadHcList = append(spreadHcList, row.Spreads.HC)
 			spreadLcList = append(spreadLcList, row.Spreads.LC)
+			openList = append(openList, row.Open)
 		}
 		w.Means.SpreadOH = Cloc(spreadOhList)
 		w.Means.SpreadOL = Cloc(spreadOlList)
@@ -98,6 +88,10 @@ func Means(windows []*models.WindowData) {
 		w.Means.SpreadHC = Cloc(spreadHcList)
 		w.Means.SpreadLC = Cloc(spreadLcList)
 
+		// ratio fields (spread / open) — only meaningful for OH and OL
+		w.Means.SpreadOH.AvgRatio, w.Means.SpreadOH.EWMARatio = computeRatios(spreadOhList, openList)
+		w.Means.SpreadOL.AvgRatio, w.Means.SpreadOL.EWMARatio = computeRatios(spreadOlList, openList)
+
 		threshold := 30.0
 		if w.Info.Id == "All" {
 			threshold = 60.0
@@ -105,6 +99,32 @@ func Means(windows []*models.WindowData) {
 		setRecommend(w.Means.SpreadOH, spreadOhList, threshold)
 		setRecommend(w.Means.SpreadOL, spreadOlList, threshold)
 	}
+}
+
+// computeRatios computes avg and EWMA of (spread/open) ratios.
+// Both slices must be in newest-first order and have the same length.
+func computeRatios(spreads, opens []float64) (avgRatio, ewmaRatio float64) {
+	const lambda = 0.9
+	var sum, ewmaNum, ewmaDen float64
+	n := 0
+	for i, s := range spreads {
+		if i >= len(opens) || opens[i] <= 0 {
+			continue
+		}
+		ratio := s / opens[i]
+		sum += ratio
+		w := math.Pow(lambda, float64(i))
+		ewmaNum += w * ratio
+		ewmaDen += w
+		n++
+	}
+	if n > 0 {
+		avgRatio = utils.Round(sum / float64(n))
+	}
+	if ewmaDen > 0 {
+		ewmaRatio = utils.Round(ewmaNum / ewmaDen)
+	}
+	return
 }
 
 func setRecommend(m *models.MeansAvgData, vals []float64, threshold float64) {
@@ -119,11 +139,28 @@ func setRecommend(m *models.MeansAvgData, vals []float64, threshold float64) {
 	}
 }
 
+// Cloc computes descriptive statistics from list, which must be in newest-first order.
 func Cloc(list []float64) *models.MeansAvgData {
+	v := &models.MeansAvgData{Count: len(list)}
+	if len(list) == 0 {
+		return v
+	}
+
+	// EWMA (λ=0.9): computed before sorting to preserve newest-first order.
+	const lambda = 0.9
+	var ewmaNum, ewmaDen float64
+	for i, val := range list {
+		w := math.Pow(lambda, float64(i))
+		ewmaNum += w * val
+		ewmaDen += w
+	}
+	if ewmaDen > 0 {
+		v.EWMA = utils.Round(ewmaNum / ewmaDen)
+	}
+
 	sorted := make([]float64, len(list))
 	copy(sorted, list)
 	sort.Float64s(sorted)
-	v := &models.MeansAvgData{Count: len(list)}
 
 	v.Avg, _ = stats.Mean(sorted)
 	v.Avg = utils.Round(v.Avg)
@@ -131,6 +168,8 @@ func Cloc(list []float64) *models.MeansAvgData {
 	v.Median = utils.Round(v.Median)
 	v.Mean, _ = stats.Mean([]float64{v.Avg, v.Median})
 	v.Mean = utils.Round(v.Mean)
+	stddev, _ := stats.StandardDeviation(stats.Float64Data(sorted))
+	v.StdDev = utils.Round(stddev)
 	v.Distribution = Distribution(sorted, 10)
 	return v
 }

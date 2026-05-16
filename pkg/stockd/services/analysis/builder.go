@@ -28,82 +28,141 @@ func Build(in models.Input) *models.AnalysisResult {
 	}
 }
 
-// BuildRefTable computes the prediction reference table from windows and optional actual prices.
+// BuildRefTable populates WindowData.Predict for each window and returns cross-window summaries.
+// Each window gets a full PredictBreakdown (ByMean/ByMedian/ByEWMA/ByRatio/ReverseLow/ReverseHigh/Mean).
+// RefTable aggregates per-window Means across all windows.
 func BuildRefTable(windows []*models.WindowData, openPrice, actualHigh, actualLow *float64) *models.RefTable {
 	if len(windows) == 0 {
 		return nil
 	}
-	lastWin := windows[len(windows)-1]
 
-	// High: openPrice + spreadOH.mean per window; reverseLow = actualLow + spreadHL.mean
-	var highVals []float64
-	highWindows := make(map[string]float64)
-	if openPrice != nil {
-		for _, w := range windows {
-			if w.Means != nil && w.Means.SpreadOH != nil && w.Means.SpreadOH.Mean != 0 {
-				v := *openPrice + w.Means.SpreadOH.Mean
-				highWindows[w.Info.Id] = v
-				highVals = append(highVals, v)
-			}
+	var highMeans, lowMeans, closeMeans []float64
+	for _, w := range windows {
+		if w.Means == nil {
+			continue
 		}
-	}
-	var highReverseLow float64
-	if actualLow != nil && lastWin.Means != nil && lastWin.Means.SpreadHL != nil && lastWin.Means.SpreadHL.Mean != 0 {
-		highReverseLow = *actualLow + lastWin.Means.SpreadHL.Mean
-		highVals = append(highVals, highReverseLow)
-	}
-
-	// Low: openPrice - spreadOL.mean per window; reverseHigh = actualHigh - spreadHL.mean
-	var lowVals []float64
-	lowWindows := make(map[string]float64)
-	if openPrice != nil {
-		for _, w := range windows {
-			if w.Means != nil && w.Means.SpreadOL != nil && w.Means.SpreadOL.Mean != 0 {
-				v := *openPrice - w.Means.SpreadOL.Mean
-				lowWindows[w.Info.Id] = v
-				lowVals = append(lowVals, v)
-			}
+		p := &models.WindowPredict{
+			High:  buildHighBreakdown(w.Means, openPrice, actualLow),
+			Low:   buildLowBreakdown(w.Means, openPrice, actualHigh),
+			Close: buildCloseBreakdown(w.Means, openPrice, actualHigh, actualLow),
 		}
-	}
-	var lowReverseHigh float64
-	if actualHigh != nil && lastWin.Means != nil && lastWin.Means.SpreadHL != nil && lastWin.Means.SpreadHL.Mean != 0 {
-		lowReverseHigh = *actualHigh - lastWin.Means.SpreadHL.Mean
-		lowVals = append(lowVals, lowReverseHigh)
-	}
-
-	// Close: reverseLow = actualLow + spreadLC.mean; reverseHigh = actualHigh - spreadHC.mean
-	var closeVals []float64
-	var closeReverseLow, closeReverseHigh float64
-	if actualLow != nil && lastWin.Means != nil && lastWin.Means.SpreadLC != nil && lastWin.Means.SpreadLC.Mean != 0 {
-		closeReverseLow = *actualLow + lastWin.Means.SpreadLC.Mean
-		closeVals = append(closeVals, closeReverseLow)
-	}
-	if actualHigh != nil && lastWin.Means != nil && lastWin.Means.SpreadHC != nil && lastWin.Means.SpreadHC.Mean != 0 {
-		closeReverseHigh = *actualHigh - lastWin.Means.SpreadHC.Mean
-		closeVals = append(closeVals, closeReverseHigh)
+		w.Predict = p
+		if p.High.Mean != 0 {
+			highMeans = append(highMeans, p.High.Mean)
+		}
+		if p.Low.Mean != 0 {
+			lowMeans = append(lowMeans, p.Low.Mean)
+		}
+		if p.Close.Mean != 0 {
+			closeMeans = append(closeMeans, p.Close.Mean)
+		}
 	}
 
 	return &models.RefTable{
-		High: models.PredictRow{
-			Windows:    highWindows,
-			ReverseLow: highReverseLow,
-			Mean:       avgOf(highVals),
-			Direction:  "+",
-		},
-		Low: models.PredictRow{
-			Windows:     lowWindows,
-			ReverseHigh: lowReverseHigh,
-			Mean:        avgOf(lowVals),
-			Direction:   "-",
-		},
-		Close: models.PredictRow{
-			Windows:     make(map[string]float64),
-			ReverseLow:  closeReverseLow,
-			ReverseHigh: closeReverseHigh,
-			Mean:        avgOf(closeVals),
-			Direction:   "-",
-		},
+		High:  models.PredictRow{Mean: avgOf(highMeans)},
+		Low:   models.PredictRow{Mean: avgOf(lowMeans)},
+		Close: models.PredictRow{Mean: avgOf(closeMeans)},
 	}
+}
+
+// buildHighBreakdown computes all High prediction methods for one window.
+// spread_oh = high - open  →  high = open + spread_oh
+// ReverseLow: from actualLow + spread_hl (since high ≈ low + spread_hl)
+func buildHighBreakdown(m *models.MeansData, openPrice, actualLow *float64) models.PredictBreakdown {
+	var b models.PredictBreakdown
+	if openPrice != nil {
+		if oh := m.SpreadOH; oh != nil {
+			b.ByMean = *openPrice + oh.Mean
+			b.ByMedian = *openPrice + oh.Median
+			if oh.EWMA > 0 {
+				b.ByEWMA = *openPrice + oh.EWMA
+			}
+			if oh.EWMARatio > 0 {
+				b.ByRatio = *openPrice + *openPrice*oh.EWMARatio
+			}
+		}
+	}
+	if actualLow != nil {
+		if hl := m.SpreadHL; hl != nil && hl.Mean != 0 {
+			b.ReverseLow = *actualLow + hl.Mean
+		}
+	}
+	b.Mean = avgOfNonZero(b.ByMean, b.ByMedian, b.ByEWMA, b.ByRatio, b.ReverseLow)
+	return b
+}
+
+// buildLowBreakdown computes all Low prediction methods for one window.
+// spread_ol = open - low  →  low = open - spread_ol
+// ReverseHigh: from actualHigh - spread_hl (since low ≈ high - spread_hl)
+func buildLowBreakdown(m *models.MeansData, openPrice, actualHigh *float64) models.PredictBreakdown {
+	var b models.PredictBreakdown
+	if openPrice != nil {
+		if ol := m.SpreadOL; ol != nil {
+			b.ByMean = *openPrice - ol.Mean
+			b.ByMedian = *openPrice - ol.Median
+			if ol.EWMA > 0 {
+				b.ByEWMA = *openPrice - ol.EWMA
+			}
+			if ol.EWMARatio > 0 {
+				b.ByRatio = *openPrice - *openPrice*ol.EWMARatio
+			}
+		}
+	}
+	if actualHigh != nil {
+		if hl := m.SpreadHL; hl != nil && hl.Mean != 0 {
+			b.ReverseHigh = *actualHigh - hl.Mean
+		}
+	}
+	b.Mean = avgOfNonZero(b.ByMean, b.ByMedian, b.ByEWMA, b.ByRatio, b.ReverseHigh)
+	return b
+}
+
+// buildCloseBreakdown computes all Close prediction methods for one window.
+// spread_oc = open - close  →  close = open - spread_oc
+// ReverseLow: from actualLow + spread_lc (since close ≈ low + spread_lc)
+// ReverseHigh: from actualHigh - spread_hc (since close ≈ high - spread_hc)
+func buildCloseBreakdown(m *models.MeansData, openPrice, actualHigh, actualLow *float64) models.PredictBreakdown {
+	var b models.PredictBreakdown
+	if openPrice != nil {
+		if oc := m.SpreadOC; oc != nil {
+			b.ByMean = *openPrice - oc.Mean
+			b.ByMedian = *openPrice - oc.Median
+			if oc.EWMA != 0 {
+				b.ByEWMA = *openPrice - oc.EWMA
+			}
+			if oc.EWMARatio != 0 {
+				b.ByRatio = *openPrice - *openPrice*oc.EWMARatio
+			}
+		}
+	}
+	if actualLow != nil {
+		if lc := m.SpreadLC; lc != nil && lc.Mean != 0 {
+			b.ReverseLow = *actualLow + lc.Mean
+		}
+	}
+	if actualHigh != nil {
+		if hc := m.SpreadHC; hc != nil && hc.Mean != 0 {
+			b.ReverseHigh = *actualHigh - hc.Mean
+		}
+	}
+	b.Mean = avgOfNonZero(b.ByMean, b.ByMedian, b.ByEWMA, b.ByRatio, b.ReverseLow, b.ReverseHigh)
+	return b
+}
+
+// avgOfNonZero returns the arithmetic mean of non-zero values.
+func avgOfNonZero(vals ...float64) float64 {
+	var sum float64
+	var n int
+	for _, v := range vals {
+		if v != 0 {
+			sum += v
+			n++
+		}
+	}
+	if n == 0 {
+		return 0
+	}
+	return sum / float64(n)
 }
 
 func avgOf(vals []float64) float64 {
@@ -117,7 +176,10 @@ func avgOf(vals []float64) float64 {
 	return sum / float64(len(vals))
 }
 
-// Composite computes the arithmetic average across all time windows for each spread key.
+// Composite computes the arithmetic average of MeansAvgData.Mean across all time windows
+// for each of the six spread keys. The result is a single blended value that treats all
+// windows equally regardless of sample size — useful as a quick model summary but less
+// reactive to recent changes than the per-window values in WindowData.Means.
 func Composite(windows []*models.WindowData) map[string]float64 {
 	spreadFields := []struct {
 		key string
@@ -172,7 +234,10 @@ func MeanOfNumericCells(cells []string) string {
 	return fmt.Sprintf("%.2f", sum/float64(len(nums)))
 }
 
-// RecommendRange finds the narrowest contiguous range covering >= threshold% of sorted values.
+// RecommendRange finds the narrowest contiguous band that covers at least threshold% of
+// the sorted observations using a sliding window of size ceil(n * threshold / 100).
+// The result is the tightest historical price-spread range a trader can expect to see
+// on the specified fraction of days — used for 高抛低吸 target recommendation.
 func RecommendRange(sorted []float64, threshold float64) (low, high, cumPct float64, ok bool) {
 	n := len(sorted)
 	if n == 0 {

@@ -94,7 +94,7 @@ onMounted(load)
 
 <template>
   <div v-loading="loading">
-    <el-card style="margin-bottom: 16px">
+    <el-card style="margin-bottom: 10px">
       <template #header>实时价格与预测</template>
       <table class="price-table">
         <thead>
@@ -136,18 +136,14 @@ onMounted(load)
 
     <SpreadAnalysisTable :result="analysis" />
 
-    <div style="margin-top: 16px">
+    <div style="margin-top: 10px">
       <SpreadHistogram :result="analysis" />
     </div>
   </div>
 </template>
 
 <style scoped lang="scss">
-:deep(.el-card__header) {
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 600;
-}
+/* el-card header/body padding is set globally in element-reset.scss */
 .price-table {
   border-collapse: collapse;
   font-size: 13px;

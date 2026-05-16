@@ -114,7 +114,7 @@ selfhost-build: ; $(info) @ ## Build backend/web from the current checkout and s
 	@if curl -sf http://localhost:$${STOCKD_PORT:-8443}/health > /dev/null 2>&1; then \
 		echo ""; \
 		echo "✓ stockd is running!"; \
-		echo "  Frontend: http://localhost:$${STOCKD_PORT:-3000}"; \
+		echo "  Frontend: http://localhost:$${STOCKD_PORT:-8443}"; \
 		echo ""; \
 	else \
 		echo ""; \

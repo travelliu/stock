@@ -24,15 +24,41 @@ func ToTushareCode(code string) string {
 	if strings.Contains(code, ".") {
 		return code
 	}
-	if len(code) < 6 {
+	if strings.HasPrefix(code, "sz") {
+		return strings.TrimPrefix(code, "sz") + ".SZ"
+	}
+	if strings.HasPrefix(code, "sh") {
+		return strings.TrimPrefix(code, "sh") + ".sh"
+	}
+	codeType := GetStockType(code)
+	if codeType == "" {
 		return code
 	}
+	return code + "." + codeType
+}
+
+func GetStockType(code string) string {
 	prefix := code[:3]
 	if _, ok := shPrefixes[prefix]; ok {
-		return code + ".SH"
+		return "SH"
 	}
 	if _, ok := szPrefixes[prefix]; ok {
-		return code + ".SZ"
+		return "SZ"
 	}
-	return code
+	return ""
+}
+
+func ToTencentCode(code string) string {
+	if strings.Contains(code, ".") {
+		parts := strings.SplitN(code, ".", 2)
+		if len(parts) != 2 {
+			return code
+		}
+		return strings.ToLower(parts[1]) + parts[0]
+	}
+	codeType := GetStockType(code)
+	if codeType == "" {
+		return code
+	}
+	return strings.ToLower(codeType) + code
 }

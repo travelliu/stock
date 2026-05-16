@@ -6,9 +6,9 @@ import (
 	"errors"
 	"stock/pkg/stockd/utils"
 	"time"
-	
+
 	"gorm.io/gorm"
-	
+
 	"stock/pkg/models"
 	"stock/pkg/tushare"
 )

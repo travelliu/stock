@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AnalysisResult } from '@/types/api'
+import type { AnalysisResult, PredictBreakdown } from '@/types/api'
 
 const props = defineProps<{ result?: AnalysisResult | null }>()
 
@@ -8,80 +8,114 @@ function windowName(id: string): string {
   return map[id] || id
 }
 
-
-function fmt(v: number): string {
+function fmt(v: number | null | undefined): string {
   return v ? v.toFixed(2) : '/'
 }
 
-function buildRows() {
-  const t = props.result?.refTable
-  if (!t) return []
-  return [
-    { label: '最高价预测', row: t.high },
-    { label: '最低价预测', row: t.low },
-    { label: '收盘价预测', row: t.close },
-  ]
+interface MethodRow {
+  label: string
+  get: (b: PredictBreakdown) => number
+}
+
+const methods: MethodRow[] = [
+  { label: '均值',     get: b => b.byMean },
+  { label: '中位数',   get: b => b.byMedian },
+  { label: 'EWMA',    get: b => b.byEwma },
+  { label: '比率',     get: b => b.byRatio },
+  { label: '最低反推', get: b => b.reverseLow },
+  { label: '最高反推', get: b => b.reverseHigh },
+  { label: '综合均值', get: b => b.mean },
+]
+
+interface DataRow {
+  label: string
+  high: (PredictBreakdown | null)[]   // one entry per window
+  low: (PredictBreakdown | null)[]
+  close: (PredictBreakdown | null)[]
+}
+
+// Keep a reference to the getter alongside each row for template use.
+interface FullRow extends DataRow {
+  _get: (b: PredictBreakdown) => number
+}
+
+function buildFullRows(): FullRow[] {
+  const windows = props.result?.windows ?? []
+  return methods.map(m => ({
+    label: m.label,
+    high:  windows.map(w => w.predict?.high  ?? null),
+    low:   windows.map(w => w.predict?.low   ?? null),
+    close: windows.map(w => w.predict?.close ?? null),
+    _get:  m.get,
+  }))
 }
 </script>
 
 <template>
-  <el-card v-if="result?.refTable" style="margin-top: 16px">
-    <template #header>预测收盘价 (历史参考价)</template>
-    <el-table :data="buildRows()" size="small" border>
-      <el-table-column label="" width="100" prop="label" />
-      <el-table-column
-        v-for="w in result?.windows ?? []"
-        :key="w.info.id"
-        align="right"
-      >
-        <template #header>
-          <el-tooltip placement="top" effect="dark">
-            <template #content>
-              {{ windowName(w.info.id) }}数据均值预测<br />
-              最高价 = 开盘价 + {{ windowName(w.info.id) }}高开价差均值<br />
-              最低价 = 开盘价 − {{ windowName(w.info.id) }}开低价差均值
-            </template>
-            <span class="tip-header">{{ windowName(w.info.id) }}</span>
-          </el-tooltip>
-        </template>
-        <template #default="{ row }">{{ fmt(row.row.windows[w.info.id] ?? 0) }}</template>
+  <el-card v-if="result?.refTable" style="margin-top: 10px">
+    <template #header>预测参考价</template>
+
+    <el-table :data="buildFullRows()" size="small" border>
+      <el-table-column label="方法" prop="label" width="80" fixed />
+
+      <!-- 最高价预测 group -->
+      <el-table-column label="最高价预测" header-align="center" align="center">
+        <el-table-column
+          v-for="(w, i) in (result?.windows ?? [])"
+          :key="'h-' + w.info.id"
+          :label="windowName(w.info.id)"
+          align="right"
+          width="72"
+        >
+          <template #default="{ row }">{{ fmt(row._get(row.high[i])) }}</template>
+        </el-table-column>
       </el-table-column>
-      <el-table-column align="right">
-        <template #header>
-          <el-tooltip placement="top" effect="dark">
-            <template #content>
-              由当日最低价反推<br />
-              • 最高价预测：最低价 + 近2周高低价差均值<br />
-              • 收盘价预测：最低价 + 近2周低收价差均值
-            </template>
-            <span class="tip-header">最低价反推</span>
-          </el-tooltip>
-        </template>
-        <template #default="{ row }">{{ fmt(row.row.reverseLow) }}</template>
+
+      <!-- 最低价预测 group -->
+      <el-table-column label="最低价预测" header-align="center" align="center">
+        <el-table-column
+          v-for="(w, i) in (result?.windows ?? [])"
+          :key="'l-' + w.info.id"
+          :label="windowName(w.info.id)"
+          align="right"
+          width="72"
+        >
+          <template #default="{ row }">{{ fmt(row._get(row.low[i])) }}</template>
+        </el-table-column>
       </el-table-column>
-      <el-table-column align="right">
-        <template #header>
-          <el-tooltip placement="top" effect="dark">
-            <template #content>
-              由当日最高价反推<br />
-              • 最低价预测：最高价 − 近2周高低价差均值<br />
-              • 收盘价预测：最高价 − 近2周高收价差均值
-            </template>
-            <span class="tip-header">最高价反推</span>
-          </el-tooltip>
-        </template>
-        <template #default="{ row }">{{ fmt(row.row.reverseHigh) }}</template>
+
+      <!-- 收盘价预测 group -->
+      <el-table-column label="收盘价预测" header-align="center" align="center">
+        <el-table-column
+          v-for="(w, i) in (result?.windows ?? [])"
+          :key="'c-' + w.info.id"
+          :label="windowName(w.info.id)"
+          align="right"
+          width="72"
+        >
+          <template #default="{ row }">{{ fmt(row._get(row.close[i])) }}</template>
+        </el-table-column>
       </el-table-column>
-      <el-table-column align="right">
-        <template #header>
-          <el-tooltip content="本行所有有效数值的算术平均" placement="top" effect="dark">
-            <span class="tip-header">均值</span>
-          </el-tooltip>
-        </template>
-        <template #default="{ row }">{{ fmt(row.row.mean) }}</template>
+    </el-table>
+
+    <!-- 跨窗口综合均值 -->
+    <el-table
+      :data="[
+        { label: '跨窗口综合均值', high: result.refTable.high.mean, low: result.refTable.low.mean, close: result.refTable.close.mean }
+      ]"
+      size="small"
+      border
+      style="margin-top: 6px"
+    >
+      <el-table-column label="" prop="label" width="80" />
+      <el-table-column label="最高价" align="right" width="72">
+        <template #default="{ row }">{{ fmt(row.high) }}</template>
       </el-table-column>
-      <el-table-column label="正负算一" width="70" align="center">
-        <template #default="{ row }">{{ row.row.direction }}</template>
+      <el-table-column label="最低价" align="right" width="72">
+        <template #default="{ row }">{{ fmt(row.low) }}</template>
+      </el-table-column>
+      <el-table-column label="收盘价" align="right" width="72">
+        <template #default="{ row }">{{ fmt(row.close) }}</template>
       </el-table-column>
     </el-table>
   </el-card>

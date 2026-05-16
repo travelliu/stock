@@ -28,7 +28,7 @@ const auth = useAuthStore()
 }
 .main {
   flex: 1;
-  padding: 16px;
+  padding: 12px;
   overflow: auto;
 }
 </style>

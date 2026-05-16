@@ -63,7 +63,7 @@ func TestMiddleware_BearerToken(t *testing.T) {
 	require.NoError(t, gdb.Create(&models.APIToken{UserID: user.ID, Name: "cli", TokenHash: hash}).Error)
 
 	r := gin.New()
-	store := auth.NewSessionStore([]byte("12345678901234567890123456789012"))
+	store := auth.NewSessionStore([]byte("12345678901234567890123456789012"), false)
 	r.Use(sessions.Sessions(auth.SessionName, store))
 	r.Use(auth.Middleware(gdb, ""))
 	r.GET("/me", func(c *gin.Context) {

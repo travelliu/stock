@@ -21,12 +21,12 @@ func TestFetchQuotes_ParsesFields(t *testing.T) {
 	defer srv.Close()
 
 	c := NewClient(WithBaseURL(srv.URL + "/q="))
-	quotes, err := c.FetchQuotes(context.Background(), []string{"600519.SH"})
+	quotes, err := c.FetchQuotes(context.Background(), []string{"600519"})
 	require.NoError(t, err)
 	require.Len(t, quotes, 1)
 
 	q := quotes[0]
-	assert.Equal(t, "600519.SH", q.TsCode)
+	assert.Equal(t, "600519", q.TsCode)
 	assert.InDelta(t, 1780.00, q.Price, 0.001)
 	assert.InDelta(t, 1775.00, q.PrevClose, 0.001)
 	assert.InDelta(t, 1778.00, q.Open, 0.001)
@@ -42,14 +42,14 @@ func TestFetchQuotes_ParsesFields(t *testing.T) {
 }
 
 func TestTsToCodes(t *testing.T) {
-	got := tsToCodes([]string{"600519.SH", "000858.SZ"})
+	got := tsToCodes([]string{"600519.SH", "000858"})
 	assert.Equal(t, []string{"sh600519", "sz000858"}, got)
 }
 
 func TestTencentToTs(t *testing.T) {
 	cases := []struct{ in, want string }{
-		{"sh600519", "600519.SH"},
-		{"sz000858", "000858.SZ"},
+		{"sh600519", "600519"},
+		{"sz000858", "000858"},
 	}
 	for _, tc := range cases {
 		assert.Equal(t, tc.want, tencentToTs(tc.in))
@@ -58,7 +58,7 @@ func TestTencentToTs(t *testing.T) {
 
 func TestFetchQuotes_EmptyInput(t *testing.T) {
 	c := NewClient()
-	quotes, err := c.FetchQuotes(context.Background(), nil)
+	quotes, err := c.FetchQuotes(context.Background(), []string{})
 	require.NoError(t, err)
 	assert.Empty(t, quotes)
 }

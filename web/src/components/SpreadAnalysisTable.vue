@@ -23,6 +23,7 @@ function stats(m: MeansAvgData | null | undefined) {
     avg: fmt(m?.avg),
     median: fmt(m?.median),
     mean: fmt(m?.mean),
+    ewma: fmt(m?.ewma),
     rec: fmtRec(m?.recommend),
   }
 }
@@ -44,7 +45,7 @@ function buildRows(): Row[] {
 </script>
 
 <template>
-  <el-card v-if="result" style="margin-top: 16px">
+  <el-card v-if="result" style="margin-top: 10px">
     <template #header>价差分析</template>
     <el-table :data="buildRows()" size="small" border>
       <el-table-column label="时段" prop="label" width="70" />
@@ -61,6 +62,9 @@ function buildRows(): Row[] {
         <el-table-column label="均值" align="right" width="70">
           <template #default="{ row }">{{ row.oh.mean }}</template>
         </el-table-column>
+        <el-table-column label="EWMA" align="right" width="70">
+          <template #default="{ row }">{{ row.oh.ewma }}</template>
+        </el-table-column>
       </el-table-column>
       <el-table-column label="── 开盘-最低 ──">
         <el-table-column label="样本" align="right" width="55">
@@ -74,6 +78,9 @@ function buildRows(): Row[] {
         </el-table-column>
         <el-table-column label="均值" align="right" width="70">
           <template #default="{ row }">{{ row.ol.mean }}</template>
+        </el-table-column>
+        <el-table-column label="EWMA" align="right" width="70">
+          <template #default="{ row }">{{ row.ol.ewma }}</template>
         </el-table-column>
       </el-table-column>
       <el-table-column label="高抛推荐 (累计占比)" align="right">

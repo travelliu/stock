@@ -36,7 +36,7 @@ func setupAuthRouter(t *testing.T) (*gin.Engine, *gorm.DB) {
 	r.Use(sessions.Sessions(auth.SessionName, store))
 	r.Use(auth.ResolveUser(gdb, ""))
 
-	svc := services.NewService(gdb, nil, nil, nil, nil)
+	svc := services.NewService(gdb, nil, nil)
 	h := http2.NewHandler(svc)
 	r.POST("/api/auth/login", h.Login)
 	r.POST("/api/auth/logout", h.Logout)

@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/signal"
 	"stock/pkg/logs"
-	"stock/pkg/baidu"
 	"stock/pkg/stockd/services"
 	"syscall"
 	"time"
@@ -18,8 +17,6 @@ import (
 	"stock/pkg/stockd/config"
 	"stock/pkg/stockd/db"
 	httpkg "stock/pkg/stockd/http"
-	"stock/pkg/tencent"
-	"stock/pkg/tushare"
 )
 
 var (
@@ -61,12 +58,7 @@ func main() {
 		logger.WithError(err).Fatal("bootstrap failed")
 	}
 
-	tc := tushare.NewClient(tushare.WithBaseURL(cfg.Tushare.BaseURL))
-	tencentClient := tencent.NewClient()
-	baiduClient := baidu.NewClient()
-	svc := services.NewService(gdb, tc, tencentClient, cfg, logger,
-		services.WithBaiduClient(baiduClient),
-	)
+	svc := services.NewService(gdb, cfg, logger)
 	if err := svc.LoadStockCache(context.Background()); err != nil {
 		logger.WithError(err).Warn("stock cache load failed")
 	}

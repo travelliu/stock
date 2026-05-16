@@ -39,22 +39,29 @@ type Service struct {
 // ServiceOption configures Service after construction.
 type ServiceOption func(*Service)
 
-// WithBaiduClient injects a Baidu PAE client.
+// WithTushareClient overrides the default Tushare client (used in tests).
+func WithTushareClient(c *tushare.Client) ServiceOption {
+	return func(s *Service) { s.ts = c }
+}
+
+// WithBaiduClient overrides the default Baidu PAE client (used in tests).
 func WithBaiduClient(c *baidu.Client) ServiceOption {
 	return func(s *Service) { s.baiduClient = c }
 }
 
-func NewService(db *gorm.DB, ts *tushare.Client, tc *tencent.Client, cfg *config.Config,
-	logger *logrus.Logger, opts ...ServiceOption) *Service {
+func NewService(db *gorm.DB, cfg *config.Config, logger *logrus.Logger, opts ...ServiceOption) *Service {
 	svc := &Service{
 		db:            db,
-		ts:            ts,
-		tc:            tc,
 		cfg:           cfg,
 		cron:          cron.New(cron.WithLocation(time.Local)),
 		jobs:          map[string]JobFunc{},
 		logger:        logger,
 		realtimeCache: make(map[string]*models.StockRealtimeAndAnalysis),
+		tc:            tencent.NewClient(),
+		baiduClient:   baidu.NewClient(),
+	}
+	if cfg != nil {
+		svc.ts = tushare.NewClient(tushare.WithBaseURL(cfg.Tushare.BaseURL))
 	}
 	for _, o := range opts {
 		o(svc)
@@ -63,5 +70,4 @@ func NewService(db *gorm.DB, ts *tushare.Client, tc *tencent.Client, cfg *config
 }
 
 func (s *Service) GetDB() *gorm.DB           { return s.db }
-func (s *Service) GetTS() *tushare.Client    { return s.ts }
 func (s *Service) GetConfig() *config.Config { return s.cfg }

@@ -467,6 +467,26 @@ func joinSideBySide(tables []string, gap int) string {
 	return strings.Join(lines, "\n")
 }
 
+func PortfolioTable(items []*models.Portfolio, quotes map[string]*models.RealtimeQuote) {
+	headers := []string{"代码", "名称", "当前价", "涨跌%", "开盘", "备注"}
+	var rows [][]string
+	for _, p := range items {
+		q := quotes[p.Code]
+		price, changePct, open := "--", "--", "--"
+		if q != nil {
+			price = fmt.Sprintf("%.2f", q.Price)
+			sign := "+"
+			if q.ChangePct < 0 {
+				sign = ""
+			}
+			changePct = fmt.Sprintf("%s%.2f%%", sign, q.ChangePct)
+			open = fmt.Sprintf("%.2f", q.Open)
+		}
+		rows = append(rows, []string{p.Code, p.Name, price, changePct, open, p.Note})
+	}
+	fmt.Println(FormatTable(headers, rows))
+}
+
 func BarsTable(items []*models.DailyBar) {
 	headers := []string{"日期", "开盘", "最高", "最低", "收盘", "成交量"}
 	var rows [][]string

@@ -1,12 +1,13 @@
 package cmd
 
 import (
-	"fmt"
-	"stock/pkg/models"
+	"sync"
 
 	"github.com/spf13/cobra"
 
 	"stock/pkg/cli/client"
+	"stock/pkg/cli/render"
+	"stock/pkg/models"
 )
 
 var portfolioCmd = &cobra.Command{
@@ -19,13 +20,30 @@ var portfolioListCmd = &cobra.Command{
 	Short: "List tracked stocks",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := client.New(cfg.ServerURL, cfg.Token)
-		var res []*models.Portfolio
-		if err := c.GET("/api/portfolio", &res); err != nil {
+
+		var portfolio []*models.Portfolio
+		if err := c.GET("/api/portfolio", &portfolio); err != nil {
 			return err
 		}
-		for _, p := range res {
-			fmt.Printf("%s\t%s\t%s\n", p.TsCode, p.Name, p.Note)
+
+		quotes := make(map[string]*models.RealtimeQuote, len(portfolio))
+		var mu sync.Mutex
+		var wg sync.WaitGroup
+		for _, p := range portfolio {
+			wg.Add(1)
+			go func(code string) {
+				defer wg.Done()
+				var q models.RealtimeQuote
+				if err := c.GET("/api/quotes/"+code, &q); err == nil {
+					mu.Lock()
+					quotes[code] = &q
+					mu.Unlock()
+				}
+			}(p.Code)
 		}
+		wg.Wait()
+
+		render.PortfolioTable(portfolio, quotes)
 		return nil
 	},
 }

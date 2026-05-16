@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import type { Stock, DailyBar, RealtimeQuote } from '@/types/api'
 import { fmtPrice, fmtPct, priceClass, fmtQuoteTime } from '@/utils/format'
 
 const props = defineProps<{ stock: Stock; lastBar?: DailyBar; prevClose?: number; quote?: RealtimeQuote }>()
 const emit = defineEmits<{ back: [] }>()
+
+const expanded = ref(false)
 
 const displayPrice = computed(() => {
   if (props.quote) return props.quote.price
@@ -12,21 +14,15 @@ const displayPrice = computed(() => {
 })
 
 const changeClass = computed(() => {
-  if (props.quote) {
-    return priceClass(props.quote.price, props.quote.prevClose)
-  }
+  if (props.quote) return priceClass(props.quote.price, props.quote.prevClose)
   if (!props.lastBar) return 'g-flat'
-  const base = props.prevClose || props.lastBar.open
-  return priceClass(props.lastBar.close, base)
+  return priceClass(props.lastBar.close, props.prevClose || props.lastBar.open)
 })
 
 const changePct = computed(() => {
-  if (props.quote) {
-    return `${props.quote.changePct >= 0 ? '+' : ''}${props.quote.changePct.toFixed(2)}%`
-  }
+  if (props.quote) return `${props.quote.changePct >= 0 ? '+' : ''}${props.quote.changePct.toFixed(2)}%`
   if (!props.lastBar) return '--'
-  const base = props.prevClose || props.lastBar.open
-  return fmtPct(props.lastBar.close, base)
+  return fmtPct(props.lastBar.close, props.prevClose || props.lastBar.open)
 })
 
 function fmtDate(d: string): string {
@@ -40,8 +36,15 @@ function fmtVol(v: number): string {
 }
 
 function fmtAmount(a: number): string {
-  if (a >= 10000) return `${(a / 10000).toFixed(2)}亿`
-  return `${a.toFixed(0)}万`
+  if (a >= 100000000) return `${(a / 100000000).toFixed(2)}亿`
+  if (a >= 10000) return `${(a / 10000).toFixed(2)}万`
+  return `${a.toFixed(0)}`
+}
+
+function fmtMktCap(v: number): string {
+  if (v >= 100000000) return `${(v / 100000000).toFixed(2)}亿`
+  if (v >= 10000) return `${(v / 10000).toFixed(2)}万`
+  return `${v.toFixed(0)}`
 }
 </script>
 
@@ -58,6 +61,7 @@ function fmtAmount(a: number): string {
         <span class="pct" :class="changeClass">{{ changePct }}</span>
       </template>
     </div>
+
     <div v-if="quote" class="quote-row">
       <span class="q-item">开 <b>{{ fmtPrice(quote.open) }}</b></span>
       <span class="q-item">高 <b :class="priceClass(quote.high, quote.prevClose)">{{ fmtPrice(quote.high) }}</b></span>
@@ -68,6 +72,22 @@ function fmtAmount(a: number): string {
       <span class="q-item g-up">涨停 {{ fmtPrice(quote.limitUp) }}</span>
       <span class="q-item g-down">跌停 {{ fmtPrice(quote.limitDown) }}</span>
       <span class="q-time">{{ fmtQuoteTime(quote.quoteTime) }}</span>
+      <el-button link size="small" class="expand-btn" @click="expanded = !expanded">
+        {{ expanded ? '▲' : '▼' }}
+      </el-button>
+    </div>
+
+    <div v-if="quote && expanded" class="expand-row">
+      <span class="q-item">换手 <b>{{ quote.turnoverRate.toFixed(2) }}%</b></span>
+      <span class="q-item">市盈率 <b>{{ quote.pe.toFixed(2) }}</b></span>
+      <span class="q-item">市净率 <b>{{ quote.pb.toFixed(2) }}</b></span>
+      <span class="q-item">振幅 <b>{{ quote.amplitude.toFixed(2) }}%</b></span>
+      <span class="q-item">流通市值 <b>{{ fmtMktCap(quote.circMarketCap) }}</b></span>
+      <span class="q-item">总市值 <b>{{ fmtMktCap(quote.totalMarketCap) }}</b></span>
+      <span class="q-item">外盘 <b>{{ fmtVol(quote.outerVol) }}</b></span>
+      <span class="q-item">内盘 <b>{{ fmtVol(quote.innerVol) }}</b></span>
+      <span class="q-item">52周高 <b>{{ fmtPrice(quote.high52w) }}</b></span>
+      <span class="q-item">52周低 <b>{{ fmtPrice(quote.low52w) }}</b></span>
     </div>
   </el-card>
 </template>
@@ -107,8 +127,19 @@ function fmtAmount(a: number): string {
 .quote-row {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 12px;
   margin-top: 6px;
+  font-size: 12px;
+  color: #606266;
+}
+.expand-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--el-border-color-lighter);
   font-size: 12px;
   color: #606266;
 }
@@ -119,8 +150,13 @@ function fmtAmount(a: number): string {
   }
 }
 .q-time {
-  margin-left: auto;
   color: #909399;
   font-size: 11px;
+}
+.expand-btn {
+  margin-left: auto;
+  padding: 0;
+  font-size: 11px;
+  color: #909399;
 }
 </style>

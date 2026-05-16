@@ -1,6 +1,7 @@
 package services
 
 import (
+	"stock/pkg/baidu"
 	"stock/pkg/models"
 	"stock/pkg/stockd/config"
 	"stock/pkg/tencent"
@@ -31,11 +32,21 @@ type Service struct {
 
 	realtimeCache map[string]*models.StockRealtimeAndAnalysis
 	realtimeMu    sync.RWMutex
+
+	baiduClient *baidu.Client
+}
+
+// ServiceOption configures Service after construction.
+type ServiceOption func(*Service)
+
+// WithBaiduClient injects a Baidu PAE client.
+func WithBaiduClient(c *baidu.Client) ServiceOption {
+	return func(s *Service) { s.baiduClient = c }
 }
 
 func NewService(db *gorm.DB, ts *tushare.Client, tc *tencent.Client, cfg *config.Config,
-	logger *logrus.Logger) *Service {
-	return &Service{
+	logger *logrus.Logger, opts ...ServiceOption) *Service {
+	svc := &Service{
 		db:            db,
 		ts:            ts,
 		tc:            tc,
@@ -45,6 +56,10 @@ func NewService(db *gorm.DB, ts *tushare.Client, tc *tencent.Client, cfg *config
 		logger:        logger,
 		realtimeCache: make(map[string]*models.StockRealtimeAndAnalysis),
 	}
+	for _, o := range opts {
+		o(svc)
+	}
+	return svc
 }
 
 func (s *Service) GetDB() *gorm.DB           { return s.db }

@@ -27,7 +27,7 @@ func TestFetchQuotes_ParsesFields(t *testing.T) {
 
 	q := quotes[0]
 	assert.Equal(t, "600519", q.TsCode)
-	assert.Equal(t, "贵州茅台", q.Name)
+	assert.Empty(t, q.Name) // GBK name skipped; fillNames populates from DB cache
 	assert.InDelta(t, 1780.00, q.Price, 0.001)
 	assert.InDelta(t, 1775.00, q.PrevClose, 0.001)
 	assert.InDelta(t, 1778.00, q.Open, 0.001)

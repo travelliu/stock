@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, provide, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { wMessage } from '@/utils/message'
-import { getStock, queryBars, getQuote } from '@/apis/stocks'
-import type { Stock, DailyBar, RealtimeQuote } from '@/types/api'
+import { getStock, getQuote } from '@/apis/stocks'
+import type { Stock, RealtimeQuote } from '@/types/api'
 import StockBasicCard from '@/components/StockBasicCard.vue'
 
 const route = useRoute()
@@ -11,10 +11,10 @@ const router = useRouter()
 const code = route.params.code as string
 
 const stock = ref<Stock | null>(null)
-const lastBar = ref<DailyBar | undefined>(undefined)
-const prevClose = ref(0)
 const quote = ref<RealtimeQuote | undefined>(undefined)
 const loading = ref(false)
+
+provide('stockQuote', quote)
 
 const activeTab = computed(() => {
   if (route.path.endsWith('/bars')) return 'bars'
@@ -31,14 +31,9 @@ function onTabClick(paneName: string) {
 onMounted(async () => {
   loading.value = true
   try {
-    const [s, barsPage] = await Promise.all([
-      getStock(code),
-      queryBars(code, { limit: 2 }),
-    ])
+    const [s, q] = await Promise.all([getStock(code), getQuote(code).catch(() => undefined)])
     stock.value = s
-    lastBar.value = barsPage.items[0]
-    prevClose.value = barsPage.items[1]?.close ?? 0
-    getQuote(code).then(q => { quote.value = q }).catch(() => {})
+    quote.value = q
   } catch (e: unknown) {
     wMessage('error', e instanceof Error ? e.message : '加载失败')
   } finally {
@@ -50,7 +45,7 @@ onMounted(async () => {
 <template>
   <div v-loading="loading">
     <div v-if="stock">
-      <StockBasicCard :stock="stock" :last-bar="lastBar" :prev-close="prevClose" :quote="quote" @back="router.push('/stocks')" />
+      <StockBasicCard :stock="stock" :quote="quote" @back="router.push('/stocks')" />
     </div>
     <el-tabs
       :model-value="activeTab"

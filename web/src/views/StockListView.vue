@@ -5,6 +5,7 @@ import { wMessage } from '@/utils/message'
 import { usePortfolioStore } from '@/stores/portfolio'
 import { searchStocks } from '@/apis/stocks'
 import type { Stock, Portfolio } from '@/types/api'
+import { fmtQuoteTime } from '@/utils/format'
 
 const router = useRouter()
 const portfolioStore = usePortfolioStore()
@@ -80,7 +81,7 @@ function fmtPct(v: number | undefined): string {
       <el-table-column prop="name" :label="$t('stockList.name')" width="120" />
       <el-table-column label="时间" width="60" align="center">
         <template #default="{ row }">
-          <span class="secondary">{{ row.quote?.quoteTime?.slice(0, 5) ?? '' }}</span>
+          <span class="secondary">{{ fmtQuoteTime(row.quote?.quoteTime) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="开盘" align="right" width="80">

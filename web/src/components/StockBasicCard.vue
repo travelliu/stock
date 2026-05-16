@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Stock, DailyBar, RealtimeQuote } from '@/types/api'
-import { fmtPrice, fmtPct, priceClass } from '@/utils/format'
+import { fmtPrice, fmtPct, priceClass, fmtQuoteTime } from '@/utils/format'
 
 const props = defineProps<{ stock: Stock; lastBar?: DailyBar; prevClose?: number; quote?: RealtimeQuote }>()
 const emit = defineEmits<{ back: [] }>()
@@ -67,7 +67,7 @@ function fmtAmount(a: number): string {
       <span class="q-item">额 <b>{{ fmtAmount(quote.amount) }}</b></span>
       <span class="q-item g-up">涨停 {{ fmtPrice(quote.limitUp) }}</span>
       <span class="q-item g-down">跌停 {{ fmtPrice(quote.limitDown) }}</span>
-      <span class="q-time">{{ quote.quoteTime }}</span>
+      <span class="q-time">{{ fmtQuoteTime(quote.quoteTime) }}</span>
     </div>
   </el-card>
 </template>

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, inject, onMounted, computed } from 'vue'
+import type { Ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { wMessage } from '@/utils/message'
-import { queryBars } from '@/apis/stocks'
 import { getAnalysis, getPredictions } from '@/apis/analysis'
 import type { AnalysisParams } from '@/apis/analysis'
-import type { AnalysisResult, AnalysisPrediction, DailyBar } from '@/types/api'
+import type { AnalysisResult, AnalysisPrediction, RealtimeQuote } from '@/types/api'
 import SpreadModelTable from '@/components/SpreadModelTable.vue'
 import TradePlanTable from '@/components/TradePlanTable.vue'
 import SpreadAnalysisTable from '@/components/SpreadAnalysisTable.vue'
@@ -13,10 +13,10 @@ import SpreadHistogram from '@/components/SpreadHistogram.vue'
 
 const route = useRoute()
 const code = route.params.code as string
+const quote = inject<Ref<RealtimeQuote | undefined>>('stockQuote')
 
 const analysis = ref<AnalysisResult | null>(null)
 const latestPred = ref<AnalysisPrediction | null>(null)
-const bars = ref<DailyBar[]>([])
 const openPrice = ref(0)
 const actualHigh = ref(0)
 const actualLow = ref(0)
@@ -27,28 +27,20 @@ const recalcing = ref(false)
 async function load() {
   loading.value = true
   try {
-    const [predsPage, barsPage] = await Promise.all([
-      getPredictions(code, { limit: 1 }),
-      queryBars(code, { limit: 30 }),
-    ])
+    const predsPage = await getPredictions(code, { limit: 1 })
     latestPred.value = predsPage.items[0] ?? null
-    bars.value = barsPage.items
 
-    const bar = barsPage.items[0]
     const initParams: AnalysisParams = {}
-    if (bar) {
-      openPrice.value = bar.open || 0
-      if (bar.open) initParams.actualOpen = bar.open
-      const now = new Date()
-      const today = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
-      if (bar.tradeDate === today) {
-        actualHigh.value = bar.high || 0
-        actualLow.value = bar.low || 0
-        actualClose.value = bar.close || 0
-        if (bar.high) initParams.actualHigh = bar.high
-        if (bar.low) initParams.actualLow = bar.low
-        if (bar.close) initParams.actualClose = bar.close
-      }
+    const q = quote?.value
+    if (q) {
+      openPrice.value = q.open || q.price || 0
+      actualHigh.value = q.high || 0
+      actualLow.value = q.low || 0
+      actualClose.value = q.price || 0
+      if (openPrice.value) initParams.actualOpen = openPrice.value
+      if (q.high) initParams.actualHigh = q.high
+      if (q.low) initParams.actualLow = q.low
+      if (q.price) initParams.actualClose = q.price
     }
     analysis.value = await getAnalysis(code, initParams)
   } catch (e: unknown) {

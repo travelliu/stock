@@ -84,6 +84,10 @@ export interface MeansAvgData {
   avg: number
   median: number
   mean: number
+  ewma: number
+  stdDev: number
+  avgRatio: number
+  ewmaRatio: number
   distribution: DistBucket[] | null
   recommend: RecommendRangeResult | null
 }
@@ -104,17 +108,30 @@ export interface MeansData {
   spreadOC: MeansAvgData | null
 }
 
-export interface WindowData {
-  info: WindowInfo
-  means: MeansData | null
-}
-
-export interface PredictRow {
-  windows: Record<string, number>
+export interface PredictBreakdown {
+  byMean: number
+  byMedian: number
+  byEwma: number
+  byRatio: number
   reverseLow: number
   reverseHigh: number
   mean: number
-  direction: string
+}
+
+export interface WindowPredict {
+  high: PredictBreakdown
+  low: PredictBreakdown
+  close: PredictBreakdown
+}
+
+export interface WindowData {
+  info: WindowInfo
+  means: MeansData | null
+  predict?: WindowPredict
+}
+
+export interface PredictRow {
+  mean: number
 }
 
 export interface RefTable {
@@ -171,6 +188,24 @@ export interface JobRun {
   finishedAt: string | null
   status: string
   message: string
+}
+
+export interface RealtimeQuote {
+  tsCode: string
+  name: string
+  price: number
+  prevClose: number
+  open: number
+  vol: number
+  high: number
+  low: number
+  amount: number
+  change: number
+  changePct: number
+  limitUp: number
+  limitDown: number
+  quoteTime: string
+  updatedAt: string
 }
 
 export interface LoginReq {

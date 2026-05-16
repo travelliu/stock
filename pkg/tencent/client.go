@@ -62,7 +62,8 @@ const (
 	idxPB           = 46
 	idxLimitUp      = 47
 	idxLimitDown    = 48
-	idxMinFields    = 49
+	idxVolRatio     = 49
+	idxMinFields    = 50
 )
 
 // Client fetches realtime quotes from Tencent Finance.
@@ -165,6 +166,7 @@ func parseQuotes(body []byte) []*models.StockRealtime {
 			ChangePct:      parseFloat(fields[idxChangePct]),
 			LimitUp:        parseFloat(fields[idxLimitUp]),
 			LimitDown:      parseFloat(fields[idxLimitDown]),
+			VolRatio:       parseFloat(fields[idxVolRatio]),
 			QuoteTime:      fields[idxQuoteTime],
 			UpdatedAt:      now,
 		})
@@ -181,7 +183,7 @@ func tsToCodes(tsCodes []string) []string {
 	return out
 }
 
-// tencentToTs converts "sh600519" -> "600519.SH".
+// tencentToTs converts "sh600519" -> "600519".
 func tencentToTs(code string) string {
 	if len(code) < 3 {
 		return code

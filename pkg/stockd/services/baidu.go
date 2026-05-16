@@ -15,10 +15,10 @@ func (s *Service) GetConceptBlocks(ctx context.Context, code string) (*baidu.Con
 	return s.baiduClient.FetchConceptBlocks(ctx, code)
 }
 
-// GetFundFlowHistory returns daily fund flow for the last 20 trading days.
-func (s *Service) GetFundFlowHistory(ctx context.Context, code string) ([]baidu.FundFlowDay, error) {
+// GetFundFlow returns industry-level fund flow (申万一级/二级) for a stock.
+func (s *Service) GetFundFlow(ctx context.Context, code string) (*baidu.FundFlow, error) {
 	if s.baiduClient == nil {
 		return nil, fmt.Errorf("baidu client not configured")
 	}
-	return s.baiduClient.FetchFundFlowHistory(ctx, code, 20)
+	return s.baiduClient.FetchFundFlow(ctx, code)
 }

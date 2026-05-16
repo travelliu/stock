@@ -7,32 +7,35 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"stock/pkg/baidu"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"stock/pkg/baidu"
 )
 
 func TestFetchConceptBlocks(t *testing.T) {
 	payload := map[string]any{
 		"ResultCode": "0",
-		"Result": []map[string]any{
-			{
-				"type": "行业板块",
-				"list": []map[string]any{
-					{"name": "工业机器人", "increase": "3.5"},
+		"Result": map[string]any{
+			"688017": []map[string]any{
+				{
+					"name": "行业",
+					"list": []map[string]any{
+						{"name": "工业机器人", "ratio": "3.5%", "describe": "申万一级"},
+					},
 				},
-			},
-			{
-				"type": "概念板块",
-				"list": []map[string]any{
-					{"name": "人形机器人", "increase": "5.1"},
-					{"name": "减速器", "increase": "4.2"},
+				{
+					"name": "概念",
+					"list": []map[string]any{
+						{"name": "人形机器人", "ratio": "5.1%"},
+						{"name": "减速器", "ratio": "4.2%"},
+					},
 				},
-			},
-			{
-				"type": "地域板块",
-				"list": []map[string]any{
-					{"name": "上海", "increase": "1.2"},
+				{
+					"name": "地域",
+					"list": []map[string]any{
+						{"name": "上海", "ratio": "1.2%"},
+					},
 				},
 			},
 		},
@@ -49,6 +52,7 @@ func TestFetchConceptBlocks(t *testing.T) {
 
 	require.Len(t, blocks.Industry, 1)
 	assert.Equal(t, "工业机器人", blocks.Industry[0].Name)
+	assert.Equal(t, "申万一级", blocks.Industry[0].Describe)
 
 	require.Len(t, blocks.Concept, 2)
 	assert.Equal(t, "人形机器人", blocks.Concept[0].Name)
@@ -71,47 +75,75 @@ func TestFetchConceptBlocks_APIError(t *testing.T) {
 	assert.Contains(t, err.Error(), "API error")
 }
 
-func TestFetchFundFlowHistory(t *testing.T) {
+func TestFetchFundFlow(t *testing.T) {
 	payload := map[string]any{
 		"ResultCode": "0",
 		"Result": map[string]any{
-			"list": []map[string]any{
-				{
-					"showtime":    "2026-05-16",
-					"closepx":     "224.12",
-					"ratio":       "4.24",
-					"superNetIn":  "5000",
-					"largeNetIn":  "3000",
-					"mediumNetIn": "-1000",
-					"littleNetIn": "-7000",
-					"extMainIn":   "8000",
+			"content": map[string]any{
+				"fundFlowBlock": map[string]any{
+					"result": []map[string]any{
+						{
+							"belongs":    "stocklevelone",
+							"updateTime": "2026-05-16 15:30:00",
+							"unit":       "亿",
+							"industry":   map[string]any{"name": "电力设备", "desc": "申万一级"},
+							"todayMainFlow": map[string]any{
+								"mainIn": "1.23", "mainOut": "0.98", "mainNetIn": "0.25",
+							},
+							"superGrp": map[string]any{
+								"netTurnover": "0.12", "turnoverIn": "0.20", "turnoverOut": "0.08",
+								"turnoverInRate": "3.5%", "turnoverOutRate": "2.1%",
+							},
+							"largeGrp": map[string]any{
+								"netTurnover": "0.08", "turnoverIn": "0.15", "turnoverOut": "0.07",
+								"turnoverInRate": "2.0%", "turnoverOutRate": "1.8%",
+							},
+							"mediumGrp": map[string]any{
+								"netTurnover": "-0.03", "turnoverIn": "0.10", "turnoverOut": "0.13",
+								"turnoverInRate": "1.5%", "turnoverOutRate": "1.8%",
+							},
+							"littleGrp": map[string]any{
+								"netTurnover": "-0.06", "turnoverIn": "0.05", "turnoverOut": "0.11",
+								"turnoverInRate": "0.8%", "turnoverOutRate": "1.5%",
+							},
+							"recently": []map[string]any{
+								{"key": "近三日", "value": "0.5"},
+								{"key": "近五日", "value": "-0.3"},
+							},
+						},
+					},
 				},
 			},
 		},
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Contains(t, r.URL.String(), "688017")
-		assert.Contains(t, r.URL.String(), "rn=20")
 		json.NewEncoder(w).Encode(payload)
 	}))
 	defer srv.Close()
 
 	c := baidu.NewClient(baidu.WithBaseURL(srv.URL))
-	rows, err := c.FetchFundFlowHistory(context.Background(), "688017", 20)
+	ff, err := c.FetchFundFlow(context.Background(), "688017")
 	require.NoError(t, err)
-	require.Len(t, rows, 1)
-	assert.Equal(t, "2026-05-16", rows[0].Date)
-	assert.Equal(t, "224.12", rows[0].Close)
-	assert.Equal(t, "8000", rows[0].MainIn)
+	require.Len(t, ff.Levels, 1)
+
+	lvl := ff.Levels[0]
+	assert.Equal(t, "stocklevelone", lvl.Belongs)
+	assert.Equal(t, "电力设备", lvl.Industry.Name)
+	assert.Equal(t, "申万一级", lvl.Industry.Desc)
+	assert.Equal(t, "0.25", lvl.TodayMain.MainNetIn)
+	assert.Equal(t, "0.12", lvl.Super.NetTurnover)
+	require.Len(t, lvl.Recently, 2)
+	assert.Equal(t, "近三日", lvl.Recently[0].Key)
 }
 
-func TestFetchFundFlowHistory_APIError(t *testing.T) {
+func TestFetchFundFlow_APIError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{"ResultCode": 1})
 	}))
 	defer srv.Close()
 
 	c := baidu.NewClient(baidu.WithBaseURL(srv.URL))
-	_, err := c.FetchFundFlowHistory(context.Background(), "688017", 20)
+	_, err := c.FetchFundFlow(context.Background(), "688017")
 	require.Error(t, err)
 }

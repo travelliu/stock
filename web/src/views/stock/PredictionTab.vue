@@ -14,6 +14,7 @@ import SpreadHistogram from '@/components/SpreadHistogram.vue'
 const route = useRoute()
 const code = route.params.code as string
 const quote = inject<Ref<RealtimeQuote | undefined>>('stockQuote')
+const cachedAnalysis = inject<Ref<AnalysisResult | null>>('cachedAnalysis')
 
 const analysis = ref<AnalysisResult | null>(null)
 const latestPred = ref<AnalysisPrediction | null>(null)
@@ -30,19 +31,26 @@ async function load() {
     const predsPage = await getPredictions(code, { limit: 1 })
     latestPred.value = predsPage.items[0] ?? null
 
-    const initParams: AnalysisParams = {}
+    // Use the pre-computed analysis from the cached quote response.
+    // Only fall back to a fresh fetch if the cache returned nothing.
     const q = quote?.value
     if (q) {
       openPrice.value = q.open || q.price || 0
       actualHigh.value = q.high || 0
       actualLow.value = q.low || 0
       actualClose.value = q.price || 0
-      if (openPrice.value) initParams.actualOpen = openPrice.value
-      if (q.high) initParams.actualHigh = q.high
-      if (q.low) initParams.actualLow = q.low
-      if (q.price) initParams.actualClose = q.price
     }
-    analysis.value = await getAnalysis(code, initParams)
+
+    if (cachedAnalysis?.value) {
+      analysis.value = cachedAnalysis.value
+    } else {
+      const initParams: AnalysisParams = {}
+      if (openPrice.value) initParams.actualOpen = openPrice.value
+      if (actualHigh.value) initParams.actualHigh = actualHigh.value
+      if (actualLow.value) initParams.actualLow = actualLow.value
+      if (actualClose.value) initParams.actualClose = actualClose.value
+      analysis.value = await getAnalysis(code, initParams)
+    }
   } catch (e: unknown) {
     wMessage('error', e instanceof Error ? e.message : '加载失败')
   } finally {
@@ -85,7 +93,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div v-loading="loading">
+  <div v-loading="loading" style="background: #fff; min-height: 100%">
     <el-card style="margin-bottom: 10px">
       <template #header>实时价格与预测</template>
       <table class="price-table">

@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	codeValue = "code"
-	codeUrl   = ":code"
+	codeValue  = "code"
+	codeUrlKey = ":code"
 )
 
 func (h *handler) ListPortfolio(c *gin.Context) {

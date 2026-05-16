@@ -24,11 +24,13 @@ const auth = useAuthStore()
 <style scoped lang="scss">
 .app-root {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 .main {
   flex: 1;
   padding: 12px;
-  overflow: auto;
+  overflow-y: auto;
+  background: #fff;
 }
 </style>

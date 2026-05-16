@@ -1,4 +1,4 @@
-import type { Stock, DailyBar, PageResult, RealtimeAndAnalysis, ConceptBlocks, FundFlowDay } from '@/types/api'
+import type { Stock, DailyBar, PageResult, RealtimeAndAnalysis, ConceptBlocks, FundFlow } from '@/types/api'
 import { $http } from './axios'
 
 export const searchStocks = (q: string, limit = 20): Promise<Stock[]> =>
@@ -17,5 +17,5 @@ export const getQuote = (code: string): Promise<RealtimeAndAnalysis> =>
 export const getConceptBlocks = (code: string): Promise<ConceptBlocks> =>
   $http.get(`/stocks/${code}/concepts`) as any
 
-export const getFundFlow = (code: string): Promise<FundFlowDay[]> =>
+export const getFundFlow = (code: string): Promise<FundFlow> =>
   $http.get(`/stocks/${code}/fund-flow`) as any

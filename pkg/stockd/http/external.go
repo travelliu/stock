@@ -15,9 +15,9 @@ func (h *handler) GetConceptBlocks(c *gin.Context) {
 	utils.HTTPRequestSuccess(c, 200, data)
 }
 
-// GetFundFlow returns per-stock fund flow history for the last 20 trading days (Baidu PAE).
+// GetFundFlow returns industry-level fund flow (申万一级/二级) for a stock (Baidu PAE).
 func (h *handler) GetFundFlow(c *gin.Context) {
-	data, err := h.svc.GetFundFlowHistory(c.Request.Context(), c.Param(codeValue))
+	data, err := h.svc.GetFundFlow(c.Request.Context(), c.Param(codeValue))
 	if err != nil {
 		utils.HTTPRequestFailedV5(c, err)
 		return

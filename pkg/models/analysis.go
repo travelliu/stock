@@ -210,6 +210,7 @@ type StockRealtime struct {
 	ChangePct      float64   `json:"changePct"`      // [32] 涨跌%
 	LimitUp        float64   `json:"limitUp"`        // [47] 涨停价
 	LimitDown      float64   `json:"limitDown"`      // [48] 跌停价
+	VolRatio       float64   `json:"volRatio"`       // [49] 量比
 	QuoteTime      string    `json:"quoteTime"`      // [30] 行情时间
 	UpdatedAt      time.Time `json:"updatedAt"`
 }

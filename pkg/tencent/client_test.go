@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// fixture has exactly 49 fields (indices 0-48)
-const fixtureResponse = `v_sh600519="1~贵州茅台~600519~1780.00~1775.00~1778.00~12345~200~100~1779.00~100~1779.50~200~1779.80~300~1780.00~100~1780.00~50~1780.10~100~1780.20~200~1780.30~300~1780.40~100~1780.50~50~recent~14:58:30~5.00~0.28~1785.00~1760.00~stuff~12345~5000.00~1.23~28.5~field40~1800.00~1600.00~1.50~2000.00~2500.00~5.20~1815.80~1738.60";`
+// fixture has exactly 50 fields (indices 0-49): 量比 is at index 49
+const fixtureResponse = `v_sh600519="1~贵州茅台~600519~1780.00~1775.00~1778.00~12345~200~100~1779.00~100~1779.50~200~1779.80~300~1780.00~100~1780.00~50~1780.10~100~1780.20~200~1780.30~300~1780.40~100~1780.50~50~recent~14:58:30~5.00~0.28~1785.00~1760.00~stuff~12345~5000.00~1.23~28.5~field40~1800.00~1600.00~1.50~2000.00~2500.00~5.20~1815.80~1738.60~1.85";`
 
 func TestFetchQuotes_ParsesFields(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -50,6 +50,7 @@ func TestFetchQuotes_ParsesFields(t *testing.T) {
 	assert.InDelta(t, 0.28, q.ChangePct, 0.001)
 	assert.InDelta(t, 1815.80, q.LimitUp, 0.001)
 	assert.InDelta(t, 1738.60, q.LimitDown, 0.001)
+	assert.InDelta(t, 1.85, q.VolRatio, 0.001)
 	assert.Equal(t, "14:58:30", q.QuoteTime)
 }
 

@@ -61,30 +61,53 @@ var stockAnalysisCmd = &cobra.Command{
 			plainCode = tsCode[:idx]
 		}
 
-		// Fetch realtime quote to mirror web behavior (prices used as defaults).
-		var quote models.StockRealtime
-		hasQuote := c.GET("/api/quotes/"+plainCode, &quote) == nil
+		// Fetch cached realtime+analysis in one call.
+		var ra models.StockRealtimeAndAnalysis
+		hasRA := c.GET("/api/stocks/"+plainCode+"/quote", &ra) == nil
 
-		path := "/api/analysis/" + tsCode
+		hasCustomFlags := cmd.Flags().Changed("actual-open") ||
+			cmd.Flags().Changed("actual-high") ||
+			cmd.Flags().Changed("actual-low") ||
+			cmd.Flags().Changed("actual-close")
+
+		// If no custom price flags and cache has analysis, use it directly.
+		if !hasCustomFlags && hasRA && ra.StockAnalysisResult != nil {
+			if format == "json" {
+				return nil
+			}
+			render.AnalysisTable(*ra.StockAnalysisResult)
+			return nil
+		}
+
+		// Build fresh analysis request with user overrides or quote prices as defaults.
+		path := "/api/stocks/" + tsCode + "/analysis"
 		qs := ""
-
 		appendParam := func(flag, key string, quoteVal float64) {
 			if cmd.Flags().Changed(flag) {
 				v, _ := cmd.Flags().GetFloat64(flag)
 				qs += fmt.Sprintf("&%s=%.2f", key, v)
-			} else if hasQuote && quoteVal != 0 {
+			} else if hasRA && ra.StockRealtime != nil && quoteVal != 0 {
 				qs += fmt.Sprintf("&%s=%.2f", key, quoteVal)
 			}
 		}
 
-		openDefault := quote.Open
-		if openDefault == 0 {
-			openDefault = quote.Price
+		var openDefault float64
+		if hasRA && ra.StockRealtime != nil {
+			openDefault = ra.StockRealtime.Open
+			if openDefault == 0 {
+				openDefault = ra.StockRealtime.Price
+			}
+		}
+		var high, low, price float64
+		if hasRA && ra.StockRealtime != nil {
+			high = ra.StockRealtime.High
+			low = ra.StockRealtime.Low
+			price = ra.StockRealtime.Price
 		}
 		appendParam("actual-open", "actual_open", openDefault)
-		appendParam("actual-high", "actual_high", quote.High)
-		appendParam("actual-low", "actual_low", quote.Low)
-		appendParam("actual-close", "actual_close", quote.Price)
+		appendParam("actual-high", "actual_high", high)
+		appendParam("actual-low", "actual_low", low)
+		appendParam("actual-close", "actual_close", price)
 
 		if qs != "" {
 			path += "?" + qs[1:]
@@ -115,7 +138,7 @@ var stockHistoryCmd = &cobra.Command{
 		c := client.New(cfg.ServerURL, cfg.Token)
 		from, _ := cmd.Flags().GetString("from")
 		to, _ := cmd.Flags().GetString("to")
-		path := fmt.Sprintf("/api/bars/%s?from=%s&to=%s", args[0], from, to)
+		path := fmt.Sprintf("/api/stocks/%s/bars?from=%s&to=%s", args[0], from, to)
 		var res *models.BarsPage
 		if err := c.GET(path, &res); err != nil {
 			return err
@@ -150,7 +173,7 @@ var stockPredictionsCmd = &cobra.Command{
 		from, _ := cmd.Flags().GetString("from")
 		to, _ := cmd.Flags().GetString("to")
 		limit, _ := cmd.Flags().GetInt("limit")
-		path := fmt.Sprintf("/api/analysis/predictions/%s?limit=%d", args[0], limit)
+		path := fmt.Sprintf("/api/stocks/%s/predictions?limit=%d", args[0], limit)
 		if from != "" {
 			path += "&from=" + from
 		}
@@ -172,7 +195,7 @@ var stockRecalcCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := client.New(cfg.ServerURL, cfg.Token)
 		tsCode, _ := cmd.Flags().GetString("ts-code")
-		path := "/api/analysis/recalc"
+		path := "/api/stocks/analysis/recalc"
 		if tsCode != "" {
 			path += "?ts_code=" + tsCode
 		}

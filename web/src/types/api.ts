@@ -222,6 +222,7 @@ export interface RealtimeQuote {
   changePct: number
   limitUp: number
   limitDown: number
+  volRatio: number           // [49] 量比
   quoteTime: string
   updatedAt: string
 }
@@ -266,6 +267,7 @@ export interface PatchUserReq {
 export interface BlockItem {
   name: string
   change_pct: string
+  describe?: string
 }
 
 export interface ConceptBlocks {
@@ -275,13 +277,58 @@ export interface ConceptBlocks {
   concept_tags: string[]
 }
 
-export interface FundFlowDay {
-  date: string
-  close: string
-  change_pct: string
-  super_net_in: string
-  large_net_in: string
-  medium_net_in: string
-  little_net_in: string
+export interface OrderFlowGroups {
+  super: OrderFlowGroup
+  large: OrderFlowGroup
+  medium: OrderFlowGroup
+  little: OrderFlowGroup
+}
+
+export interface OrderFlowGroup {
+  net_turnover: string
+  turnover_in: string
+  turnover_out: string
+  turnover_in_rate: string
+  turnover_out_rate: string
+}
+
+export interface MainFlow {
   main_in: string
+  main_out: string
+  main_net_in: string
+}
+
+export interface RecentAgg {
+  key: string
+  value: string
+}
+
+export interface IndustryInfo {
+  name: string
+  desc: string
+}
+
+export interface FundFlowLevel extends OrderFlowGroups {
+  belongs: string
+  update_time: string
+  unit: string
+  industry: IndustryInfo
+  today_main: MainFlow
+  recently: RecentAgg[]
+}
+
+export interface StockFundFlow extends OrderFlowGroups {
+  today_main: MainFlow
+  turnover_in_total: string
+  turnover_out_total: string
+  turnover_net_total: string
+  main_net_total: string
+  unit: string
+  update_time: string
+  stock_status: string
+}
+
+export interface FundFlow {
+  stock_flow: StockFundFlow | null
+  levels: FundFlowLevel[]
 }

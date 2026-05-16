@@ -68,6 +68,8 @@ function fmtMktCap(v: number): string {
       <span class="q-item">昨收 <b>{{ fmtPrice(quote.prevClose) }}</b></span>
       <span class="q-item">量 <b>{{ fmtVol(quote.vol) }}</b></span>
       <span class="q-item">额 <b>{{ fmtAmount(quote.amount) }}</b></span>
+      <span class="q-item">换手 <b>{{ quote.turnoverRate.toFixed(2) }}%</b></span>
+      <span class="q-item">量比 <b>{{ quote.volRatio.toFixed(2) }}</b></span>
       <span class="q-item g-up">涨停 {{ fmtPrice(quote.limitUp) }}</span>
       <span class="q-item g-down">跌停 {{ fmtPrice(quote.limitDown) }}</span>
       <span class="q-time">{{ fmtQuoteTime(quote.quoteTime) }}</span>
@@ -77,7 +79,6 @@ function fmtMktCap(v: number): string {
     </div>
 
     <div v-if="quote && expanded" class="expand-row">
-      <span class="q-item">换手 <b>{{ quote.turnoverRate.toFixed(2) }}%</b></span>
       <span class="q-item">市盈率 <b>{{ quote.pe.toFixed(2) }}</b></span>
       <span class="q-item">市净率 <b>{{ quote.pb.toFixed(2) }}</b></span>
       <span class="q-item">振幅 <b>{{ quote.amplitude.toFixed(2) }}%</b></span>

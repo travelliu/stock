@@ -15,7 +15,7 @@ export const getAnalysis = (code: string, params?: AnalysisParams): Promise<Anal
   if (params?.actualLow !== undefined) qs.set('actual_low', String(params.actualLow))
   if (params?.actualClose !== undefined) qs.set('actual_close', String(params.actualClose))
   const q = qs.toString()
-  return $http.get(`/analysis/${code}${q ? '?' + q : ''}`) as any
+  return $http.get(`/stocks/${code}/analysis${q ? '?' + q : ''}`) as any
 }
 
 export interface PredictionsParams {
@@ -34,12 +34,12 @@ export const getPredictions = (
   if (params?.to) qs.set('to', params.to)
   qs.set('page', String(params?.page ?? 1))
   qs.set('limit', String(params?.limit ?? 20))
-  return $http.get(`/analysis/predictions/${code}?${qs.toString()}`) as any
+  return $http.get(`/stocks/${code}/predictions?${qs.toString()}`) as any
 }
 
 export const recalcPredictions = (code?: string): Promise<{ updated: number }> => {
   const qs = new URLSearchParams()
   if (code) qs.set('code', code)
-  const path = `/analysis/recalc${qs.toString() ? '?' + qs.toString() : ''}`
+  const path = `/stocks/analysis/recalc${qs.toString() ? '?' + qs.toString() : ''}`
   return $http.post(path) as any
 }

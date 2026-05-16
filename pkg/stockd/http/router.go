@@ -52,13 +52,16 @@ func NewRouter(svc *services.Service, logger *logrus.Logger) *gin.Engine {
 		},
 	)
 
+	// AllowAllOrigins disables credentials in CORS responses, which is correct
+	// for a wildcard origin — browsers reject AllowOrigins=["*"]+AllowCredentials=true.
+	// The embedded frontend is always same-origin, so credentials flow via cookie without CORS.
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"*"}
-	corsConfig.AllowCredentials = true
+	corsConfig.AllowAllOrigins = true
 	corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "Authorization", "Lang")
 	r.Use(cors.New(corsConfig))
 
-	store := auth.NewSessionStore([]byte(svc.GetConfig().Server.SessionSecret))
+	cfg := svc.GetConfig()
+	store := auth.NewSessionStore([]byte(cfg.Server.SessionSecret), cfg.Server.TLS.Enabled)
 	r.Use(sessions.Sessions(auth.SessionName, store))
 
 	r.Use(auth.ResolveUser(svc.GetDB(), svc.GetConfig().Tushare.DefaultToken))
@@ -94,6 +97,7 @@ func NewRouter(svc *services.Service, logger *logrus.Logger) *gin.Engine {
 
 	api.GET("/stocks", h.SearchStocks)
 	api.GET("/stocks/"+codeUrl, h.GetStock)
+	api.GET("/quotes/"+codeUrl, h.GetQuote)
 
 	pr := api.Group("/portfolio")
 	pr.Use(AuthRequired())

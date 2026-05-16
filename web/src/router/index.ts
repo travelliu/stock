@@ -19,6 +19,7 @@ const router = createRouter({
         { path: '', name: 'StockPrediction', component: () => import('@/views/stock/PredictionTab.vue') },
         { path: 'bars', name: 'StockBars', component: () => import('@/views/stock/DailyBarsTab.vue') },
         { path: 'predictions', name: 'StockPredictions', component: () => import('@/views/stock/PredictionRecordsTab.vue') },
+        { path: 'blocks-fund', name: 'StockBlocksFund', component: () => import('@/views/stock/BlocksFundTab.vue') },
       ],
     },
     {

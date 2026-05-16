@@ -18,6 +18,11 @@ export interface User {
   updatedAt: string
 }
 
+export interface RealtimeAndAnalysis {
+  stockRealtime: RealtimeQuote
+  stockAnalysisResult: AnalysisResult | null
+}
+
 export interface Portfolio {
   id: number
   userId: number
@@ -27,6 +32,7 @@ export interface Portfolio {
   note: string
   addedAt: string
   quote?: RealtimeQuote
+  analysisResult?: AnalysisResult
 }
 
 export interface PortfolioReq {
@@ -255,4 +261,27 @@ export interface PatchUserReq {
   role?: string
   disabled?: boolean
   tushareToken?: string
+}
+
+export interface BlockItem {
+  name: string
+  change_pct: string
+}
+
+export interface ConceptBlocks {
+  industry: BlockItem[]
+  concept: BlockItem[]
+  region: BlockItem[]
+  concept_tags: string[]
+}
+
+export interface FundFlowDay {
+  date: string
+  close: string
+  change_pct: string
+  super_net_in: string
+  large_net_in: string
+  medium_net_in: string
+  little_net_in: string
+  main_in: string
 }

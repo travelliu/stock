@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
+	
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,12 +19,12 @@ func TestFetchQuotes_ParsesFields(t *testing.T) {
 		_, _ = w.Write([]byte(fixtureResponse))
 	}))
 	defer srv.Close()
-
+	
 	c := NewClient(WithBaseURL(srv.URL + "/q="))
 	quotes, err := c.FetchQuotes(context.Background(), []string{"600519"})
 	require.NoError(t, err)
 	require.Len(t, quotes, 1)
-
+	
 	q := quotes[0]
 	assert.Equal(t, "600519", q.TsCode)
 	assert.Empty(t, q.Name) // GBK name skipped; fillNames populates from DB cache

@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"sync"
-
 	"github.com/spf13/cobra"
 
 	"stock/pkg/cli/client"
@@ -26,24 +24,7 @@ var portfolioListCmd = &cobra.Command{
 			return err
 		}
 
-		quotes := make(map[string]*models.RealtimeQuote, len(portfolio))
-		var mu sync.Mutex
-		var wg sync.WaitGroup
-		for _, p := range portfolio {
-			wg.Add(1)
-			go func(code string) {
-				defer wg.Done()
-				var q models.RealtimeQuote
-				if err := c.GET("/api/quotes/"+code, &q); err == nil {
-					mu.Lock()
-					quotes[code] = &q
-					mu.Unlock()
-				}
-			}(p.Code)
-		}
-		wg.Wait()
-
-		render.PortfolioTable(portfolio, quotes)
+		render.PortfolioTable(portfolio)
 		return nil
 	},
 }

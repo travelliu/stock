@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"stock/pkg/models"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -54,20 +55,37 @@ var stockAnalysisCmd = &cobra.Command{
 		c := client.New(cfg.ServerURL, cfg.Token)
 		format, _ := cmd.Flags().GetString("format")
 
-		path := "/api/analysis/" + args[0]
+		tsCode := args[0]
+		plainCode := tsCode
+		if idx := strings.Index(tsCode, "."); idx > 0 {
+			plainCode = tsCode[:idx]
+		}
+
+		// Fetch realtime quote to mirror web behavior (prices used as defaults).
+		var quote models.RealtimeQuote
+		hasQuote := c.GET("/api/quotes/"+plainCode, &quote) == nil
+
+		path := "/api/analysis/" + tsCode
 		qs := ""
-		if v, _ := cmd.Flags().GetFloat64("actual-open"); v != 0 {
-			qs += fmt.Sprintf("&actual_open=%.2f", v)
+
+		appendParam := func(flag, key string, quoteVal float64) {
+			if cmd.Flags().Changed(flag) {
+				v, _ := cmd.Flags().GetFloat64(flag)
+				qs += fmt.Sprintf("&%s=%.2f", key, v)
+			} else if hasQuote && quoteVal != 0 {
+				qs += fmt.Sprintf("&%s=%.2f", key, quoteVal)
+			}
 		}
-		if v, _ := cmd.Flags().GetFloat64("actual-high"); v != 0 {
-			qs += fmt.Sprintf("&actual_high=%.2f", v)
+
+		openDefault := quote.Open
+		if openDefault == 0 {
+			openDefault = quote.Price
 		}
-		if v, _ := cmd.Flags().GetFloat64("actual-low"); v != 0 {
-			qs += fmt.Sprintf("&actual_low=%.2f", v)
-		}
-		if v, _ := cmd.Flags().GetFloat64("actual-close"); v != 0 {
-			qs += fmt.Sprintf("&actual_close=%.2f", v)
-		}
+		appendParam("actual-open", "actual_open", openDefault)
+		appendParam("actual-high", "actual_high", quote.High)
+		appendParam("actual-low", "actual_low", quote.Low)
+		appendParam("actual-close", "actual_close", quote.Price)
+
 		if qs != "" {
 			path += "?" + qs[1:]
 		}

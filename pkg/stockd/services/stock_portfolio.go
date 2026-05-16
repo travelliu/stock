@@ -5,7 +5,7 @@ import (
 	"context"
 	"strings"
 	"time"
-	
+
 	"stock/pkg/models"
 )
 
@@ -55,17 +55,15 @@ func (s *Service) ListPortfolio(ctx context.Context, userID uint) ([]*models.Por
 		}
 	}
 	s.cacheMu.RUnlock()
-	
+
 	s.realtimeMu.RLock()
 	for _, r := range rows {
-		quote, err := s.GetRealtimeQuote(ctx, r.Code)
-		if err != nil {
-			continue
+		if q, ok := s.realtimeCache[r.Code]; ok {
+			r.Quote = q
 		}
-		r.Quote = quote
 	}
 	s.realtimeMu.RUnlock()
-	
+
 	return rows, nil
 }
 

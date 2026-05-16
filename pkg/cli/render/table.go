@@ -1,7 +1,6 @@
 package render
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -117,8 +116,6 @@ func windowKeyName(id string) string {
 }
 
 func AnalysisTable(r models.AnalysisResult) {
-	b, _ := json.MarshalIndent(r, "", " ")
-	fmt.Println(string(b))
 
 	fmt.Printf("\n=== %s (%s) 交易计划 ===\n\n", r.StockName, r.TsCode)
 
@@ -467,24 +464,40 @@ func joinSideBySide(tables []string, gap int) string {
 	return strings.Join(lines, "\n")
 }
 
-func PortfolioTable(items []*models.Portfolio, quotes map[string]*models.RealtimeQuote) {
-	headers := []string{"代码", "名称", "当前价", "涨跌%", "开盘", "备注"}
+func PortfolioTable(items []*models.Portfolio) {
+	headers := []string{"代码", "名称", "时间", "开盘", "最高", "最低", "最新", "涨跌幅", "备注"}
 	var rows [][]string
 	for _, p := range items {
-		q := quotes[p.Code]
-		price, changePct, open := "--", "--", "--"
+		q := p.Quote
+		tm, open, high, low, price, changePct := "--", "--", "--", "--", "--", "--"
 		if q != nil {
+			tm = fmtQuoteTime(q.QuoteTime)
+			open = fmt.Sprintf("%.2f", q.Open)
+			high = fmt.Sprintf("%.2f", q.High)
+			low = fmt.Sprintf("%.2f", q.Low)
 			price = fmt.Sprintf("%.2f", q.Price)
 			sign := "+"
 			if q.ChangePct < 0 {
 				sign = ""
 			}
 			changePct = fmt.Sprintf("%s%.2f%%", sign, q.ChangePct)
-			open = fmt.Sprintf("%.2f", q.Open)
 		}
-		rows = append(rows, []string{p.Code, p.Name, price, changePct, open, p.Note})
+		rows = append(rows, []string{p.Code, p.Name, tm, open, high, low, price, changePct, p.Note})
 	}
 	fmt.Println(FormatTable(headers, rows))
+}
+
+func fmtQuoteTime(t string) string {
+	if len(t) == 14 {
+		return t[8:10] + ":" + t[10:12]
+	}
+	if len(t) >= 16 && strings.Contains(t, " ") {
+		return t[11:16]
+	}
+	if len(t) >= 5 {
+		return t[:5]
+	}
+	return t
 }
 
 func BarsTable(items []*models.DailyBar) {

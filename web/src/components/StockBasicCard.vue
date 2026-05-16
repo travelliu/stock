@@ -36,15 +36,14 @@ function fmtVol(v: number): string {
 }
 
 function fmtAmount(a: number): string {
-  if (a >= 100000000) return `${(a / 100000000).toFixed(2)}亿`
-  if (a >= 10000) return `${(a / 10000).toFixed(2)}万`
-  return `${a.toFixed(0)}`
+  // Tencent API returns amount in 万元
+  if (a >= 10000) return `${(a / 10000).toFixed(2)}亿`
+  return `${a.toFixed(2)}万`
 }
 
 function fmtMktCap(v: number): string {
-  if (v >= 100000000) return `${(v / 100000000).toFixed(2)}亿`
-  if (v >= 10000) return `${(v / 10000).toFixed(2)}万`
-  return `${v.toFixed(0)}`
+  // Tencent API returns market cap in 亿元
+  return `${v.toFixed(2)}亿`
 }
 </script>
 
